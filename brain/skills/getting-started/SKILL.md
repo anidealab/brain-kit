@@ -4,7 +4,7 @@ description: "The first session in a new brain: welcome the owner, learn who the
 ---
 
 # Getting started
-This brain was started on {KIT_DATE} from a starter kit made from Matt's brain. On the owner's Windows PC, the installer has already:
+This brain was started on {KIT_DATE} from the AnIdeaLab brain kit. On the owner's Windows PC, the installer has already:
 - made this private GitHub repo and put the brain in it;
 - put a copy in `C:\AI-Brain-Link\<repo name>` and opened it in Obsidian, with the Obsidian Git plugin syncing it;
 - set up the PC runner (a GitHub Actions self-hosted runner with the label `my-pc`, running as a Windows service under the owner's account), unless they skipped it.

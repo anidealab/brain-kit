@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Apply brain updates from AnIdeaLab, and send their reports to AnIdeaLab's inbox.
 
-This brain was started from a starter kit made from Matt's brain. Matt sends updates to it
-(fixes, new rules, new parts) through the public repo AnIdeaLab/brain-kit:
+This brain was started from the AnIdeaLab brain kit, and AnIdeaLab sends updates to it
+(fixes, new rules, new parts) through the kit's public repo, AnIdeaLab/brain-kit:
 - brain/ holds the kit's brain as a fresh one would get it, with its two date placeholders
   left in for each brain's own start date;
 - updates/NNNN-<words>.md is each update's message: a summary for the owner, what changed and
@@ -25,7 +25,7 @@ changed the same lines, the update's lines go in, and it prints both sides of ea
 takes the whole clashing stretch, so a paragraph the brain added next to a line the update changed
 goes too, and the agent puts back what's the owner's own (but not the brain's own old fixes to kit parts,
 which give way to the kit's: the brain spec's "Brain updates" says why). Obsidian's settings files
-are the exception: there the brain's own lines stay, since the owner set them (two friends' brains,
+are the exception: there the brain's own lines stay, since the owner set them (two owners' brains,
 26 Oct 2026). A file the update adds is written, one it changed that this brain no longer has is
 written again, and one it deleted is deleted. Then it records the
 update in knowledge/systems/brain-updates/README.md and starts knowledge/systems/brain-updates/NNNN-report.md
@@ -721,8 +721,8 @@ def do_compare(args):
 
 def refresh_library(head, timeout):
     """Bring this brain's sign-off links up to the kit repo's copy, and say whether they changed. It's AnIdeaLab's file and
-    only changes which page a link goes to, so it's the one thing that changes without the owner's go (Matt, 31 Oct 2026;
-    the brain spec's "Brain updates"). Offline, blocked, or with no copy in the kit, the brain keeps the copy it has."""
+    only changes which page a link goes to, so it's the one thing that changes without the owner's go (the brain
+    spec's "Brain updates"). Offline, blocked, or with no copy in the kit, the brain keeps the copy it has."""
     try:
         r = subprocess.run(["git", "-C", CACHE, "show", f"{head}:{LIBRARY_IN_KIT}"], capture_output=True, timeout=timeout)
     except (subprocess.TimeoutExpired, OSError):
