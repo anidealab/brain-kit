@@ -1,0 +1,9 @@
+{
+  "theme": "dark",
+  "accent": "coral",
+  "speed": 2,
+  "replayOnOpen": true,
+  "physics": true,
+  "hold": 0.3,
+  "bridges": "hover"
+}

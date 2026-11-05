@@ -1,0 +1,50 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/skills/brain-spec/reminders.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR}/skills/brain-spec/reminders.py\" 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/skills/handoff/nudge.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR}/skills/handoff/nudge.py\" 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/skills/handoff/nudge.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR}/skills/handoff/nudge.py\" 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/skills/handoff/nudge.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR}/skills/handoff/nudge.py\" 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

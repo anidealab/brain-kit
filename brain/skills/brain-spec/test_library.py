@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""A small test of library.py: build, find and check a throwaway knowledge/ tree.
+
+Run it from anywhere: python3 skills/brain-spec/test_library.py
+It makes the tree in a temporary folder and never touches the brain itself.
+"""
+import os
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import library  # noqa: E402
+
+SHELF = """---
+about: "{about}"
+updated: 19 Oct 2026
+---
+# {title}
+
+<!-- index:start -->
+<!-- index:end -->
+"""
+
+
+def note(about, **fields):
+    lines = ["---", f'about: "{about}"']
+    lines += [f"{k}: {v}" for k, v in fields.items()]
+    if "updated" not in fields:
+        lines.append("updated: 19 Oct 2026")
+    return "\n".join(lines + ["---", "# A note", ""])
+
+
+class LibraryTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = self.tmp.name
+        files = {
+            "CLAUDE.md": "# The core\n",
+            "knowledge/README.md": SHELF.format(about="The library.", title="Knowledge"),
+            "knowledge/tasks/README.md": SHELF.format(about="What's in flight.", title="Tasks"),
+            "knowledge/tasks/send-pack.md": note("Matt sends the pack.", tags="[law-office]", status="open",
+                                                 holder="owner", due="23 Oct 2026"),
+            "knowledge/tasks/build-site.md": note("Build the site.", tags="[drivermods]", status="doing",
+                                                  holder="https://claude.ai/code/session_x"),
+            "knowledge/tasks/old-job.md": note("An old job.", status="done", holder="open"),
+            "knowledge/tasks/bad-holder.md": note("Nobody knows.", status="open", holder="bob"),
+            "knowledge/ventures/README.md": SHELF.format(about="Things with a goal.", title="Ventures"),
+            "knowledge/ventures/drivermods/README.md": SHELF.format(about="The store.", title="DriverMods"),
+            "knowledge/ventures/drivermods/order-flow.md": note("How an order flows.", tags="[drivermods, money]"),
+            "knowledge/ventures/law-office.md": note("The law venture."),
+            "knowledge/ventures/lab/README.md": SHELF.format(about="The lab.", title="Lab"),
+            "knowledge/ventures/lab/robot/README.md": SHELF.format(about="A project in the lab.", title="Robot"),
+            "knowledge/ventures/lab/history/README.md": SHELF.format(about="Old notes.", title="History"),
+            "knowledge/tasks/build-robot.md": note("Build the robot.", tags="[lab, robot]", status="open",
+                                                   holder="open"),
+            "knowledge/areas/README.md": SHELF.format(about="Ongoing things.", title="Areas"),
+            "knowledge/areas/money.md": note("The money picture."),
+            "knowledge/decisions/README.md": SHELF.format(about="What Matt decided.", title="Decisions"),
+            "knowledge/decisions/2026-10-17-older.md": note("An older one.", status="current"),
+            "knowledge/decisions/2026-10-18-newer.md": note("A newer one.", status="current", tags="[nowhere]"),
+            "knowledge/decisions/2026-10-01-gone.md": note("Replaced.", status="superseded"),
+            "knowledge/ideas/README.md": SHELF.format(about="Not started yet.", title="Ideas"),
+            "knowledge/ideas/no-card.md": "# No card here\n",
+            "knowledge/ideas/odd.md": note("A strange status.", status="current"),
+            "knowledge/people/notes.txt": "not a note, and its folder has no README\n",
+            "skills/README.md": "# Skills\n## The main ones\n- [brain-spec](brain-spec/SKILL.md): the spec.\n"
+                                "## The lists by topic\n- [Work](lists/work.md): everything.\n",
+            "skills/lists/work.md": "# Work\n## The brain's own\n- [brain-spec](../brain-spec/SKILL.md): the spec.\n"
+                                    "- [other](../other/SKILL.md), [long](../long/SKILL.md): two more.\n"
+                                    "Not a line: [plain](../plain/SKILL.md).\n"
+                                    "## Copied\nFrom [a/b](https://github.com/a/b), commit `abc1234`, copied 1 Oct 2026.\n"
+                                    "- [copied](../copied/SKILL.md): kept as it came. [tidy](../tidy/SKILL.md), [ghost](../ghost/SKILL.md).\n",
+            "skills/lists/sources.md": "# Where they came from\nSee [brain-spec](../brain-spec/SKILL.md).\n## a/b\n"
+                                       "From [a/b](https://github.com/a/b), commit `abc1234`, copied 1 Oct 2026.\n\n"
+                                       "- [copied](../copied/SKILL.md)\n- [tidy](../tidy/SKILL.md)\n- [ghost](../ghost/SKILL.md)\n",
+            "skills/brain-spec/SKILL.md": "# Spec\nLessons from using this skill in the brain: [LESSONS.md](LESSONS.md).\n"
+                                          "[a task](../../knowledge/tasks/send-pack.md)\n",
+            "skills/brain-spec/LESSONS.md": "# Lessons: brain-spec\n*Newest at the top.*\n\n- **19 Oct 2026:** two.\n"
+                                            "- **18 Oct 2026:** one.\n",
+            "skills/other/SKILL.md": "[a task](../../knowledge/tasks/send-pack.md) "
+                                     "[a decision](../../knowledge/decisions/2026-10-17-older.md)\n"
+                                     "```\n[an example](LESSONS.md)\n```\n",
+            "skills/other/LESSONS.md": "- **21 Oct 2026:** one.\n",
+            "skills/long/SKILL.md": "# Long\n" + "A step.\n" * 520,
+            "skills/copied/SKILL.md": "# Copied\nSee [LESSONS.md](LESSONS.md).\n## In this brain\n",
+            "skills/copied/LESSONS.md": "- a lesson.\n" * 21,
+            "skills/tidy/SKILL.md": "# Tidy\nSteps.\n## In this brain\n"
+                                    "Lessons from using this skill in the brain: [LESSONS.md](LESSONS.md).\n",
+            "skills/tidy/LESSONS.md": "- **21 Oct 2026:** one.\n",
+            "skills/ghost/SKILL.md": "# Ghost\n## In this brain\n[LESSONS.md](LESSONS.md)\n",
+            "skills/plain/SKILL.md": "# Plain, with no lessons\n",
+        }
+        for rel, text in files.items():
+            path = os.path.join(root, rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        self.lib = library.Library(root)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def read(self, rel):
+        with open(os.path.join(self.tmp.name, rel), encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_card(self):
+        card = library.read_card(os.path.join(self.tmp.name, "knowledge/ventures/drivermods/order-flow.md"))
+        self.assertEqual(card["about"], "How an order flows.")
+        self.assertEqual(card["tags"], ["drivermods", "money"])
+        self.assertIsNone(library.read_card(os.path.join(self.tmp.name, "knowledge/ideas/no-card.md")))
+        self.assertEqual(library.to_date("19 Oct 2026").isoformat(), "2026-10-19")
+
+    def test_build(self):
+        changed = library.build(self.lib, quiet=True)
+        self.assertIn("knowledge/tasks/README.md", changed)
+        tasks = self.read("knowledge/tasks/README.md")
+        self.assertIn("### Waiting on the owner\n- [send-pack](send-pack.md): Matt sends the pack. Due 23 Oct 2026. [law-office]", tasks)
+        self.assertIn("### Doing\n- [build-site](build-site.md)", tasks)
+        self.assertNotIn("old-job", tasks)
+        self.assertIn("Finished, and not listed: 1.", tasks)
+        top = self.read("knowledge/README.md")
+        self.assertIn("- [tasks/](tasks/README.md): What's in flight.", top)
+        ventures = self.read("knowledge/ventures/README.md")
+        self.assertLess(ventures.index("drivermods/"), ventures.index("law-office"))
+        decisions = self.read("knowledge/decisions/README.md")
+        self.assertLess(decisions.index("2026-10-18-newer"), decisions.index("2026-10-17-older"))
+        self.assertNotIn("2026-10-01-gone", decisions)
+        self.assertEqual(library.build(self.lib, quiet=True), [], "a second build changes nothing")
+
+    def test_find(self):
+        self.assertEqual(library.find(self.lib, holder="owner"),
+                         ["knowledge/tasks/send-pack.md: Matt sends the pack."])
+        drivermods = library.find(self.lib, tag="drivermods")
+        self.assertIn("knowledge/ventures/drivermods/README.md: The store.", drivermods)
+        self.assertIn("knowledge/tasks/build-site.md: Build the site.", drivermods)
+        self.assertEqual(library.find(self.lib, shelf="tasks", text="old job"), [])
+        self.assertEqual(len(library.find(self.lib, shelf="knowledge/tasks", text="old job", show_all=True)), 1)
+        self.assertEqual(len(library.find(self.lib, status="superseded")), 1)
+
+    def test_check(self):
+        problems = "\n".join(library.check(self.lib))
+        self.assertIn("knowledge/people/: no README.md", problems)
+        self.assertIn("knowledge/ideas/no-card.md: no card", problems)
+        self.assertIn('knowledge/ideas/odd.md: status "current"', problems)
+        self.assertIn('the tag "nowhere"', problems)
+        self.assertIn('knowledge/tasks/bad-holder.md: holder "bob"', problems)
+        self.assertIn("skills/other/SKILL.md: a skill links into the notes (../../knowledge/tasks/send-pack.md)", problems)
+        self.assertNotIn("skills/brain-spec", problems)
+        self.assertNotIn("2026-10-17-older.md)", problems)
+        self.assertNotIn("drivermods", problems)
+        self.assertNotIn("money", problems)
+        self.assertNotIn('the tag "robot"', problems)
+        self.assertNotIn("history", self.lib.known_tags())
+        self.assertIn("skills/long/SKILL.md: 521 lines, over 500", problems)
+        self.assertIn("skills/other/LESSONS.md: skills/other/SKILL.md doesn't link it", problems,
+                      "a link in a code block doesn't count")
+        self.assertIn("skills/copied/SKILL.md: a copied skill links LESSONS.md outside", problems)
+        self.assertIn("skills/copied/LESSONS.md: 21 lessons, past 20", problems)
+        self.assertIn("skills/ghost/SKILL.md: links LESSONS.md, but there isn't one", problems)
+        self.assertIn("skills/plain: no line in a topic list", problems, "a link outside a list item isn't a line")
+        self.assertIn("skills/lists/work.md: a source's \"From\" line", problems)
+        for fine in ("skills/tidy", "skills/plain/", "skills/copied/SKILL.md: 2", "skills/lists/sources.md:", "skills/other:"):
+            self.assertNotIn(fine, problems)
+
+    def test_lessons(self):
+        self.assertEqual(library.own_skills(self.lib), ["brain-spec", "long", "other", "plain"], "every skill sources.md doesn't name")
+        self.assertEqual(library.copied_skills(self.lib), {"copied", "tidy", "ghost"})
+        self.assertEqual(library.lessons(self.lib), [  # every skill's, copied too (Matt, 2 Nov 2026)
+            "skills/brain-spec/LESSONS.md: 2 lessons (fold in)",
+            "skills/copied/LESSONS.md: 21 lessons (fold in)",
+            "skills/other/LESSONS.md: 1 lesson (fold in)",
+            "skills/tidy/LESSONS.md: 1 lesson (fold in)",
+        ])
+
+    def test_handoffs(self):
+        files = {
+            "knowledge/handoffs/README.md": SHELF.format(about="Where work stands.", title="Hand-offs"),
+            "knowledge/handoffs/history/README.md": SHELF.format(about="Old hand-offs.", title="History"),
+            "knowledge/handoffs/history/2026-10-30-first.md": note("The first session.", kind="session", status="done"),
+            "knowledge/handoffs/2026-10-31-second.md": note("The second session.", kind="session", status="picked-up",
+                                                            before="2026-10-30-first.md", tags="[drivermods]"),
+            "knowledge/handoffs/2026-11-01-third.md": note("The third session.", kind="session", status="open",
+                                                           before="2026-10-31-second"),
+            "knowledge/handoffs/2026-11-01-brief.md": note("A brief.", kind="brief", status="open"),
+            "knowledge/handoffs/2026-11-01-report.md": note("A report.", kind="report", status="done",
+                                                            before="2026-11-01-brief.md"),
+            "knowledge/handoffs/2026-11-01-odd.md": note("An odd one.", kind="letter", before="2026-09-01-lost.md"),
+        }
+        for rel, text in files.items():
+            path = os.path.join(self.tmp.name, rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        library.build(self.lib, quiet=True)
+        board = self.read("knowledge/handoffs/README.md")
+        self.assertIn("### Open\n- [2026-11-01-third](2026-11-01-third.md): The third session. *(session)*\n"
+                      "- [2026-11-01-brief](2026-11-01-brief.md): A brief. *(brief)*", board, "open ones first, newest first")
+        self.assertIn("### Picked up\n- [2026-10-31-second](2026-10-31-second.md): The second session. *(session)* [drivermods]", board)
+        self.assertIn("### Other\n- [2026-11-01-odd]", board, "a hand-off with no status still shows")
+        self.assertNotIn("2026-11-01-report", board)
+        self.assertIn("Finished, and not listed: 1.", board)
+        self.assertIn("- [history/](history/README.md): Old hand-offs.", board)
+        problems = "\n".join(library.check(self.lib))
+        self.assertIn('knowledge/handoffs/2026-11-01-odd.md: kind "letter" should be session, brief or report', problems)
+        self.assertIn("knowledge/handoffs/2026-11-01-odd.md: no status", problems)
+        self.assertIn('knowledge/handoffs/2026-11-01-odd.md: before "2026-09-01-lost.md" isn\'t a hand-off', problems)
+        for fine in ("2026-10-31-second", "2026-11-01-third", "2026-11-01-brief", "2026-11-01-report", "history/2026-10-30"):
+            self.assertNotIn(fine, problems)
+
+    def test_one_way_decisions(self):
+        def write(rel, text):
+            with open(os.path.join(self.tmp.name, rel), "w", encoding="utf-8") as fh:
+                fh.write(text)
+        older = "knowledge/decisions/2026-10-17-older.md"
+        newer = "knowledge/decisions/2026-10-18-newer.md"
+        write(newer, note("A newer one.", status="current") + "It narrows [the older](2026-10-17-older.md).\n")
+        write("knowledge/decisions/2026-10-01-gone.md", note("Replaced.", status="superseded") + "[newer](2026-10-18-newer.md)\n")
+        self.assertEqual(library.one_way_decisions(self.lib), [(newer, older)])
+        write(os.path.join("skills", "brain-spec", "checked_links.txt"), f"# read by the audit\n{newer} -> {older}  # only a reference\n")
+        self.assertEqual(library.one_way_decisions(self.lib), [], "a checked pair isn't reported again")
+        os.remove(os.path.join(self.tmp.name, "skills", "brain-spec", "checked_links.txt"))
+        write(older, note("An older one.", status="current") + "Narrowed by [the newer](2026-10-18-newer.md).\n")
+        self.assertEqual(library.one_way_decisions(self.lib), [], "a link back answers it")
+
+
+if __name__ == "__main__":
+    unittest.main()

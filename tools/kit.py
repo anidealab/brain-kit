@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+"""The kit's own build: check the kit after a change, and make its zip.
+
+This repo is the kit. brain/ is the brain a new owner gets, with {KIT_DATE} and {KIT_ISO} where each brain has its own
+start date; install.ps1 and install/ make a brain from it on the owner's PC; updates/ holds the brain updates that
+brains made from it get. Change the kit by changing those files here, then run:
+
+    python3 tools/kit.py build           rebuild brain/'s indexes, copy sign-off-links.md into brain/, then make a brain
+                                         from brain/ in a scratch folder and run its own checks and tests, and the kit's
+                                         promises (below). Run it after every change, and fix what it reports.
+    python3 tools/kit.py zip [folder]    the zip an owner can install from instead of the one command: the brain as a
+                                         git bundle started today, the installer, the setup check and START-HERE.txt
+
+The kit's promises: no one person's names or accounts, every date placeholder filled in a new brain, the core under
+6 KB (a core may be 8 KB, so each owner has 2 KB for their own lines), and as many skills as START-HERE.txt says.
+
+Python 3.8+ and git, nothing else.
+"""
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import zipfile
+from datetime import datetime, timezone
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+BRAIN = os.path.join(REPO, "brain")
+INSTALL = os.path.join(REPO, "install")
+UPDATES = os.path.join(REPO, "updates")
+LIBRARY = os.path.join(REPO, "sign-off-links.md")  # the copy brains refresh theirs from each day
+BRAIN_LIBRARY = os.path.join("knowledge", "systems", "sign-off-links.md")  # the copy a new brain starts with
+TEXT = {".md", ".py", ".ps1", ".yml", ".json", ".txt", ".css", ".js", ".mjs", ".sh", ".gitignore"}
+CORE_MAX = 6 * 1024
+# A date no brain starts on, filled in for the checks and swapped back to the placeholders after.
+SENTINEL = ("9 Sep 1999", "1999-09-09")
+# The line in a brain's brain-updates note that brain_update.py and the installer read and write.
+UPDATE_LINE = re.compile(r"(?m)^\*\*On kit update:\*\* [^\r\n]*")
+UPDATE_FILE = re.compile(r"^(\d{4})-[a-z0-9-]+\.md$")
+# Names from one person's own setup, which a kit brain must never carry. Paths still left out are listed below.
+PERSONAL = re.compile(r"matt-pc|matts-pc|big-brain|mjohnsonchung|D:\\AI-Brain-Link|AnIdeaLab-brain-friends-kit", re.I)
+PERSONAL_LEFT_OUT = ("skills/brain-spec/", ".obsidian/plugins/brain-graph/", "skills/my-pc/check-setup.ps1")
+ONE_COMMAND = "irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex"
+# START-HERE.txt is for the one command; the zip's copy has the line that unpacks the zip from Downloads instead.
+ZIP_START = (
+    "2. PASTE THIS LINE into the blue window and press Enter:\n\n" + ONE_COMMAND + "\n",
+    "2. SAVE THE ZIP in your Downloads folder, as it came (no need to unzip it). Then PASTE THIS\n"
+    "   LINE into the blue window and press Enter:\n\n"
+    "$z = Get-ChildItem \"$HOME\\Downloads\" -Filter 'brain-kit-*.zip' | Sort-Object LastWriteTime | Select-Object -Last 1; "
+    "Expand-Archive $z.FullName \"$env:TEMP\\brain-kit\" -Force; powershell -ExecutionPolicy Bypass -File "
+    "(Get-ChildItem \"$env:TEMP\\brain-kit\" -Recurse -Filter install-windows.ps1 | Select-Object -Last 1).FullName\n")
+
+
+def run(*cmd, cwd=None, check=True, env=None):
+    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
+    if check and r.returncode:
+        sys.exit(f"{' '.join(cmd)} failed:\n{r.stdout}{r.stderr}")
+    return r
+
+
+def fill(text, day, iso):
+    return text.replace("{KIT_DATE}", day).replace("{KIT_ISO}", iso)
+
+
+def copy_brain(dest, day, iso):
+    """brain/ into dest, with the start date filled in, in names and in text files."""
+    for dirpath, dirs, files in os.walk(BRAIN):
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for f in files:
+            src = os.path.join(dirpath, f)
+            out = os.path.join(dest, fill(os.path.relpath(src, BRAIN), day, iso))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            if os.path.splitext(f)[1] in TEXT or f == ".gitignore":
+                open(out, "w", encoding="utf-8", newline="").write(fill(open(src, encoding="utf-8", newline="").read(), day, iso))
+                shutil.copymode(src, out)
+            else:
+                shutil.copy2(src, out)
+
+
+def unfill(text):
+    day, iso = SENTINEL
+    return text.replace(day, "{KIT_DATE}").replace(iso, "{KIT_ISO}")
+
+
+def skill_count():
+    skills = os.path.join(BRAIN, "skills")
+    return len([d for d in os.listdir(skills) if os.path.isfile(os.path.join(skills, d, "SKILL.md"))])
+
+
+def check(brain):
+    """A brain's own checks and tests, run on a new brain made from brain/, and the kit's promises. Returns the problems."""
+    run(sys.executable, "skills/brain-spec/library.py", "build", cwd=brain)
+    run("git", "init", "-q", "-b", "main", cwd=brain)
+    run("git", "add", "-A", cwd=brain)
+    lib = run(sys.executable, "skills/brain-spec/library.py", "check", "--strict", cwd=brain, check=False)
+    links = run(sys.executable, "skills/brain-spec/check_links.py", cwd=brain, check=False)
+    tests = run(sys.executable, "skills/brain-spec/test_library.py", cwd=brain, check=False)
+    problems = []
+    if lib.returncode:
+        problems.append("library check:\n" + lib.stdout)
+    if links.returncode or "Notes nothing links to: 0" not in links.stdout:
+        problems.append("link check:\n" + links.stdout)
+    if tests.returncode:
+        problems.append("library tests:\n" + tests.stdout + tests.stderr)
+    count = skill_count()
+    start = open(os.path.join(INSTALL, "START-HERE.txt"), encoding="utf-8").read()
+    if f"{count} skills" not in start:
+        problems.append(f"the kit has {count} skills, but install/START-HERE.txt doesn't say \"{count} skills\"")
+    files = run("git", "ls-files", cwd=brain).stdout.splitlines()
+    personal, unfilled = [], []
+    for rel in files:
+        if os.path.splitext(rel)[1] not in TEXT:
+            continue
+        text = open(os.path.join(brain, rel), encoding="utf-8", errors="replace").read()
+        if PERSONAL.search(text) and not rel.startswith(PERSONAL_LEFT_OUT):
+            personal.append(rel)
+        if "{KIT_" in text:
+            unfilled.append(rel)
+    for rel in [os.path.relpath(os.path.join(INSTALL, f), REPO) for f in sorted(os.listdir(INSTALL))] + ["install.ps1", "README.md"]:
+        if PERSONAL.search(open(os.path.join(REPO, rel), encoding="utf-8", errors="replace").read()):
+            personal.append(rel)
+    if personal:
+        problems.append("one person's own names or accounts are in: " + ", ".join(personal))
+    if unfilled:
+        problems.append("a {KIT_...} placeholder isn't filled in a new brain, in: " + ", ".join(unfilled))
+    if os.path.getsize(os.path.join(brain, "CLAUDE.md")) > CORE_MAX:
+        problems.append("the core is over 6 KB, leaving owners less than their 2 KB of the 8 KB")
+    return problems
+
+
+def build():
+    """Rebuild brain/'s indexes and its copy of the sign-off's links, then check the kit."""
+    notes = []
+    library = os.path.join(BRAIN, BRAIN_LIBRARY)
+    if open(LIBRARY, encoding="utf-8").read() != open(library, encoding="utf-8").read():
+        shutil.copy2(LIBRARY, library)
+        notes.append(f"copied sign-off-links.md to brain/{BRAIN_LIBRARY}")
+    work = tempfile.mkdtemp()
+    try:
+        scratch = os.path.join(work, "brain")
+        copy_brain(scratch, *SENTINEL)
+        problems = check(scratch)
+        # The indexes the build wrote, with the placeholders back, into brain/.
+        for dirpath, _, files in os.walk(scratch):
+            if "README.md" not in files or os.sep + ".git" in dirpath:
+                continue
+            built = unfill(open(os.path.join(dirpath, "README.md"), encoding="utf-8", newline="").read())
+            rel = unfill(os.path.relpath(os.path.join(dirpath, "README.md"), scratch))
+            mine = os.path.join(BRAIN, rel)
+            if os.path.isfile(mine) and open(mine, encoding="utf-8", newline="").read() != built:
+                open(mine, "w", encoding="utf-8", newline="").write(built)
+                notes.append(f"rebuilt brain/{rel}")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    for n in notes:
+        print(n)
+    if problems:
+        sys.exit("The kit didn't pass its checks.\n\n" + "\n\n".join(problems))
+    print(f"The kit passed its checks ({skill_count()} skills).")
+
+
+def newest_update():
+    """The newest brain update in updates/, or 0 if there's none yet."""
+    found = [UPDATE_FILE.match(f) for f in os.listdir(UPDATES)] if os.path.isdir(UPDATES) else []
+    return max((int(m.group(1)) for m in found if m), default=0)
+
+
+def zip_kit(out):
+    os.makedirs(out, exist_ok=True)
+    now = datetime.now(timezone.utc)
+    day, iso = f"{now.day} {now:%b %Y}", f"{now:%Y-%m-%d}"
+    name = f"brain-kit-{iso}"
+    work = tempfile.mkdtemp()
+    try:
+        brain = os.path.join(work, "brain")
+        copy_brain(brain, day, iso)
+        # The brain has every update in updates/, so its note says the newest, as the installer writes it.
+        n = newest_update()
+        if n:
+            path = os.path.join(brain, "knowledge", "systems", "brain-updates", "README.md")
+            text = open(path, encoding="utf-8", newline="").read()
+            text, found = UPDATE_LINE.subn(f"**On kit update:** {n} (in the kit this brain started from, made on {day})", text, count=1)
+            if not found:
+                sys.exit("The \"**On kit update:**\" line isn't in brain/knowledge/systems/brain-updates/README.md any more; "
+                         "change zip_kit here, and New-BrainRepo in install/install-windows.ps1, to match.")
+            open(path, "w", encoding="utf-8", newline="").write(text)
+        problems = check(brain)
+        if problems:
+            sys.exit("The kit didn't pass its checks, so there's no zip.\n\n" + "\n\n".join(problems))
+        env = dict(os.environ, GIT_AUTHOR_NAME="AnIdeaLab brain kit", GIT_AUTHOR_EMAIL="brain-kit@anidealab.com",
+                   GIT_COMMITTER_NAME="AnIdeaLab brain kit", GIT_COMMITTER_EMAIL="brain-kit@anidealab.com")
+        run("git", "-C", brain, "commit", "-q", "-m", f"Started this brain from the AnIdeaLab brain kit, {day}", env=env)
+        kit = os.path.join(work, name)
+        os.makedirs(kit)
+        run("git", "-C", brain, "bundle", "create", os.path.join(kit, f"{name}.bundle"), "main")
+        test = os.path.join(work, "unpacked")
+        run("git", "clone", "-q", "-b", "main", os.path.join(kit, f"{name}.bundle"), test)
+        if run("git", "-C", test, "ls-files").stdout != run("git", "-C", brain, "ls-files").stdout:
+            sys.exit("The bundle didn't unpack to the same files.")
+        shutil.copy2(os.path.join(INSTALL, "install-windows.ps1"), kit)
+        shutil.copy2(os.path.join(BRAIN, "skills", "my-pc", "check-setup.ps1"), kit)
+        start = fill(open(os.path.join(INSTALL, "START-HERE.txt"), encoding="utf-8").read(), day, iso)
+        if ZIP_START[0] not in start:
+            sys.exit("install/START-HERE.txt's step 2 isn't the one command any more; change ZIP_START in tools/kit.py to match.")
+        open(os.path.join(kit, "START-HERE.txt"), "w", encoding="utf-8", newline="\r\n").write(start.replace(*ZIP_START))
+        zpath = os.path.join(out, f"{name}.zip")
+        with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+            for f in sorted(os.listdir(kit)):
+                z.write(os.path.join(kit, f), f"{name}/{f}")
+        print(f"{zpath} ({os.path.getsize(zpath) / 1e6:.1f} MB, {skill_count()} skills)")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def main():
+    args = sys.argv[1:]
+    if args[:1] == ["build"]:
+        return build()
+    if args[:1] == ["zip"]:
+        return zip_kit(os.path.abspath(args[1] if len(args) > 1 else "."))
+    sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()
