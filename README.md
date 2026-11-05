@@ -1,6 +1,6 @@
 # The AnIdeaLab brain kit
 
-A second brain for working with AI agents: a private GitHub repo of plain Markdown that agents work from. It has a core every agent reads (`CLAUDE.md`), a library of skills for how to do things, and a knowledge library of what the brain knows, with Obsidian to see it and a runner on the owner's PC for jobs that need it. An owner starts one with one command in PowerShell ([Install](#install)).
+A second brain for working with AI agents: a private GitHub repo of plain Markdown that agents work from. It has a core every agent reads (`CLAUDE.md`), a library of skills for how to do things, and a knowledge library of what the brain knows, with a  custom AnIdeaLab ObsidianPlugin to see it and a runner on the owner's PC for jobs that need it. An owner starts one with one command in PowerShell ([Install](#install)).
 
 ## Install
 On a Windows PC, open PowerShell (press the Windows key, type powershell, press Enter), paste this line and press Enter:
