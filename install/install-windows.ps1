@@ -294,6 +294,16 @@ if (Test-Path (Join-Path $vault '.git')) {
   if (-not $check) {
     Native { & $git -C $vault push -u origin main }
     if ($LASTEXITCODE -ne 0) { throw 'Sending the brain to GitHub failed. Paste the same command again to retry.' }
+    # A setup report, so AnIdeaLab can count new brains: the brain's "Send brain update reports" workflow sends
+    # it to the kit's inbox, as it does an update's report. It holds the day it was set up, nothing else.
+    Say 'Sending AnIdeaLab a setup report (just the date), so it can count new brains...'
+    $setupDay = (Get-Date).ToUniversalTime().ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)
+    $setupReport = Inside $vault 'knowledge' 'systems' 'brain-updates' '0000-report.md'
+    $setupText = "---`nabout: `"This brain's setup report: the day it was set up from the AnIdeaLab brain kit. Sent to AnIdeaLab's inbox.`"`ntags: [the-brain]`nupdated: $setupDay`n---`n# Setup report`n`nThis brain was set up from the AnIdeaLab brain kit on $setupDay (UTC).`n"
+    [IO.File]::WriteAllText($setupReport, $setupText, $noBom)
+    Native { & $git -C $vault add -- $setupReport }
+    Native { & $git -C $vault commit -q -m 'Setup report for AnIdeaLab' } | Out-Null
+    Native { & $git -C $vault push -q origin main } | Out-Null
   }
 } else {
   Say "$repo already has a brain in it, so this PC gets a copy of it..."
