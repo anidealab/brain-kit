@@ -33,7 +33,6 @@ TEXT = {".md", ".py", ".js", ".mjs", ".cjs", ".css", ".json", ".yml", ".yaml", "
 SKILLS = "skills/"
 LISTS = "lists/"  # inside skills/: the lists by topic, linked from its README
 SOURCES = LISTS + "sources.md"  # the record of every copied skill and where it came from
-TEMPLATES = ("skills/brain-starter/kit/",)  # a friend's brain in the making; its links point inside it, and make_starter.py checks them there
 BIG = 1_000_000  # bytes; text files over this are flagged too
 LONG = 12_000    # bytes; the core or an index over this is flagged
 HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*#*\s*$", re.M)
@@ -104,7 +103,7 @@ def main():
     files = tracked()
     copied = copied_skills()
     kept = [p for p in files if copied and p.startswith(copied)]
-    files = [p for p in files if not (copied and p.startswith(copied)) and not p.startswith(TEMPLATES)]
+    files = [p for p in files if not (copied and p.startswith(copied))]
     notes = [p for p in files if p.endswith(".md")]
     broken, sections, inbound = [], [], collections.Counter()
     for note in notes:

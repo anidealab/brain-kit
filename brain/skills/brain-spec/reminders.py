@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Tell the agent, at the start of a session, which reminders in knowledge/systems/routines.md are due.
 
-Matt, 18 Oct 2026: work that needs an AI or Matt can be a reminder instead of a
-scheduled AI job. When he starts a session after one is due and it hasn't been done,
-the agent tells him, and he decides whether to run it. Each reminder is a row in the
+Work that needs an AI or the owner can be a reminder instead of a scheduled AI job.
+When the owner starts a session after one is due and it hasn't been done, the agent
+tells them, and they decide whether to run it. Each reminder is a row in the
 table in knowledge/systems/routines.md whose Kind is "Reminder":
 - its When cell gives a weekday and a time in NZ time, like "Saturdays 05:00", or the
   first of a weekday in each month, like "First Saturday of each month, 06:00" (added
@@ -20,13 +20,13 @@ is ignored, so a typo can't switch a reminder off for weeks.
 Any agent can run it: python3 skills/brain-spec/reminders.py. Claude Code runs it at the start of a
 session through a SessionStart hook in .claude/settings.json, and what it prints goes
 into the session. It prints nothing when nothing is due. It reads only this repo and
-needs nothing outside Python's standard library. In a brain started from the friends' starter
+needs nothing outside Python's standard library. In a brain started from the AnIdeaLab brain
 kit, it also runs brain_update.py notice beside it, which asks the kit repo at most once a day
-whether AnIdeaLab has sent an update, and prints only when one is waiting (Matt, 26 Oct 2026:
-"check daily for updates, but silently unless there is one"). In a kit brain it also says how many
+whether AnIdeaLab has sent an update, and prints only when one is waiting, so a day with no
+update costs the session nothing. In a kit brain it also says how many
 things are waiting at the upload point and since when (knowledge/systems/upload-point.md, which the
 owner's Upload point window writes; 31 Oct 2026), so the agent asks the owner what to do with them.
-It's silent when nothing's waiting, and in a brain without the note, like Matt's.
+It's silent when nothing's waiting, and in a brain without the note.
 Try it: python3 skills/brain-spec/reminders.py --now 2026-10-24T03:00Z
 """
 import os

@@ -6,7 +6,7 @@ Written for the brain restructure (19 Oct 2026). The design is in the brain-spec
 
     ---
     about: "One line: what's in the note and when you'd read it."
-    tags: [drivermods, money]
+    tags: [bakery, money]
     status: current
     updated: 19 Oct 2026
     ---
@@ -175,7 +175,7 @@ class Library:
                 elif os.path.isdir(os.path.join(base, name)):
                     tags.add(name)
                     if shelf == "ventures":
-                        # a project inside a venture (anidealab/rosie/) is a tag too
+                        # a project inside a venture (bakery/website/) is a tag too
                         for sub in os.listdir(os.path.join(base, name)):
                             if sub != "history" and os.path.isfile(os.path.join(base, name, sub, "README.md")):
                                 tags.add(sub)
@@ -513,7 +513,7 @@ def skill_shape(lib):
 
 
 def lessons(lib):
-    """Every skill with a LESSONS.md, copied or not: the weekly audit folds them all in (Matt, 2 Nov 2026)."""
+    """Every skill with a LESSONS.md, copied or not: the weekly audit folds them all in."""
     rows = []
     for name in all_skills(lib):
         text = skill_text(lib, name, "LESSONS.md")
@@ -525,7 +525,7 @@ def lessons(lib):
 
 
 def history_links(lib):
-    """Live notes linking to a retired note in a history/ folder (Matt, 20 Oct 2026).
+    """Live notes linking to a retired note in a history/ folder.
 
     Retired notes keep their own links, and an index may list its history/ shelf, but
     nothing current should send an agent to a superseded note: say where it is in words.
@@ -617,7 +617,7 @@ def audit(lib, since):
             lines, bot = 0, False
             for row in log.splitlines():
                 if row.startswith("@"):
-                    bot = row[1:].startswith(("farm-brain", "github-actions"))  # the repo's own Actions
+                    bot = row[1:].startswith("github-actions")  # the repo's own Actions
                     continue
                 parts = row.split("\t")
                 if not bot and len(parts) == 3 and parts[0].isdigit():

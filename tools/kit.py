@@ -11,8 +11,9 @@ brains made from it get. Change the kit by changing those files here, then run:
     python3 tools/kit.py zip [folder]    the zip an owner can install from instead of the one command: the brain as a
                                          git bundle started today, the installer, the setup check and START-HERE.txt
 
-The kit's promises: no one person's names or accounts, every date placeholder filled in a new brain, the core under
-6 KB (a core may be 8 KB, so each owner has 2 KB for their own lines), and as many skills as START-HERE.txt says.
+The kit's promises: no one person's names, accounts or setup anywhere in the repo (the copied skills aside, kept as
+they came), every date placeholder filled in a new brain, the core under 6 KB (a core may be 8 KB, so each owner has
+2 KB for their own lines), and as many skills as START-HERE.txt says.
 
 Python 3.8+ and git, nothing else.
 """
@@ -39,9 +40,11 @@ SENTINEL = ("9 Sep 1999", "1999-09-09")
 # The line in a brain's brain-updates note that brain_update.py and the installer read and write.
 UPDATE_LINE = re.compile(r"(?m)^\*\*On kit update:\*\* [^\r\n]*")
 UPDATE_FILE = re.compile(r"^(\d{4})-[a-z0-9-]+\.md$")
-# Names from one person's own setup, which a kit brain must never carry. Paths still left out are listed below.
-PERSONAL = re.compile(r"matt-pc|matts-pc|big-brain|mjohnsonchung|D:\\AI-Brain-Link|AnIdeaLab-brain-friends-kit", re.I)
-PERSONAL_LEFT_OUT = ("skills/brain-spec/", ".obsidian/plugins/brain-graph/", "skills/my-pc/check-setup.ps1")
+# One person's names, accounts and setup, which nothing in the kit may carry: it stands alone. The first name counts on
+# its own; Matt Pocock, whose skills are copied in, doesn't. The build looks in every text file in the repo and in a new
+# brain made from it, except the copied skills, kept as they came, and the pattern's own line here.
+PERSONAL = re.compile(r"\bMatt\b(?!\s+Pocock)|matt-pc|matts-pc|big-brain|farm-brain|mjohnsonchung|D:\\AI-Brain-Link|AnIdeaLab-brain-friends-kit", re.I)
+LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 ONE_COMMAND = "irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex"
 # START-HERE.txt is for the one command; the zip's copy has the line that unpacks the zip from Downloads instead.
 ZIP_START = (
@@ -84,6 +87,44 @@ def unfill(text):
     return text.replace(day, "{KIT_DATE}").replace(iso, "{KIT_ISO}")
 
 
+def copied_skills(brain):
+    """The folders in a brain's skills/ that the list lines of skills/lists/sources.md link, read as library.py reads
+    them: the copied skills and the shared files they use, kept as they came. As paths from the brain's top."""
+    path = os.path.join(brain, "skills", "lists", "sources.md")
+    if not os.path.isfile(path):
+        return ()
+    text = re.sub(r"```.*?```", "", open(path, encoding="utf-8").read(), flags=re.S)
+    tops = set()
+    for line in text.split("\n"):
+        if not line.lstrip().startswith("- "):
+            continue
+        for target in LINK.findall(line):
+            if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.I):
+                continue
+            top = os.path.normpath(os.path.join("lists", target.split("#")[0])).split(os.sep)[0]
+            if top not in (".", "..", "lists"):
+                tops.add(top)
+    return tuple(f"skills/{top}/" for top in sorted(tops))
+
+
+def outside_brain():
+    """The repo's text files outside brain/, as paths from its top."""
+    out = []
+    for dirpath, dirs, files in os.walk(REPO):
+        dirs[:] = sorted(d for d in dirs if d not in (".git", "__pycache__", "node_modules") and not (dirpath == REPO and d == "brain"))
+        for f in sorted(files):
+            if os.path.splitext(f)[1] in TEXT or f == ".gitignore" or "." not in f:
+                out.append(os.path.relpath(os.path.join(dirpath, f), REPO).replace(os.sep, "/"))
+    return out
+
+
+def names_someone(text, rel):
+    """Whether a file's text has PERSONAL in it, leaving out the line here that defines it."""
+    if rel == "tools/kit.py":
+        text = "\n".join(line for line in text.split("\n") if not line.startswith("PERSONAL = "))
+    return bool(PERSONAL.search(text))
+
+
 def skill_count():
     skills = os.path.join(BRAIN, "skills")
     return len([d for d in os.listdir(skills) if os.path.isfile(os.path.join(skills, d, "SKILL.md"))])
@@ -109,20 +150,21 @@ def check(brain):
     if f"{count} skills" not in start:
         problems.append(f"the kit has {count} skills, but install/START-HERE.txt doesn't say \"{count} skills\"")
     files = run("git", "ls-files", cwd=brain).stdout.splitlines()
+    kept = copied_skills(brain)
     personal, unfilled = [], []
     for rel in files:
         if os.path.splitext(rel)[1] not in TEXT:
             continue
         text = open(os.path.join(brain, rel), encoding="utf-8", errors="replace").read()
-        if PERSONAL.search(text) and not rel.startswith(PERSONAL_LEFT_OUT):
-            personal.append(rel)
+        if not rel.startswith(kept) and names_someone(text, rel):
+            personal.append("brain/" + unfill(rel))
         if "{KIT_" in text:
             unfilled.append(rel)
-    for rel in [os.path.relpath(os.path.join(INSTALL, f), REPO) for f in sorted(os.listdir(INSTALL))] + ["install.ps1", "README.md"]:
-        if PERSONAL.search(open(os.path.join(REPO, rel), encoding="utf-8", errors="replace").read()):
+    for rel in outside_brain():
+        if names_someone(open(os.path.join(REPO, rel), encoding="utf-8", errors="replace").read(), rel):
             personal.append(rel)
     if personal:
-        problems.append("one person's own names or accounts are in: " + ", ".join(personal))
+        problems.append("one person's own names, accounts or setup are in: " + ", ".join(personal))
     if unfilled:
         problems.append("a {KIT_...} placeholder isn't filled in a new brain, in: " + ", ".join(unfilled))
     if os.path.getsize(os.path.join(brain, "CLAUDE.md")) > CORE_MAX:

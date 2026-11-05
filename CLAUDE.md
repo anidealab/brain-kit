@@ -8,7 +8,7 @@ This repo is the brain kit: the brain a new owner starts with, the installer tha
 
 ## Changing the kit
 1. **Change the files here directly.** brain/ is the source: nothing else writes it.
-2. **Run `python3 tools/kit.py build`** after every change. It rebuilds brain/'s indexes, copies [sign-off-links.md](sign-off-links.md) into brain/, makes a new brain from brain/ in a scratch folder, and runs that brain's own checks and tests, and the kit's promises: no one person's names or accounts, every date placeholder filled, the core under 6 KB (a core may be 8 KB, so each owner has 2 KB for their own lines), and as many skills as START-HERE.txt says. Fix what it reports before you commit.
+2. **Run `python3 tools/kit.py build`** after every change. It rebuilds brain/'s indexes, copies [sign-off-links.md](sign-off-links.md) into brain/, makes a new brain from brain/ in a scratch folder, and runs that brain's own checks and tests, and the kit's promises: no one person's names, accounts or setup anywhere in the repo (the copied skills aside, kept as they came), every date placeholder filled, the core under 6 KB (a core may be 8 KB, so each owner has 2 KB for their own lines), and as many skills as START-HERE.txt says. Fix what it reports before you commit.
 3. **Copied skills** are kept as they came, and brought up to date from their own sources: from brain/, run `python3 skills/brain-spec/skill_updates.py check`, then `update --source <owner/repo>` for a set that changed, read the diff, and run the build. Where each came from: [brain/skills/lists/sources.md](brain/skills/lists/sources.md).
 4. **Commit to `main`** in small commits with plain messages, with `git pull --rebase origin main` before you start and before you push. Never force-push.
 

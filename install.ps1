@@ -1,19 +1,18 @@
-# Starts your own second brain from Matt's starter kit, on a Windows PC. Paste into PowerShell:
+# Starts your own second brain from the AnIdeaLab brain kit, on a Windows PC. Paste into PowerShell:
 #   irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 # It downloads this repo as a zip from GitHub (no Git needed yet), unpacks it in a temporary folder and
 # runs the installer in it, install\install-windows.ps1, as a file, which does the rest and says what it's
 # doing: Git, GitHub's command line and Obsidian, your brain's private repo made from brain\, your copy in
 # C:\AI-Brain-Link, and the PC runner. Safe to run again. Windows PowerShell 5.1, plain ASCII.
-# The installer is written into install\ from Matt's brain (its brain-starter skill); this file is kept here.
 & {
   $ErrorActionPreference = 'Stop'
   $ProgressPreference = 'SilentlyContinue' # Windows PowerShell 5.1 downloads far slower with its progress bar
   [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072
   $url = 'https://github.com/AnIdeaLab/brain-kit/archive/refs/heads/main.zip'
-  $zip = Join-Path $env:TEMP 'brain-starter-kit.zip'
-  $kit = Join-Path $env:TEMP 'brain-starter-kit'
+  $zip = Join-Path $env:TEMP 'brain-kit-download.zip'
+  $kit = Join-Path $env:TEMP 'brain-kit-download'
   Write-Host ''
-  Write-Host "Downloading Matt's starter kit..." -ForegroundColor Cyan
+  Write-Host "Downloading the AnIdeaLab brain kit..." -ForegroundColor Cyan
   try {
     if (Test-Path -LiteralPath $kit) { Remove-Item -LiteralPath $kit -Recurse -Force -ErrorAction SilentlyContinue }
     if (Test-Path -LiteralPath $kit) { $kit = $kit + '-' + (Get-Random) }

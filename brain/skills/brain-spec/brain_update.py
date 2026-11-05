@@ -802,7 +802,7 @@ def do_notice(_args):
 def pushed(event):
     """The reports a push added or changed, or None if git can't say. GitHub leaves the file lists out of a
     push's commits for Actions (its changelog, 16 Oct 2019), so until 27 Oct 2026 no report went on a push
-    (Oscar's update 2 report). The commit before the push is fetched and compared with the one after."""
+    (an owner's update 2 report). The commit before the push is fetched and compared with the one after."""
     before, after = event.get("before") or "", event.get("after") or "HEAD"
     if not before.strip("0"):
         return None  # a new branch: nothing before it

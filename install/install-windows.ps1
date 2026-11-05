@@ -1,22 +1,22 @@
-# Sets up your own second brain on this Windows PC, from Matt's starter kit. It installs Git, GitHub's
+# Sets up your own second brain on this Windows PC, from the AnIdeaLab brain kit. It installs Git, GitHub's
 # command line (gh) and Obsidian if they're missing, signs you in to GitHub, makes your brain's private
-# repo (inviting Matt's testing account to it, to test the kit while it's in testing) and puts the brain
+# repo (inviting AnIdeaLab's testing account to it, to test the kit while it's in testing) and puts the brain
 # in it, puts your copy in C:\AI-Brain-Link with Obsidian's syncing on, adds the upload point if the
 # brain has one, sets up the PC runner, so AI agents can run jobs on this PC, and opens Obsidian last.
 # Safe to run again: it skips what's already done. It ends with a list of which steps finished, and
 # keeps it in C:\AI-Brain-Link\_logs\install.log, which the setup check reads.
 # Where the brain comes from, first found:
 # - -Brain <a brain folder or a .bundle file>;
-# - a .bundle file next to this script (the zip make_starter.py makes);
+# - a .bundle file next to this script (the zip tools\kit.py makes);
 # - the kit repo's brain\ folder beside this script's install\ folder. install.ps1, at the kit repo's
 #   root, downloads the repo as a zip and runs this from it, with -Zip <that zip>, which says which of
 #   the brain's files are programs (a mark Windows' files don't keep).
-# START-HERE.txt has the one command that runs it. Made by the brain-starter skill in Matt's brain.
+# START-HERE.txt has the one command that runs it. It's part of the kit's repo, AnIdeaLab/brain-kit.
 # Works in Windows PowerShell 5.1.
 param([string]$Brain = '', [string]$Zip = '')
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$check = $env:BRAIN_STARTER_CHECK # a test folder: nothing is installed, and GitHub and Obsidian aren't touched
+$check = $env:BRAIN_KIT_CHECK # a test folder: nothing is installed, and GitHub and Obsidian aren't touched
 $root = if ($check) { $check } else { 'C:\AI-Brain-Link' }
 $noBom = New-Object Text.UTF8Encoding $false # Obsidian can't read JSON that starts with a byte-order mark
 
@@ -33,7 +33,7 @@ function Ask($q, $default) {
 
 # The steps and how each went, kept in C:\AI-Brain-Link\_logs\install.log as it goes and listed at the end,
 # so if the setup stops, or its window is closed, the brain's agent and the setup check can see how far it
-# got. On Zak's PC (31 Oct 2026) it stopped after Obsidian with nothing on screen or on the PC to say why.
+# got. On an owner's PC (31 Oct 2026) it stopped after Obsidian with nothing on screen or on the PC to say why.
 $steps = [ordered]@{}
 $logFile = Join-Path (Join-Path $root '_logs') 'install.log'
 function Log($t) { try { [IO.File]::AppendAllText($logFile, ((Get-Date).ToString('yyyy-MM-dd HH:mm:ss') + "  $t`r`n"), $noBom) } catch { } }
@@ -125,18 +125,18 @@ function Programs-In($zipPath) {
   } catch { }
   return $out
 }
-# Makes the new brain from a brain folder, as make_starter.py makes its bundle: a copy, with today's date
+# Makes the new brain from a brain folder, as tools\kit.py makes its zip's bundle: a copy, with today's date
 # (UTC) in for the kit's {KIT_DATE} and {KIT_ISO} in file names and in its text files, written as UTF-8
 # without a byte-order mark, and one commit. Returns the folder, a git repo to clone the brain from.
 function New-BrainRepo($from) {
-  $work = if ($check) { Join-Path $root 'new-brain' } else { Join-Path $env:TEMP 'brain-starter-new' }
+  $work = if ($check) { Join-Path $root 'new-brain' } else { Join-Path $env:TEMP 'brain-kit-new' }
   if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
   New-Item -ItemType Directory -Force -Path $work | Out-Null
   Get-ChildItem -LiteralPath $from -Force | Copy-Item -Destination $work -Recurse -Force
   $now = [DateTime]::UtcNow
   $day = $now.ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)
   $iso = $now.ToString('yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
-  $textTypes = '.md', '.py', '.ps1', '.yml', '.json', '.txt', '.css', '.js', '.mjs', '.sh' # make_starter.py's TEXT
+  $textTypes = '.md', '.py', '.ps1', '.yml', '.json', '.txt', '.css', '.js', '.mjs', '.sh' # tools\kit.py's TEXT
   foreach ($f in @(Get-ChildItem -LiteralPath $work -Recurse -Force -File)) {
     if ($textTypes -cnotcontains $f.Extension) { continue }
     $t = [IO.File]::ReadAllText($f.FullName, $noBom)
@@ -168,11 +168,11 @@ function New-BrainRepo($from) {
   Native { & $git -C $work add -A } | Out-Null
   $programs = @(Programs-In $Zip | ForEach-Object { $_.Replace('{KIT_DATE}', $day).Replace('{KIT_ISO}', $iso) } | Where-Object { Test-Path -LiteralPath (Join-Path $work $_) })
   if ($programs.Count) { Native { & $git -C $work update-index --chmod=+x -- $programs } | Out-Null }
-  $who = 'Brain starter kit', 'starter-kit@anidealab.com'
+  $who = 'AnIdeaLab brain kit', 'brain-kit@anidealab.com'
   foreach ($k in 'AUTHOR', 'COMMITTER') {
     [Environment]::SetEnvironmentVariable("GIT_${k}_NAME", $who[0], 'Process'); [Environment]::SetEnvironmentVariable("GIT_${k}_EMAIL", $who[1], 'Process')
   }
-  try { Native { & $git -C $work commit -q -m "Started this brain from Matt's starter kit, $day" } | Out-Null }
+  try { Native { & $git -C $work commit -q -m "Started this brain from the AnIdeaLab brain kit, $day" } | Out-Null }
   finally { foreach ($k in 'AUTHOR', 'COMMITTER') { foreach ($v in 'NAME', 'EMAIL') { [Environment]::SetEnvironmentVariable("GIT_${k}_$v", $null, 'Process') } } }
   if ($LASTEXITCODE -ne 0) { throw "Making the brain from $from failed." }
   return $work
@@ -248,7 +248,7 @@ if (-not $check) {
   $info = Native { & $gh repo view $repo --json isEmpty,visibility 2>$null } | Out-String
   if ($LASTEXITCODE -ne 0) {
     Say "Making the private repo $repo on GitHub..."
-    Native { & $gh repo create $repo --private --description "My second brain, started from Matt's starter kit" } | Out-Host
+    Native { & $gh repo create $repo --private --description "My second brain, started from the AnIdeaLab brain kit" } | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Couldn't make $repo on GitHub." }
   } else {
     $j = $info | ConvertFrom-Json
