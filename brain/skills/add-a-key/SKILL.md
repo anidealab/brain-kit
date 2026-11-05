@@ -4,7 +4,7 @@ description: "How to get a key or token that only the owner can make (a service'
 ---
 
 # Getting a key from the owner in one command
-From Matt's brain, where it started on 26 Oct 2026, after a key went in this way: "That was a very streamlined way of doing it... It might not be just for Vercel, just in general, that was quite useful. Being able to add a GitHub token that way. And whatever else, wherever else." He brought it to this kit on 31 Oct 2026 ([the starting rules](../../knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)).
+One paste puts any key where it lives, for any service: a GitHub token, a site host's key, whatever a job needs ([the starting rules](../../knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)).
 
 The secrets gate in the core still holds: a key never goes in a file, a commit or a message, and never in a chat, and the owner is the one who adds it. This keeps to that and costs them one paste. It's the "give the owner a command" default for keys: no clicking through GitHub's settings.
 
@@ -41,9 +41,9 @@ Save it in the brain beside the job it's for, push it, and give the owner the sa
 
 ## Where it goes
 - **A key for the brain's own jobs** goes in this repo's GitHub Actions secrets: `gh secret set NAME --repo <owner>/<repo> --body $key`. `gh` is a real program, so the key reaches GitHub exactly.
-- **A live site's runtime key** goes in its host's secret settings, through the host's own tool, but never with the key on a command line: on Windows, `npx.cmd`, `vercel.cmd` and the like run through cmd.exe, which changes `^ & | < > %` in an argument without a word (a password reached a site changed that way in Matt's brain, 30 Oct 2026). On Vercel, use [set-vercel-env.mjs](set-vercel-env.mjs), beside this skill, with the key in an environment variable: `$env:ENV_VALUE = $key; node set-vercel-env.mjs <project> <NAME>`, then `Remove-Item Env:ENV_VALUE`. Then deploy again so the site picks it up.
+- **A live site's runtime key** goes in its host's secret settings, through the host's own tool, but never with the key on a command line: on Windows, `npx.cmd`, `vercel.cmd` and the like run through cmd.exe, which changes `^ & | < > %` in an argument without a word (a password once reached a site changed that way). On Vercel, use [set-vercel-env.mjs](set-vercel-env.mjs), beside this skill, with the key in an environment variable: `$env:ENV_VALUE = $key; node set-vercel-env.mjs <project> <NAME>`, then `Remove-Item Env:ENV_VALUE`. Then deploy again so the site picks it up.
 - **A key a Claude session needs directly** (rare: jobs use the Actions secret): the owner adds it to the session's environment settings with the same name, as [keys and accounts](../../knowledge/systems/keys-and-accounts.md) says.
 
 ## When it goes wrong
-- **When a step says it failed,** check what it changed before running it again: a set-up step in Matt's brain set a key, then failed while tidying up and said the key hadn't gone in.
+- **When a step says it failed,** check what it changed before running it again: a set-up step once set a key, then failed while tidying up and said the key hadn't gone in.
 - **A token for a second GitHub account:** `gh auth login --web` signs in whatever account the browser is on, and git on the PC follows `gh`. Open the sign-in in a private window (`$env:GH_BROWSER = 'cmd /c start msedge --inprivate'`), check whose token it got with `gh api user`, and end with `gh auth switch` back to the owner's main account.

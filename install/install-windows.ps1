@@ -202,7 +202,7 @@ if (-not $check) {
 }
 $git = Find-Git
 if (-not $git) { throw "Git is installed, but this window can't see it yet. Close PowerShell, open it again and paste the same command." }
-# Git's installer can leave Git off the PATH, and gh needs it there (a friend's PC, 22 Oct 2026).
+# Git's installer can leave Git off the PATH, and gh needs it there (an owner's PC, 22 Oct 2026).
 # This window gets it now; setup-runner.ps1 adds it for the whole PC.
 if (-not (Get-Command git -CommandType Application -ErrorAction SilentlyContinue)) { $env:Path = "$env:Path;$(Split-Path $git -Parent)" }
 $gh = Find-Gh
@@ -355,7 +355,7 @@ Step 'The PC runner' 'started'
 if (-not $check) {
   if (Yes 'Set up the PC runner now, so AI agents can run jobs on this PC? It asks for admin rights, then your Windows password, in a second window.') {
     & powershell -NoProfile -ExecutionPolicy Bypass -File $runnerSetup -Repo $repo -Root $root
-    # "All done" only once GitHub sees the runner online: on a friend's PC it said so after the
+    # "All done" only once GitHub sees the runner online: on an owner's PC it said so after the
     # runner setup had stopped partway (22 Oct 2026).
     $runnerOk = $LASTEXITCODE -eq 0
     try { $list = Native { & $gh api "repos/$repo/actions/runners" } | Out-String | ConvertFrom-Json } catch { $list = $null }

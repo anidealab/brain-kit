@@ -12,7 +12,7 @@ Skills copied in unchanged from another provider are kept as they came, so their
 links, notes and asset files are counted in one line, not listed. Which they are comes
 from the record, skills/lists/sources.md: every folder its lines link (each copied skill,
 and the shared files they use) is copied, and every other skill is the brain's own (26 Oct
-2026; before, it went by the headings in the skills list, which a friend's brain tripped
+2026; before, it went by the headings in the skills list, which an owner's brain tripped
 over). The lists themselves are the brain's, and checked.
 
 Run it from anywhere: python3 skills/brain-spec/check_links.py
@@ -95,7 +95,7 @@ def finished(path):
 def tracked():
     """The repo's files: tracked ones, and new ones not yet added that git doesn't ignore.
 
-    New ones count too, so a check before `git add` doesn't miss new notes (a friend's brain, Oct 2026)."""
+    New ones count too, so a check before `git add` doesn't miss new notes (an owner's brain, Oct 2026)."""
     out = subprocess.check_output(["git", "-C", ROOT, "ls-files", "-z", "--cached", "--others", "--exclude-standard"])
     return sorted({p for p in out.decode("utf-8").split("\0") if p and os.path.isfile(os.path.join(ROOT, p))})
 

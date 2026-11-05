@@ -418,7 +418,7 @@ def skill_links(lib):
 def copied_skills(lib):
     """The folders in skills/ that the lines of skills/lists/sources.md link: every copied skill, and the
     shared files they use. It's the record of what's copied (26 Oct 2026); before, the brain went by the
-    headings in skills/README.md, which a friend's brain tripped over. A link in its prose doesn't count."""
+    headings in skills/README.md, which an owner's brain tripped over. A link in its prose doesn't count."""
     path = os.path.join(lib.root, "skills", "lists", "sources.md")
     if not os.path.exists(path):
         return set()

@@ -1,6 +1,6 @@
 # The monthly deep audit
 
-Matt's brain, which this one was started from, has two levels of audit (Matt, 25 Oct 2026: "a few levels of audit. like weekly clean/audit/whatever, and a deeper version that may use more tokens but proper check for the brain"). The [weekly tidy-up](SKILL.md) is cheap: scripts and cards, not notes. This monthly one reads notes in full and asks a fresh agent questions about the brain, to catch what only reading does: rules that clash without linking, a removed rule surviving in other words, and cards that no longer say what's in their note. Matt's brain added it to the kit on 3 Nov 2026.
+The brain has two levels of audit. The [weekly tidy-up](SKILL.md) is cheap: scripts and cards, not notes. This monthly one reads notes in full and asks a fresh agent questions about the brain, to catch what only reading does: rules that clash without linking, a removed rule surviving in other words, and cards that no longer say what's in their note. It uses more of the owner's plan, so it comes once a month.
 
 **When:** the first Saturday of each month, as a reminder, like the tidy-up: nothing runs until the owner says yes in a session ([routines](../../knowledge/systems/routines.md)). Do the weekly tidy-up first if it's due the same morning.
 

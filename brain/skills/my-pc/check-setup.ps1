@@ -66,7 +66,7 @@ Section 'Tools'
 $script:git = Find-Git
 if ($git) { Ok "Git: $((& $git --version) -join ' ')" } else { Fix 'Git is not installed' 'winget install --id Git.Git -e' }
 if ($git) {
-  # Git's installer can leave it off the PATH, where gh, new windows and the runner's jobs look (a friend's PC, 22 Oct 2026).
+  # Git's installer can leave it off the PATH, where gh, new windows and the runner's jobs look (an owner's PC, 22 Oct 2026).
   $gitDir = Split-Path $git -Parent
   $saved = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
   if (@($saved -split ';' | ForEach-Object { $_.TrimEnd('\') }) -contains $gitDir.TrimEnd('\')) { Ok "Git is on this PC's PATH" }
