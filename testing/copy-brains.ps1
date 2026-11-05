@@ -3,11 +3,10 @@
 #   irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/testing/copy-brains.ps1 | iex
 #
 # The kit's installer invites the testing account to each brain repo it makes. This installs GitHub's
-# command line with winget if it's missing and adds the testing account to it the first time, accepts any
-# invitation still waiting (the account is only for owners' brains, so it declines one to a repo of
-# AnIdeaLab's own, or of one of its people, the members of its GitHub organisation), and clones each brain
-# the account can reach into C:\AI-Brain-Link\Brain-Copies\<owner>\<repo>, every branch and the whole
-# history, or brings a copy it made before up to date.
+# command line with winget if it's missing and adds the testing account to it the first time, accepts every
+# invitation still waiting, and clones each brain the account can reach into
+# C:\AI-Brain-Link\Brain-Copies\<owner>\<repo>, every branch and the whole history, or brings a copy it
+# made before up to date.
 # It uses the testing account for this run only: gh and git stay on whatever account they were on, and
 # the account's token is never written to a file. Safe to run again.
 # Set $env:BRAIN_COPIES first to use another folder. Kept to Windows PowerShell 5.1 and plain ASCII.
@@ -39,10 +38,6 @@
     if ($before -and $before -ne $tester) { gh auth switch --hostname github.com --user $before 2>&1 | Out-Null }
     if (-not $token) { Write-Host "gh isn't signed in as $tester. Paste the command again, and sign in as $tester in the browser." -ForegroundColor Red; return }
   }
-  # AnIdeaLab and its people, whose repos the testing account must never reach, or their PCs through a
-  # runner. Read with gh's usual account, before the switch: a member of the organisation sees every member,
-  # and anyone else only the public ones.
-  $skip = @('AnIdeaLab') + @(gh api orgs/AnIdeaLab/members --paginate --jq '.[].login' 2>$null | Where-Object { $_ })
   $env:GH_TOKEN = $token # for this window's gh only; removed at the end
   try {
     $me = "$(gh api user --jq .login)".Trim()
@@ -57,19 +52,13 @@
     if (-not $inv) { Write-Host 'None waiting.' }
     foreach ($line in $inv) {
       $id, $full = $line -split "`t", 2
-      # AnIdeaLab's own repos and its people's are never the testing account's.
-      if ($full.Split('/')[0] -in $skip) {
-        gh api -X DELETE "user/repository_invitations/$id" --silent
-        Write-Host "Declined $full, a repo of AnIdeaLab's own people" -ForegroundColor Yellow
-        continue
-      }
       gh api -X PATCH "user/repository_invitations/$id" --silent
       if ($LASTEXITCODE -eq 0) { Write-Host "Accepted $full" -ForegroundColor Green } else { Write-Host "Couldn't accept $full" -ForegroundColor Yellow }
     }
 
     Write-Host "`n3. The brains"
     # A brain is a repo the account collaborates on with the kit's brain spec in it.
-    $repos = @(gh api 'user/repos?affiliation=collaborator&per_page=100' --paginate --jq '.[].full_name') | Where-Object { $_ -and $_.Split('/')[0] -notin $skip }
+    $repos = @(gh api 'user/repos?affiliation=collaborator&per_page=100' --paginate --jq '.[].full_name') | Where-Object { $_ }
     $brains = @($repos | Where-Object { gh api "repos/$_/contents/skills/brain-spec/SKILL.md" --silent 2>$null; $LASTEXITCODE -eq 0 })
     if (-not $brains.Count) { Write-Host 'No brains to copy yet. An invitation shows up here once someone runs the installer.'; return }
     New-Item -ItemType Directory -Force -Path $root | Out-Null

@@ -1,6 +1,6 @@
 # Invites AnIdeaLab's testing account to your second brain's repo, for a brain set up before 27 Oct 2026,
 # when the kit's installer started doing it. Paste into PowerShell on your PC:
-#   irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/testing/invite-tester.ps1 | iex
+#   irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/testing/diagnostic-setup.ps1 | iex
 #
 # AnIdeaLab's testing account (GitHub: diagnostics-anidealab) can then see your brain and copy it, to test the
 # kit while it's in testing; AnIdeaLab accepts the invitation within a day. GitHub lets a collaborator change
