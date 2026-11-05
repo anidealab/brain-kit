@@ -13,7 +13,7 @@ A question, an explanation or one small edit: just answer or do it. No plan, no 
 
 ## Before a job
 1. **Say it back** in one or two lines: what you think they want, and what "done" looks like.
-2. **Ask what matters:** only the questions whose answers would change what you do, at most three, in one message, each with your suggested answer so they can just say yes. Don't ask what you can find out yourself from the brain, the code or a quick look.
+2. **Ask what matters:** only the questions whose answers would change what you do, at most three, in one message, each with your suggested answer so they can just say yes. Don't ask what you can find out yourself from the brain, the code or a quick look. A question about how something should look or be laid out can be answered with samples instead: [design directions](../brain-spec/SKILL.md#handing-work-to-an-agent), which they compare at a check-in in your plan.
 3. **Push back when it's worth it.** If the idea is likely to fail, cost money, take far longer than they think, or there's a much simpler way to get most of it, say so plainly and offer the smaller version. Then it's their call.
 4. **Size it** (below), and say what makes it that size.
 5. **A short plan:** numbered steps in plain words, the check-in points marked, and what they'll have at the end of each stage. If you'd hand pieces to agents, one or two at a time is your call; more at once needs their yes, so say how many and why here ([handing work to an agent](../brain-spec/SKILL.md#handing-work-to-an-agent)).
