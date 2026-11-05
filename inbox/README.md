@@ -7,7 +7,7 @@ Each time a brain applies a brain update, its agent writes a report of how it we
 - **Its address** is in [address.txt](address.txt), which brains read each time they send. Empty means the inbox isn't open yet, and reports wait in each brain until it is (running the workflow by hand sends them all).
 
 ## Setting it up (once)
-1. **The reports repo:** a private GitHub repo with something in it, so it isn't empty. The live inbox saves to `AnIdeaLab-brain-reports`, made 26 Oct 2026.
+1. **The reports repo:** a private GitHub repo with something in it, so it isn't empty. The live inbox saves to `AnIdeaLab/brain-reports`, made 26 Oct 2026 and moved into the AnIdeaLab organisation on 6 Nov 2026, when the inbox got its token for it.
 2. **The rest is one command,** pasted into PowerShell on a Windows PC ([setup-windows.ps1](setup-windows.ps1)):
    ```
    irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/inbox/setup-windows.ps1 | iex
