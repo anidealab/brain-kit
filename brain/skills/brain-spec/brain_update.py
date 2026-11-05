@@ -98,7 +98,12 @@ def git(*args, repo=CACHE, check=True, text=True, timeout=None):
 def fetch(timeout=None):
     """Make or refresh the partial clone of the kit repo; return its newest commit on main.
     A new clone is made beside the cache and moved into place once it's whole, so one cut short
-    (the daily check gives git a few seconds) never leaves a broken cache."""
+    (the daily check gives git a few seconds) never leaves a broken cache. A cache cloned from somewhere else (the kit
+    repo before it moved to AnIdeaLab/brain-kit, or a test copy) is cloned again from SOURCE."""
+    if os.path.isdir(CACHE):
+        r = subprocess.run(["git", "-C", CACHE, "remote", "get-url", "origin"], capture_output=True, text=True, timeout=timeout)
+        if r.returncode or r.stdout.strip() != SOURCE:
+            shutil.rmtree(CACHE, ignore_errors=True)
     if not os.path.isdir(CACHE):
         os.makedirs(os.path.dirname(CACHE), exist_ok=True)
         part = CACHE + ".part"
