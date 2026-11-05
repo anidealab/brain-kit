@@ -19,7 +19,7 @@ In a few lines, in plain words:
 - Guide mode: agents check a plan with them before bigger jobs, because their plan's usage runs out. Once they've found their feet they can tune it down: agents still size each job and hand off between stages, without the explaining ([guide-mode](../guide-mode/SKILL.md#tuned-down)).
 
 ## 2. Ask, in one message
-- Their first name.
+- Their first name, and where they live (a town and country is enough), so reminders fall due in their own time.
 - What they'd like the brain to help with: projects, a business, study, life admin, learning to build things. A few words is fine.
 - Any business or project names.
 - Their Claude plan (Pro, Max or another), and whether agents should check a plan with them before every job or only bigger ones (guide mode's default is bigger ones).
@@ -27,6 +27,7 @@ In a few lines, in plain words:
 ## 3. Write it down
 - `knowledge/people/<first-name>.md`: the owner's note, with a card ([brain spec](../brain-spec/SKILL.md#cards)), what they said in their words, their plan, and the date.
 - In the core, change "A second brain" at the top to "<Name>'s second brain".
+- In [routines](../../knowledge/systems/routines.md), put their time zone's name on the Time zone line under "The owner's own", in place of "not set yet": the name from the time zone database, like Pacific/Auckland, Europe/London or America/New_York.
 - One short note per project or business they named, `knowledge/ventures/<name>.md`: what it is and their goal, in their words. They grow into folders when work starts.
 - Anything they said about how agents should work goes in a decision note, `knowledge/decisions/the-brain/<date>-<what>.md`.
 - Run `python3 skills/brain-spec/library.py build`, then the checks in the brain spec's "Before you push", and commit and push.
