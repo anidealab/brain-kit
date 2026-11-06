@@ -1,5 +1,6 @@
 # Sets up your own second brain on this Windows PC, from the AnIdeaLab brain kit. It asks you to accept
-# AnIdeaLab's terms of use (TERMS.md, at the kit repo's root) first, and stops if you don't. Then it installs
+# AnIdeaLab's terms of use (TERMS.md, at the kit repo's root) first, and stops if you don't. It opens Claude
+# in the browser, to sign in or sign up for a paid plan (S skips it). Then it installs
 # Git, GitHub's command line (gh) and Obsidian if they're missing, signs you in to GitHub, makes your brain's
 # private repo (inviting AnIdeaLab's testing account to it, as the terms say) and puts the brain in it,
 # puts your copy in C:\AI-Brain-Link with Obsidian's syncing on, adds the upload point if the brain has one,
@@ -214,6 +215,14 @@ if (-not $check) {
   Log 'the terms of use were accepted'
 }
 if (-not $check) { Set-QuickEdit $false }
+
+# Claude, before the installs: making an account and choosing a plan can be done while they run.
+if (-not $check) {
+  Say 'Your brain works with Claude, in Claude Code. That needs a Claude account on a paid plan (Pro or above): the free plan doesn''t include Claude Code. Already signed in on a paid plan? Type S to skip. Otherwise press Enter to open Claude in your browser: sign in, or make an account and choose a plan there. The setup carries on here while you do.'
+  $a = "$(Read-Host 'Press Enter to open Claude, or type S to skip')".Trim()
+  if ($a -notmatch '^[Ss]') { try { Start-Process 'https://claude.ai/code' } catch { Write-Host 'Open https://claude.ai/code in your browser.' } }
+  Log $(if ($a -match '^[Ss]') { 'Claude: skipped, already set up' } else { 'Claude: opened claude.ai/code to sign in or sign up' })
+}
 
 # 1. The tools
 Step "The tools (Git, GitHub's command line, Obsidian)" 'started'

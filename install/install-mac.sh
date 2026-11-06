@@ -1,6 +1,7 @@
 #!/bin/bash
 # Sets up your own second brain on this Mac, from the AnIdeaLab brain kit. It asks you to accept AnIdeaLab's
-# terms of use (TERMS.md, at the kit repo's root) first, and stops if you don't. Then it installs Apple's
+# terms of use (TERMS.md, at the kit repo's root) first, and stops if you don't. It opens Claude in the
+# browser, to sign in or sign up for a paid plan (S skips it). Then it installs Apple's
 # command line tools (they have Git), GitHub's command line (gh) and Obsidian if they're missing, signs you in
 # to GitHub, makes your brain's private repo (inviting AnIdeaLab's testing account to it, as the terms say)
 # and puts the brain in it, puts your copy in ~/AI-Brain-Link with Obsidian's syncing on, sets up the Mac
@@ -432,7 +433,16 @@ if [ -z "$check" ]; then
   esac
 fi
 
-# Room for a step here, before the tools: help making a GitHub account and getting a Claude plan.
+# Claude, before the installs: making an account and choosing a plan can be done while they run.
+if [ -z "$check" ]; then
+  say "Your brain works with Claude, in Claude Code. That needs a Claude account on a paid plan (Pro or above): the free plan doesn't include Claude Code. Already signed in on a paid plan? Type S to skip. Otherwise press Enter to open Claude in your browser: sign in, or make an account and choose a plan there. The setup carries on here while you do."
+  answer=''
+  read -r -p 'Press Enter to open Claude, or type S to skip: ' answer || answer=S
+  case "$(trim "$answer")" in
+    [Ss]*) log 'Claude: skipped, already set up' ;;
+    *) open 'https://claude.ai/code' >/dev/null 2>&1 || echo 'Open https://claude.ai/code in your browser.'; log 'Claude: opened claude.ai/code to sign in or sign up' ;;
+  esac
+fi
 
 # 1. The tools
 step "The tools (Git, GitHub's command line, Obsidian)" started

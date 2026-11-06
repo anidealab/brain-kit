@@ -11,6 +11,7 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 
 [install.ps1](install.ps1) downloads this repo as a zip (no Git needed yet), unpacks it in a temporary folder and runs [install/install-windows.ps1](install/install-windows.ps1) from it, which:
 - asks you to accept AnIdeaLab's [terms of use](TERMS.md) first (Y or N), and stops if you don't;
+- opens Claude in your browser, to sign in or make an account and choose a paid plan (you can skip it if you're already set up);
 - installs Git, GitHub's command line and Obsidian if they're missing, and signs you in to GitHub in your browser;
 - makes your brain from [brain/](brain/), as of the newest update, with the day you install it as its start, and puts it in a new private repo on your GitHub account;
 - invites AnIdeaLab's testing account to that repo, as the terms say;

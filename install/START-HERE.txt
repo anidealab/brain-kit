@@ -18,6 +18,9 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
    Its questions show in yellow. It asks you to:
    - accept AnIdeaLab's terms of use: type Y and press Enter. Read them first, here or by typing
      V in the setup: https://github.com/AnIdeaLab/brain-kit/blob/main/TERMS.md
+   - sign in to Claude: press Enter and it opens Claude in your browser. Sign in, or make an
+     account and choose a paid plan (Pro or above), since your brain works in Claude Code.
+     Already set up? Type S to skip;
    - sign in to GitHub in your browser, copying a code from the window (no account yet? make
      one on that page, it's free);
    - name your brain (press Enter for my-brain). Your brain's repo is private;
