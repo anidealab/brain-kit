@@ -1,0 +1,83 @@
+# Runs one command on the owner's Mac, through the self-hosted runner labelled "my-mac".
+# Start it with the GitHub tool's run-workflow method on main, then read the job log.
+# How agents use it: skills/my-mac/SKILL.md. Set up by skills/my-mac/setup-runner.sh.
+# Safety: this runs anything on the owner's Mac as the owner. Keep the trigger to workflow_dispatch
+# (only people with write access can start it). Never add pull_request or other triggers.
+name: Run on my Mac
+# Shows the command in the Actions list, so the owner can see what ran.
+run-name: "Mac: ${{ inputs.command }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "The command or script to run"
+        required: true
+      shell:
+        description: "bash (macOS's own, version 3.2) or zsh"
+        default: bash
+      workdir:
+        description: "Folder to run in (~ is the owner's home folder)"
+        default: "~/AI-Brain-Link"
+      timeout:
+        description: "Minutes before the job is stopped (up to 4320, three days)"
+        default: "60"
+      checkout:
+        description: "Check out this brain first, so the command can run the repo's scripts from $GITHUB_WORKSPACE"
+        type: boolean
+        default: false
+      artifact:
+        description: "A file, folder or wildcard on the Mac to attach to the run for 3 days (for example stills for an agent to look at). Empty for none."
+        default: ""
+
+# No concurrency group on purpose. The Mac has one runner, so jobs already run one at a time and
+# queue for it in order. A concurrency group keeps only one waiting run and cancels the others.
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: [self-hosted, my-mac]
+    timeout-minutes: ${{ fromJSON(inputs.timeout) }}
+    steps:
+      - name: Check out this brain
+        if: inputs.checkout
+        uses: actions/checkout@v4
+
+      - name: Run
+        env:
+          MAC_COMMAND: ${{ inputs.command }}
+          MAC_SHELL: ${{ inputs.shell }}
+          MAC_WORKDIR: ${{ inputs.workdir }}
+          MAC_RUN_ID: ${{ github.run_id }}
+          # A job that needs a key gets it here, from the repo's Actions secrets, never in the command:
+          # SOME_API_KEY: ${{ secrets.SOME_API_KEY }}
+        shell: bash
+        run: |
+          # The command comes in through an env var, so quotes and $ signs in it reach the shell untouched.
+          set +e
+          case "$MAC_SHELL" in bash|zsh) ;; *) echo "Unknown shell '$MAC_SHELL': use bash or zsh."; exit 1 ;; esac
+          log="$HOME/AI-Brain-Link/_logs/mac-run-$MAC_RUN_ID.log"
+          mkdir -p "$(dirname "$log")"
+          script="$RUNNER_TEMP/mac-run-$MAC_RUN_ID.sh"
+          printf '%s\n' "$MAC_COMMAND" > "$script"
+          dir="${MAC_WORKDIR/#\~/$HOME}"
+          mkdir -p "$dir" && cd "$dir" || exit 1
+          # The command goes in the log too, so the live jobs window on the Mac (skills/my-mac/watch-jobs.sh) shows what's running.
+          { echo "== $(date -u '+%Y-%m-%d %H:%M:%SZ') | $MAC_SHELL | $PWD"; printf -- '-- command:\n%s\n-- output:\n' "$MAC_COMMAND"; } | tee "$log"
+          "$MAC_SHELL" "$script" 2>&1 | tee -a "$log"
+          code=${PIPESTATUS[0]}
+          echo "== exit $code | log kept at $log" | tee -a "$log"
+          exit $code
+
+      # Lets an agent see a file from the Mac (stills, small logs) without pasting it into the log.
+      # Kept 3 days only: these can show the owner's home or other people's things.
+      - name: Attach a file
+        if: inputs.artifact != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-files-${{ github.run_id }}
+          path: ${{ inputs.artifact }}
+          retention-days: 3
+          if-no-files-found: warn

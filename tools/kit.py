@@ -2,20 +2,23 @@
 """The kit's own build: check the kit after a change, and make its zip.
 
 This repo is the kit. brain/ is the brain a new owner gets, with {KIT_DATE} and {KIT_ISO} where each brain has its own
-start date; install.ps1 and install/ make a brain from it on the owner's PC; updates/ holds the brain updates that
-brains made from it get. Change the kit by changing those files here, then run:
+start date; install.ps1 and install/ make a brain from it on the owner's PC, and install.sh and install/install-mac.sh
+on a Mac, adding install/mac-brain/'s parts; updates/ holds the brain updates that brains made from it get. Change the
+kit by changing those files here, then run:
 
     python3 tools/kit.py build           rebuild brain/'s indexes, copy sign-off-links.md into brain/, then make a brain
                                          from brain/ in a scratch folder and run its own checks and tests, and the kit's
-                                         promises (below). Run it after every change, and fix what it reports.
+                                         promises (below); then the same for a brain made as the Mac installer makes it
+                                         (install/install-mac.sh in its check mode, with bash). Run it after every
+                                         change, and fix what it reports.
     python3 tools/kit.py zip [folder]    the zip an owner can install from instead of the one command: the brain as a
                                          git bundle started today, the installer, the setup check and START-HERE.txt
 
 The kit's promises: no one person's names, accounts or setup anywhere in the repo (the copied skills aside, kept as
 they came), every date placeholder filled in a new brain, the core under 6 KB (a core may be 8 KB, so each owner has
-2 KB for their own lines), and as many skills as START-HERE.txt says.
+2 KB for their own lines), and as many skills as START-HERE.txt (and START-HERE-MAC.txt, for a Mac brain) says.
 
-Python 3.8+ and git, nothing else.
+Python 3.8+ and git, nothing else, and bash for the Mac brain's check.
 """
 import os
 import re
@@ -46,6 +49,10 @@ UPDATE_FILE = re.compile(r"^(\d{4})-[a-z0-9-]+\.md$")
 PERSONAL = re.compile(r"\bMatt\b(?!\s+Pocock)|matt-pc|matts-pc|big-brain|farm-brain|mjohnsonchung|D:\\AI-Brain-Link|AnIdeaLab-brain-friends-kit", re.I)
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 ONE_COMMAND = "irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex"
+# The Mac's one command, its installer, and the parts it adds to a brain made on a Mac (files as they go in a brain).
+ONE_COMMAND_MAC = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.sh)"'
+INSTALL_MAC = os.path.join(INSTALL, "install-mac.sh")
+MAC_PARTS = os.path.join(INSTALL, "mac-brain")
 # START-HERE.txt is for the one command; the zip's copy has the line that unpacks the zip from Downloads instead.
 ZIP_START = (
     "2. PASTE THIS LINE into the blue window and press Enter:\n\n" + ONE_COMMAND + "\n",
@@ -172,8 +179,46 @@ def check(brain):
     return problems
 
 
+def mac_check(notes):
+    """A brain made as the Mac installer makes it: install/install-mac.sh in its check mode, which adds
+    install/mac-brain/'s files and adapts a few of brain/'s lines (it stops if one of those lines isn't there any
+    more), then the same checks as check(), and START-HERE-MAC.txt's skill count and command. Returns the problems,
+    or None if there's no bash here to run it."""
+    bash = shutil.which("bash")
+    if not bash or os.name == "nt":
+        notes.append("no bash here, so the brain the Mac installer makes wasn't checked: run the build where there's bash")
+        return None
+    problems = []
+    both = sorted(os.path.relpath(os.path.join(dirpath, f), MAC_PARTS).replace(os.sep, "/")
+                  for dirpath, _, files in os.walk(MAC_PARTS) for f in files
+                  if os.path.exists(os.path.join(BRAIN, os.path.relpath(os.path.join(dirpath, f), MAC_PARTS))))
+    if both:
+        notes.append("brain/ has these Mac parts now, so a Mac brain gets brain/'s copies and install/mac-brain/'s can go: " + ", ".join(both))
+    parts = os.path.join(MAC_PARTS, "skills")
+    added = [d for d in os.listdir(parts) if os.path.isfile(os.path.join(parts, d, "SKILL.md"))
+             and not os.path.isfile(os.path.join(BRAIN, "skills", d, "SKILL.md"))] if os.path.isdir(parts) else []
+    start = open(os.path.join(INSTALL, "START-HERE-MAC.txt"), encoding="utf-8").read()
+    if f"{skill_count() + len(added)} skills" not in start:
+        problems.append(f"a Mac brain has {skill_count() + len(added)} skills, but install/START-HERE-MAC.txt doesn't say \"{skill_count() + len(added)} skills\"")
+    if ONE_COMMAND_MAC not in start:
+        problems.append("install/START-HERE-MAC.txt doesn't have the Mac's one command: " + ONE_COMMAND_MAC)
+    work = tempfile.mkdtemp()
+    try:
+        env = {k: v for k, v in os.environ.items() if not k.startswith("BRAIN_KIT_")}
+        env["BRAIN_KIT_CHECK"] = work
+        r = subprocess.run([bash, INSTALL_MAC], env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+        if r.returncode:
+            out = re.sub(r"\x1b\[[0-9;]*m", "", r.stdout + r.stderr).strip()
+            return problems + ["the Mac installer couldn't make a brain (install/install-mac.sh, in its check mode); "
+                               "if it says a line isn't there, change that line's Mac version in mac_brain there to match:\n" + out[-2000:]]
+        problems += [f"in a brain made by the Mac installer, {p}" for p in check(os.path.join(work, "my-brain"))]
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    return problems
+
+
 def build():
-    """Rebuild brain/'s indexes and its copy of the sign-off's links, then check the kit."""
+    """Rebuild brain/'s indexes and its copy of the sign-off's links, then check the kit, and a brain made on a Mac."""
     notes = []
     library = os.path.join(BRAIN, BRAIN_LIBRARY)
     if open(LIBRARY, encoding="utf-8").read() != open(library, encoding="utf-8").read():
@@ -196,11 +241,13 @@ def build():
                 notes.append(f"rebuilt brain/{rel}")
     finally:
         shutil.rmtree(work, ignore_errors=True)
+    mac = mac_check(notes)
+    problems += mac or []
     for n in notes:
         print(n)
     if problems:
         sys.exit("The kit didn't pass its checks.\n\n" + "\n\n".join(problems))
-    print(f"The kit passed its checks ({skill_count()} skills).")
+    print(f"The kit passed its checks ({skill_count()} skills)" + (", and so did a brain made on a Mac." if mac is not None else "."))
 
 
 def newest_update():
