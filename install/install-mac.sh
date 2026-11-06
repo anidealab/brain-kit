@@ -215,7 +215,7 @@ install_obsidian() {
   xattr -dr com.apple.quarantine "$dest/Obsidian.app" 2>/dev/null
   if [ -z "$check" ] && [ -x "$LSREGISTER" ]; then "$LSREGISTER" -f "$dest/Obsidian.app" >/dev/null 2>&1; fi # so obsidian:// links open it
   obsidian_app="$dest/Obsidian.app"
-  log "installed Obsidian $v in $dest"
+  if [ -n "$want" ]; then log "installed Obsidian $v in $dest, checked against its checksum"; else log "installed Obsidian $v in $dest, checked by its signature (GitHub listed no checksum)"; fi
 }
 
 # Makes a brain for this Mac (new <folder>), or adds the Mac's parts to a brain made elsewhere (add <folder>).
