@@ -1,0 +1,78 @@
+# Tries the Mac installer on GitHub's own Macs, Apple silicon and Intel, as an owner runs it: the one command
+# (install.sh), downloading this commit of the kit, then install/install-mac.sh in its check mode. It installs
+# GitHub's command line, Obsidian and GitHub's runner into a test folder, each checked against its checksum,
+# and makes a brain there, then runs that brain's own checks. It doesn't sign in to GitHub, make a repo,
+# register the runner or open Obsidian (the parts only an owner's Mac can try).
+# Runs on a push that changes the Mac installer, its parts or brain/, and by hand from the Actions tab.
+name: Try the Mac installer
+
+on:
+  push:
+    branches: [main, next]
+    paths:
+      - "install.sh"
+      - "install/install-mac.sh"
+      - "install/mac-brain/**"
+      - "brain/**"
+      - ".github/workflows/mac-installer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      BRAIN_KIT_CHECK: ${{ github.workspace }}-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The Mac
+        run: sw_vers; uname -m; echo "bash $BASH_VERSION"; xcode-select -p
+
+      - name: The one command, in check mode
+        env:
+          BRAIN_KIT_CHECK_TOOLS: "1"
+          BRAIN_KIT_REF: ${{ github.sha }}
+          # The run's own token, so gh can read GitHub's release lists for the runner without a sign-in.
+          GH_TOKEN: ${{ github.token }}
+        run: /bin/bash -c "$(cat install.sh)"
+
+      - name: What it made
+        run: |
+          set -e
+          c="$BRAIN_KIT_CHECK"
+          cat "$c/_logs/install.log"
+          "$c/Tools/bin/gh" --version
+          test -L "$c/Tools/bin/gh"
+          test -d "$c/Applications/Obsidian.app"
+          codesign --verify "$c/Applications/Obsidian.app" && echo "Obsidian's signature is intact"
+          defaults read "$c/Applications/Obsidian.app/Contents/Info" CFBundleShortVersionString
+          "$c/_runner/bin/Runner.Listener" --version
+          ls "$c/my-brain/.obsidian/plugins/obsidian-git"
+          python3 -c 'import json,sys; v=json.load(open(sys.argv[1]))["vaults"]; assert any(x["path"] == sys.argv[2] for x in v.values()); print("Obsidian lists the vault")' "$c/obsidian/obsidian.json" "$c/my-brain"
+          for f in .github/workflows/mac-run.yml skills/my-mac/SKILL.md skills/my-mac/setup-runner.sh skills/my-mac/check-setup.sh skills/my-mac/watch-jobs.sh knowledge/systems/my-mac.md; do test -f "$c/my-brain/$f"; done
+          grep -q 'my-mac skill' "$c/my-brain/CLAUDE.md"
+          test -d "$c/_upload"
+          python3 -c 'import re,sys; last = {}
+          for line in open(sys.argv[1]):
+              m = re.match(r"\S+ \S+  (started|done|skipped|not done)  (.+)$", line.rstrip("\n"))
+              if m: last[m.group(2)] = m.group(1)
+          left = [k for k, v in last.items() if v in ("started", "not done")]
+          assert len(last) == 8 and not left, (last, left); print("Every step finished:", len(last))' "$c/_logs/install.log"
+          for f in install.sh install/install-mac.sh install/mac-brain/skills/my-mac/*.sh; do /bin/bash -n "$f"; done
+          echo "The scripts parse in macOS's own bash"
+
+      - name: The new brain's own checks
+        working-directory: ${{ env.BRAIN_KIT_CHECK }}/my-brain
+        run: |
+          python3 skills/brain-spec/library.py check --strict
+          python3 skills/brain-spec/check_links.py
+          python3 skills/brain-spec/test_library.py
+          git log --oneline
