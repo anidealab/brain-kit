@@ -43,6 +43,9 @@ You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for install
 
    Claude asks you a few questions, tests the Mac runner and shows you around.
 
+   At the end, the setup opens AnIdeaLab's tutorials in your browser: these steps with a
+   video, then your brain in Obsidian and connecting Google.
+
 Later:
 - Agents can run jobs on your Mac while it's on, awake and you're logged in. Closing the lid
   puts it to sleep, and so does running on battery.

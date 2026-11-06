@@ -19,6 +19,7 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 - adds the upload point, a desktop shortcut and a Send to entry for giving your brain files;
 - sets up the PC runner, so AI agents can run jobs on your PC. It asks for admin rights and your Windows password;
 - opens your brain in Obsidian, last, so it can't hide a question in the PowerShell window.
+- then opens AnIdeaLab's tutorials page in your browser, for connecting Claude and the rest (anidealab.com/second-brain/tutorials, or the site's preview address until the site moves there).
 
 It's safe to run again: it skips what's already done. Its questions show in yellow, and a click in its window can't pause it. At the end it lists each step and how it went, keeps that in `C:\AI-Brain-Link\_logs\install.log` (which the brain's setup check reads), and says what to send Claude to get started. The steps in plain words, to send someone: [install/START-HERE.txt](install/START-HERE.txt).
 

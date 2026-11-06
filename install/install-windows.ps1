@@ -433,3 +433,16 @@ Write-Host '  1. Go to https://claude.ai/code. If it asks, connect GitHub and le
 Write-Host "  2. Start a new session with $repo selected."
 Write-Host '  3. Send this message:'
 Write-Host '       This is my new second brain. Read CLAUDE.md and get me set up.' -ForegroundColor Green
+
+# Last, AnIdeaLab's tutorials page opens in the browser: these steps, and the rest, with a video each.
+# It's on anidealab.com once the site's moved there, and on the site's preview address until then.
+$tutorials = 'https://anidealab.com/second-brain/tutorials'
+if (-not $check) {
+  try {
+    $r = Invoke-WebRequest -Uri $tutorials -UseBasicParsing -TimeoutSec 8
+    if ($r.StatusCode -ne 200 -or $r.Content -notmatch 'second-brain/tutorials') { throw 'not there yet' }
+  } catch { $tutorials = 'https://anidealab-website.vercel.app/second-brain/tutorials' }
+}
+Write-Host ''
+Write-Host "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials" -ForegroundColor Cyan
+if (-not $check) { try { Start-Process $tutorials } catch { } }

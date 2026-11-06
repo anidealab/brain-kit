@@ -42,6 +42,9 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 
    Claude asks you a few questions, tests the PC runner and shows you around.
 
+   At the end, the setup opens AnIdeaLab's tutorials in your browser: these steps with a
+   video, then your brain in Obsidian and connecting Google.
+
 Later:
 - Keys for services never go in a chat. Claude tells you the name, and you add the key on
   GitHub: your brain repo, then Settings, Secrets and variables, Actions, New repository secret.
