@@ -1,20 +1,31 @@
-# Invites AnIdeaLab's testing account to your second brain's repo, for a brain set up before 27 Oct 2026,
-# when the kit's installer started doing it. Paste into PowerShell on your PC:
+# Invites AnIdeaLab's testing account to your second brain's repo, as the kit's terms of use say, for a brain
+# set up before 27 Oct 2026, when the kit's installer started doing it. Paste into PowerShell on your PC:
 #   irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/testing/diagnostic-setup.ps1 | iex
 #
-# AnIdeaLab's testing account (GitHub: diagnostics-anidealab) can then see your brain and copy it, to test the
-# kit while it's in testing; AnIdeaLab accepts the invitation within a day. GitHub lets a collaborator change
-# the repo too; there's no read-only option for a personal repo. To take the account off any time: your repo
-# on GitHub, Settings, Collaborators. It installs GitHub's command line with winget if it's missing and signs
-# you in to GitHub the first time, finds your brain, and invites the account; it changes nothing else, and
-# prints only "Success", or what went wrong. Your brain is the repo of yours with the kit's update script,
-# skills/brain-spec/brain_update.py, which every brain from the kit has had since brain update 1. It does
-# nothing for AnIdeaLab's own people, the members of its GitHub organisation, as the installer does.
-# Safe to run again. Windows PowerShell 5.1, plain ASCII.
+# It asks you to accept AnIdeaLab's terms of use first, as the installer does (TERMS.md, at the kit repo's
+# root), and stops if you don't. Then it installs GitHub's command line with winget if it's missing and signs
+# you in to GitHub the first time, finds your brain, and invites the account (GitHub: diagnostics-anidealab),
+# whose invitation AnIdeaLab accepts within a day; it changes nothing else, and prints only "Success", or what
+# went wrong. Your brain is the repo of yours with the kit's update script, skills/brain-spec/brain_update.py,
+# which every brain from the kit has had since brain update 1. It does nothing for AnIdeaLab's own people, the
+# members of its GitHub organisation, as the installer does. Safe to run again. Windows PowerShell 5.1, plain
+# ASCII.
 & {
   $ErrorActionPreference = 'Continue'
   $tester = 'diagnostics-anidealab'
   function Fail($t) { Write-Host $t -ForegroundColor Red }
+
+  # AnIdeaLab's terms of use, as the installer asks them: no default, V opens them, anything else but Y stops.
+  $terms = 'https://github.com/AnIdeaLab/brain-kit/blob/main/TERMS.md'
+  Write-Host ''
+  Write-Host "AnIdeaLab's terms of use for the brain kit: $terms" -ForegroundColor Yellow
+  Write-Host "Do you accept AnIdeaLab's terms of use? (Y/N)" -ForegroundColor Yellow
+  $answer = ''
+  while (-not $answer) {
+    $answer = "$(Read-Host 'Type Y or N, or V to read them in your browser')".Trim()
+    if ($answer -match '^[Vv]') { try { Start-Process $terms } catch { }; $answer = '' }
+  }
+  if ($answer -notmatch '^[Yy]') { Write-Host "You didn't accept the terms, so nothing was changed." -ForegroundColor Yellow; return }
 
   if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Fail "winget (Windows' app installer) isn't on this PC. Install 'App Installer' from the Microsoft Store, then paste the same command again."; return }

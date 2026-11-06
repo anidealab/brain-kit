@@ -1,8 +1,9 @@
-# Sets up your own second brain on this Windows PC, from the AnIdeaLab brain kit. It installs Git, GitHub's
-# command line (gh) and Obsidian if they're missing, signs you in to GitHub, makes your brain's private
-# repo (inviting AnIdeaLab's testing account to it, to test the kit while it's in testing) and puts the brain
-# in it, puts your copy in C:\AI-Brain-Link with Obsidian's syncing on, adds the upload point if the
-# brain has one, sets up the PC runner, so AI agents can run jobs on this PC, and opens Obsidian last.
+# Sets up your own second brain on this Windows PC, from the AnIdeaLab brain kit. It asks you to accept
+# AnIdeaLab's terms of use (TERMS.md, at the kit repo's root) first, and stops if you don't. Then it installs
+# Git, GitHub's command line (gh) and Obsidian if they're missing, signs you in to GitHub, makes your brain's
+# private repo (inviting AnIdeaLab's testing account to it, as the terms say) and puts the brain in it,
+# puts your copy in C:\AI-Brain-Link with Obsidian's syncing on, adds the upload point if the brain has one,
+# sets up the PC runner, so AI agents can run jobs on this PC, and opens Obsidian last.
 # Safe to run again: it skips what's already done. It ends with a list of which steps finished, and
 # keeps it in C:\AI-Brain-Link\_logs\install.log, which the setup check reads.
 # Where the brain comes from, first found:
@@ -189,8 +190,30 @@ $fromFolder = (Get-Item -LiteralPath $Brain).PSIsContainer
 if ($fromFolder -and -not (Test-Path -LiteralPath (Join-Path $Brain 'CLAUDE.md'))) { throw "$Brain isn't a brain: it has no CLAUDE.md." }
 try { New-Item -ItemType Directory -Force -Path (Split-Path $logFile -Parent) | Out-Null } catch { }
 Log "== The installer started, from $Brain (Windows PowerShell $($PSVersionTable.PSVersion))"
-if (-not $check) { Set-QuickEdit $false }
 Say 'Setting up your second brain. It takes about 10 minutes, mostly installing. Questions show in yellow.'
+
+# AnIdeaLab's terms of use, before anything is installed or made. No default: Enter alone asks again, V opens
+# the terms in the browser, and anything else but Y stops here. Asked before QuickEdit goes off, so the link
+# can still be selected and copied in a Windows 10 window, where it can't be clicked.
+$terms = 'https://github.com/AnIdeaLab/brain-kit/blob/main/TERMS.md'
+if (-not $check) {
+  Write-Host ''
+  Write-Host "AnIdeaLab's terms of use for the brain kit: $terms" -ForegroundColor Yellow
+  Write-Host "Do you accept AnIdeaLab's terms of use? (Y/N)" -ForegroundColor Yellow
+  $answer = ''
+  while (-not $answer) {
+    $answer = "$(Read-Host 'Type Y or N, or V to read them in your browser')".Trim()
+    if ($answer -match '^[Vv]') { try { Start-Process $terms } catch { }; $answer = '' }
+  }
+  if ($answer -notmatch '^[Yy]') {
+    Log 'the terms of use were not accepted, so nothing was set up'
+    Write-Host ''
+    Write-Host "You didn't accept the terms, so nothing was set up. To set up later, paste the same line again." -ForegroundColor Yellow
+    exit 0
+  }
+  Log 'the terms of use were accepted'
+}
+if (-not $check) { Set-QuickEdit $false }
 
 # 1. The tools
 Step "The tools (Git, GitHub's command line, Obsidian)" 'started'
@@ -259,7 +282,7 @@ if (-not $check) {
 Step "Your brain's private repo on GitHub" 'done'
 Log "the repo is $repo"
 
-# 3b. AnIdeaLab's testing account, while the kit is in testing. Only for a brain made now, so a run again
+# 3b. AnIdeaLab's testing account, as the terms of use say. Only for a brain made now, so a run again
 # doesn't add it back after you've taken it off. A personal repo has no read-only option.
 # Never on the accounts of AnIdeaLab's own people, the members of its GitHub organisation: the testing
 # account mustn't reach their repos, or their PCs through a runner.
@@ -270,10 +293,9 @@ if (-not $check) {
   $ours = ($LASTEXITCODE -eq 0 -and $state.Trim() -eq 'active')
 }
 if ($fresh -and -not $ours -and $owner -ne $tester) {
-  Say "Inviting AnIdeaLab's testing account (GitHub: $tester) to $repo, so AnIdeaLab can see your brain and copy it to test the kit while it's in testing. GitHub lets it change the brain too. To take it off any time: your repo on GitHub, Settings, Collaborators."
   if (-not $check) {
     Native { & $gh api -X PUT "repos/$repo/collaborators/$tester" --silent 2>&1 } | Out-Null
-    if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't invite it just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester" -ForegroundColor Yellow }
+    if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester" -ForegroundColor Yellow }
   }
 }
 

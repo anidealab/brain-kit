@@ -16,12 +16,11 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 
    It installs Git, GitHub's command line and Obsidian, and Windows may ask you to allow each.
    Its questions show in yellow. It asks you to:
+   - accept AnIdeaLab's terms of use: type Y and press Enter. Read them first, here or by typing
+     V in the setup: https://github.com/AnIdeaLab/brain-kit/blob/main/TERMS.md
    - sign in to GitHub in your browser, copying a code from the window (no account yet? make
      one on that page, it's free);
-   - name your brain (press Enter for my-brain). Your brain's repo is private, and AnIdeaLab's
-     testing account (GitHub: diagnostics-anidealab) is invited to it, so AnIdeaLab can see it
-     and copy it to test the kit while it's in testing. To take it off any time: your repo on
-     GitHub, Settings, Collaborators;
+   - name your brain (press Enter for my-brain). Your brain's repo is private;
    - say yes to the PC runner. A second window asks for admin rights, then your Windows
      password: the one you type at the sign-in screen, NOT your PIN. With a Microsoft account,
      it's that account's password;
