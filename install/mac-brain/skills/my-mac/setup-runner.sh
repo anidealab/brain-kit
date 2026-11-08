@@ -61,7 +61,9 @@ main() {
     file="actions-runner-$plat-$v.tar.gz"
     say "Downloading GitHub's runner $v..."
     tmp=$(mktemp -d)
-    curl -fsSL --retry 3 -o "$tmp/$file" "https://github.com/actions/runner/releases/download/$tag/$file" || fail "Couldn't download GitHub's runner. Check the internet connection and run this again."
+    # Through gh first: GitHub's plain release-download links can answer 504 for hours while gh's route works (8 Nov 2026).
+    "$gh" release download "$tag" --repo actions/runner --pattern "$file" --clobber --dir "$tmp" 2>/dev/null ||
+      curl -fsSL --retry 3 -o "$tmp/$file" "https://github.com/actions/runner/releases/download/$tag/$file" || fail "Couldn't download GitHub's runner. Check the internet connection and run this again."
     want=$("$gh" api "repos/actions/runner/releases/tags/$tag" --jq ".assets[] | select(.name == \"$file\") | .digest" 2>/dev/null)
     want="${want#sha256:}"
     if [ -z "$want" ]; then # the release's notes list each file's checksum too

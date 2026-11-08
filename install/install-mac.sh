@@ -549,10 +549,20 @@ plugin="$vault/.obsidian/plugins/obsidian-git"
 if { [ -z "$check" ] || [ -n "$tools_check" ]; } && [ ! -f "$plugin/main.js" ]; then
   say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
   mkdir -p "$plugin"
+  # Through gh first: GitHub's plain release-download links can answer 504 for hours while gh's route, through
+  # its API, works (8 Nov 2026). The plain link stays for when gh isn't there or isn't signed in. main.js is
+  # moved in last, because it's what says the plugin is done.
+  got_plugin=""
+  plugin_tmp=$(mktemp -d)
+  if [ -n "$gh" ] && "$gh" release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir "$plugin_tmp" 2>/dev/null; then got_plugin=yes; fi
   for f in manifest.json styles.css main.js; do
-    curl -fsSL --retry 3 -o "$plugin/$f.part" "https://github.com/Vinzent03/obsidian-git/releases/latest/download/$f" && mv "$plugin/$f.part" "$plugin/$f" ||
-      die "Couldn't download the Obsidian Git plugin. Check the Mac is online, then paste the same command again."
+    if [ -z "$got_plugin" ]; then
+      curl -fsSL --retry 3 -o "$plugin_tmp/$f" "https://github.com/Vinzent03/obsidian-git/releases/latest/download/$f" ||
+        { rm -rf "$plugin_tmp"; die "Couldn't download the Obsidian Git plugin. Check the Mac is online, then paste the same command again."; }
+    fi
+    mv "$plugin_tmp/$f" "$plugin/$f" || die "Couldn't put the Obsidian Git plugin in $plugin."
   done
+  rm -rf "$plugin_tmp"
 fi
 # Add the brain to Obsidian's list of vaults, so it opens straight into it. Obsidian writes the list when it
 # quits, so it's closed first.

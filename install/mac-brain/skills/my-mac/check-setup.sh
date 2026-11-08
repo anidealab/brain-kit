@@ -194,7 +194,7 @@ else
   plugins="$vault/.obsidian/plugins"
   enabled=$(cat "$vault/.obsidian/community-plugins.json" 2>/dev/null)
   if [ ! -f "$plugins/obsidian-git/main.js" ]; then
-    fix "The Obsidian Git plugin isn't installed in this vault, so edits don't sync" "p=\"$plugins/obsidian-git\"; mkdir -p \"\$p\" && for f in main.js manifest.json styles.css; do curl -fsSL -o \"\$p/\$f\" https://github.com/Vinzent03/obsidian-git/releases/latest/download/\$f; done"
+    fix "The Obsidian Git plugin isn't installed in this vault, so edits don't sync" "gh release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir \"$plugins/obsidian-git\""
   elif ! printf '%s' "$enabled" | grep -q '"obsidian-git"'; then fix "The Obsidian Git plugin is switched off, so the vault doesn't sync" 'In Obsidian: Settings, Community plugins, and switch on Git'
   else ok 'The Obsidian Git plugin is installed and on, so edits sync'; fi
   if [ -f "$plugins/brain-graph/main.js" ]; then
