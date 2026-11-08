@@ -384,6 +384,22 @@ Step "Your brain on GitHub, and your copy in $vault" 'done'
 # 5. Obsidian, with the Git plugin that syncs your edits (its code isn't kept in the repo). It opens at the
 # end: opened here, it came up in front of this window while the runner's question waited behind it.
 Step 'Obsidian, with syncing on' 'started'
+# winget gets Obsidian from GitHub's plain release link at the tools step, and the setup carries on if that
+# answers 504 (see Get-Release). gh is signed in by here, so Obsidian gets a second try through it.
+if (-not $check -and -not (Find-Obsidian)) {
+  Say "Installing Obsidian through GitHub's command line, about 340 MB..."
+  $dl = Join-Path $env:TEMP 'brain-kit-obsidian'
+  try {
+    $obsTag = "$(Native { & $gh api repos/obsidianmd/obsidian-releases/releases/latest --jq .tag_name })".Trim()
+    $obsExe = "Obsidian-$($obsTag.TrimStart('v')).exe"
+    if ($obsTag -and (Get-Release 'obsidianmd/obsidian-releases' $obsTag @($obsExe) $dl)) {
+      $obsPath = Join-Path $dl $obsExe
+      if ((Get-AuthenticodeSignature -LiteralPath $obsPath).Status -eq 'Valid') { Start-Process -FilePath $obsPath -ArgumentList '/S' -Wait }
+      else { Log "Obsidian's download isn't validly signed, so it wasn't run" }
+    }
+  } catch { Log "couldn't install Obsidian through gh: $($_.Exception.Message)" }
+  Remove-Item -LiteralPath $dl -Recurse -Force -ErrorAction SilentlyContinue
+}
 $plugin = Join-Path (Join-Path (Join-Path $vault '.obsidian') 'plugins') 'obsidian-git'
 if (-not $check -and -not (Test-Path (Join-Path $plugin 'main.js'))) {
   Say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
@@ -462,15 +478,21 @@ if (-not $check) {
 
 # 7. Obsidian opens last, so it can't hide a question in this window.
 Step 'Obsidian opened on your brain' 'started'
-if (-not $check) {
+# Without Obsidian, the link only gets Windows asking which app should open it (a friend's PC, 8 Nov 2026).
+$hasObsidian = $check -or (Find-Obsidian)
+if (-not $check -and $hasObsidian) {
   try { Start-Process ('obsidian://open?path=' + [uri]::EscapeDataString($vault)) } catch { $o = Find-Obsidian; if ($o) { Start-Process $o } }
   Start-Sleep -Seconds 3
 }
-Step 'Obsidian opened on your brain' 'done'
+Step 'Obsidian opened on your brain' $(if ($hasObsidian) { 'done' } else { 'not done' })
 
 Show-Steps
 if (-not $check) { Set-QuickEdit $true }
-Say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
+if ($hasObsidian) { Say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.' }
+else {
+  Write-Host ''
+  Write-Host "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again, and give the same brain name." -ForegroundColor Yellow
+}
 if ($runnerOk) { Say 'All done on this PC.' } else {
   Write-Host ''
   Write-Host "Your brain is set up, but the PC runner isn't working yet, so agents can't run jobs on this PC." -ForegroundColor Yellow
