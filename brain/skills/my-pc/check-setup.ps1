@@ -296,7 +296,7 @@ if (-not $Vault) {
   # In PowerShell 5.1 ConvertFrom-Json hands a JSON list back as one item, so it's piped on to split it.
   $on = @(); if (Test-Path (Join-Path $obs 'community-plugins.json')) { try { $on = @((Get-Content (Join-Path $obs 'community-plugins.json') -Raw | ConvertFrom-Json) | ForEach-Object { $_ }) } catch { } }
   $pluginDir = Join-Path $obs 'plugins\obsidian-git'
-  if (-not (Test-Path (Join-Path $pluginDir 'main.js'))) { Fix "The Obsidian Git plugin isn't installed in this vault, so edits don't sync" "`$p='$pluginDir'; New-Item -ItemType Directory -Force `$p | Out-Null; 'main.js','manifest.json','styles.css' | ForEach-Object { Invoke-WebRequest -UseBasicParsing `"https://github.com/Vinzent03/obsidian-git/releases/latest/download/`$_`" -OutFile `"`$p\`$_`" }" }
+  if (-not (Test-Path (Join-Path $pluginDir 'main.js'))) { Fix "The Obsidian Git plugin isn't installed in this vault, so edits don't sync" "gh release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir '$pluginDir'" }
   elseif ($on -notcontains 'obsidian-git') { Fix 'The Obsidian Git plugin is switched off, so the vault doesn''t sync' 'In Obsidian: Settings, Community plugins, and switch on Git' }
   else { Ok 'The Obsidian Git plugin is installed and on, so edits sync' }
   if (Test-Path (Join-Path $obs 'plugins\brain-graph\main.js')) { if ($on -contains 'brain-graph') { Ok 'The brain graph is installed and on' } else { Note 'The brain graph is installed but switched off' 'In Obsidian: Settings, Community plugins, and switch on Brain graph' } }

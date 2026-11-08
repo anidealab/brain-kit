@@ -98,7 +98,10 @@ try {
     Write-Host "Downloading GitHub's runner $ver..."
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $ProgressPreference = 'SilentlyContinue' # the progress bar makes downloads very slow in PowerShell 5.1
-    Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/actions/runner/releases/download/v$ver/actions-runner-win-$arch-$ver.zip" -OutFile $zip
+    # Through gh first: GitHub's plain release-download links can answer 504 for hours while gh's route, through
+    # its API, works (8 Nov 2026). The plain link is the fallback.
+    Native { & $gh release download "v$ver" --repo actions/runner --pattern "actions-runner-win-$arch-$ver.zip" --clobber --dir $env:TEMP 2>&1 } | Out-Null
+    if ($LASTEXITCODE -ne 0) { Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/actions/runner/releases/download/v$ver/actions-runner-win-$arch-$ver.zip" -OutFile $zip }
     Expand-Archive -Path $zip -DestinationPath $runner -Force
     Remove-Item $zip -Force
   }
