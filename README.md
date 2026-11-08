@@ -48,7 +48,7 @@ AnIdeaLab sends fixes, new rules and new parts to brains made from the kit. A br
 - **[updates/](updates/)**: one message per update, newest last, each starting with a summary for the owner. The commit that added each one holds `brain/` as of that update, and `brain_update.py` merges the difference into a brain with a three-way merge, so the brain's own changes elsewhere stay.
 - **[inbox/](inbox/)**: after each update, a brain sends a report of how it went to AnIdeaLab's private inbox, so the kit gets better.
 - **[TERMS.md](TERMS.md)**: AnIdeaLab's terms of use for the kit, which the installer asks each owner to accept.
-- **[testing/](testing/)**: AnIdeaLab's scripts for its testing account, which the installer invites to each new brain's repo, as the terms say: `diagnostic-setup.ps1` invites it to a brain made before the installer did, and `copy-brains.ps1` copies the brains it's invited to.
+- **[testing/](testing/)**: AnIdeaLab's scripts for its testing account, which the installer invites to each new brain's repo, as the terms say: `diagnostic-setup.ps1` invites it to a brain made before the installer did, and `copy-brains.ps1` copies the brains it's invited to. `network-check.ps1` is for a PC whose install stops on a download: it changes nothing, and saves and copies a report of the PC's antivirus, proxy, DNS and how GitHub's downloads answer.
 - **[tools/kit.py](tools/kit.py)**: the kit's build, which checks it after each change (a brain made on a Mac too), and makes the zip a Windows owner can install from instead of the one command. How to work on the kit: [CLAUDE.md](CLAUDE.md).
 - **[.github/workflows/](.github/workflows/)**: the kit's own workflow, which tries the Mac installer on GitHub's Macs.
 
