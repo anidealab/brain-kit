@@ -130,6 +130,22 @@ function Install-App($id, $what, [scriptblock]$find, [switch]$optional) {
   if ($optional) { Log "carried on without ${what}: $why"; return }
   throw $why
 }
+# Downloads files from a GitHub release with gh, up to three tries, and says whether it worked. GitHub's plain
+# release-download links can answer 504 for hours while gh's route, through its API, works (8 Nov 2026).
+# An empty $tag means the latest release.
+function Get-Release($from, $tag, $names, $dir) {
+  $a = @('release', 'download')
+  if ($tag) { $a += $tag }
+  $a += @('--repo', $from, '--clobber', '--dir', $dir)
+  foreach ($n in $names) { $a += @('--pattern', $n) }
+  for ($try = 1; $try -le 3; $try++) {
+    if ($try -gt 1) { Say "That download didn't finish. Trying again in 15 seconds ($try of 3)..."; Start-Sleep -Seconds 15 }
+    $out = Native { & $gh @a 2>&1 } | Out-String
+    if ($LASTEXITCODE -eq 0) { return $true }
+    Log "gh couldn't download from $from (try $try): $($out.Trim())"
+  }
+  return $false
+}
 # A path inside a folder, one name at a time, so it works with either slash.
 function Inside($base) { foreach ($p in $args) { $base = Join-Path $base $p }; return $base }
 # The brain's files the kit's zip marks as programs, as paths inside brain\. GitHub's zip keeps each
@@ -372,10 +388,9 @@ $plugin = Join-Path (Join-Path (Join-Path $vault '.obsidian') 'plugins') 'obsidi
 if (-not $check -and -not (Test-Path (Join-Path $plugin 'main.js'))) {
   Say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
   New-Item -ItemType Directory -Force -Path $plugin | Out-Null
-  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-  $ProgressPreference = 'SilentlyContinue'
-  foreach ($f in 'main.js', 'manifest.json', 'styles.css') {
-    Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/Vinzent03/obsidian-git/releases/latest/download/$f" -OutFile (Join-Path $plugin $f)
+  if (-not (Get-Release 'Vinzent03/obsidian-git' '' @('main.js', 'manifest.json', 'styles.css') $plugin)) {
+    Remove-Item -LiteralPath (Join-Path $plugin 'main.js') -Force -ErrorAction SilentlyContinue # so a run again doesn't take a part-download for done
+    throw "The Obsidian Git plugin's download didn't come through: GitHub didn't answer, three times. That's on their side and usually passes. Wait a few minutes, then paste the same command again."
   }
 }
 # Add the brain to Obsidian's list of vaults, so it opens straight into it.
@@ -416,6 +431,22 @@ $runnerOk = $true
 Step 'The PC runner' 'started'
 if (-not $check) {
   if (Yes 'Set up the PC runner now, so AI agents can run jobs on this PC? It asks for admin rights, then your Windows password, in a second window.') {
+    # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
+    # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
+    $runnerDir = Join-Path $root '_runner'
+    if (-not (Test-Path (Inside $runnerDir 'bin' 'Runner.Listener.exe'))) {
+      Say "Downloading GitHub's runner, about 100 MB..."
+      $dl = Join-Path $env:TEMP 'brain-kit-runner'
+      try {
+        $runnerTag = "$(Native { & $gh api repos/actions/runner/releases/latest --jq .tag_name })".Trim()
+        $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
+        $runnerZip = "actions-runner-win-$arch-$($runnerTag.TrimStart('v')).zip"
+        if ($runnerTag -and (Get-Release 'actions/runner' $runnerTag @($runnerZip) $dl)) {
+          Expand-Archive -Path (Join-Path $dl $runnerZip) -DestinationPath $runnerDir -Force
+        }
+      } catch { Log "couldn't put the runner in place first: $($_.Exception.Message)" }
+      Remove-Item -LiteralPath $dl -Recurse -Force -ErrorAction SilentlyContinue
+    }
     & powershell -NoProfile -ExecutionPolicy Bypass -File $runnerSetup -Repo $repo -Root $root
     # "All done" only once GitHub sees the runner online: on an owner's PC it said so after the
     # runner setup had stopped partway (22 Oct 2026).
