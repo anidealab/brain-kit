@@ -104,10 +104,31 @@ function Find-Gh {
   return Find-First @("$env:ProgramFiles\GitHub CLI\gh.exe", "$env:LOCALAPPDATA\Programs\GitHub CLI\gh.exe")
 }
 function Find-Obsidian { return Find-First @("$env:LOCALAPPDATA\Programs\Obsidian\Obsidian.exe", "$env:LOCALAPPDATA\Obsidian\Obsidian.exe", "$env:ProgramFiles\Obsidian\Obsidian.exe") }
-function Install-App($id, $what) {
-  Say "Installing $what (Windows may ask you to allow it)..."
-  Native { winget install --id $id -e --silent --accept-source-agreements --accept-package-agreements } | Out-Host
-  Refresh-Path
+# Installs an app with winget, up to three tries, and stops with what went wrong if it's still missing.
+# GitHub, where winget downloads Git and gh from, can answer 504 for a while (an owner's PC, 8 Nov 2026):
+# a try a few seconds later usually gets through, and before this the installer blamed the window.
+# $find says whether it's there now; an optional app ($optional) that won't install is logged, not stopped on.
+function Install-App($id, $what, [scriptblock]$find, [switch]$optional) {
+  $out = ''; $code = 0
+  for ($try = 1; $try -le 3; $try++) {
+    if ($try -eq 1) { Say "Installing $what (Windows may ask you to allow it)..." }
+    else { Say "Installing $what didn't finish. Trying again in 15 seconds ($try of 3)..."; Start-Sleep -Seconds 15 }
+    $seen = @()
+    Native { winget install --id $id -e --silent --accept-source-agreements --accept-package-agreements 2>&1 } | Tee-Object -Variable seen | Out-Host
+    $code = $LASTEXITCODE; $out = ($seen | Out-String)
+    Refresh-Path
+    if (& $find) { return }
+    Log "winget couldn't install $what (try $try, code $code): $((@($out -split "`n" | Where-Object { $_ -match '\w' }) | Select-Object -Last 2) -join ' / ')"
+  }
+  $why = if ($out -match 'Download request status is not success|Gateway|timed? ?out|0x8019|0x80072') {
+    "$what's download didn't come through: the server it comes from (GitHub) didn't answer, three times. That's on their side and usually passes. Wait a few minutes, then paste the same command again."
+  } elseif ($code -eq 0 -or $out -match 'already installed|No available upgrade') {
+    "$what is installed, but this window can't see it yet. Close PowerShell, open it again and paste the same command."
+  } else {
+    "Installing $what didn't finish (winget stopped with code $code; what it said is above). Paste the same command again. If it stops here again, send C:\AI-Brain-Link\_logs\install.log to whoever is helping you."
+  }
+  if ($optional) { Log "carried on without ${what}: $why"; return }
+  throw $why
 }
 # A path inside a folder, one name at a time, so it works with either slash.
 function Inside($base) { foreach ($p in $args) { $base = Join-Path $base $p }; return $base }
@@ -228,9 +249,9 @@ if (-not $check) {
 Step "The tools (Git, GitHub's command line, Obsidian)" 'started'
 if (-not $check) {
   if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { throw "winget (Windows' app installer) isn't on this PC. Install 'App Installer' from the Microsoft Store, then paste the same command again." }
-  if (-not (Find-Git)) { Install-App 'Git.Git' 'Git' }
-  if (-not (Find-Gh)) { Install-App 'GitHub.cli' "GitHub's command line" }
-  if (-not (Find-Obsidian)) { Install-App 'Obsidian.Obsidian' 'Obsidian' }
+  if (-not (Find-Git)) { Install-App 'Git.Git' 'Git' { Find-Git } }
+  if (-not (Find-Gh)) { Install-App 'GitHub.cli' "GitHub's command line" { Find-Gh } }
+  if (-not (Find-Obsidian)) { Install-App 'Obsidian.Obsidian' 'Obsidian' { Find-Obsidian } -optional }
 }
 $git = Find-Git
 if (-not $git) { throw "Git is installed, but this window can't see it yet. Close PowerShell, open it again and paste the same command." }
