@@ -113,7 +113,7 @@ def main():
             if re.match(r"^[a-z]+:", target):
                 continue
             file, _, section = unquote(target).partition("#")
-            path = os.path.normpath(os.path.join(os.path.dirname(note), file)) if file else note
+            path = os.path.normpath(os.path.join(os.path.dirname(note), file)).replace(os.sep, "/") if file else note  # git's paths use /, on Windows too
             if not os.path.exists(os.path.join(ROOT, path)):
                 broken.append((note, target))
                 continue

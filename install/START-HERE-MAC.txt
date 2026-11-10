@@ -1,7 +1,7 @@
 Your own second brain, started from the AnIdeaLab brain kit, on a Mac.
 
 What you'll have at the end:
-- Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 65 skills
+- Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 66 skills
   (how to do things) and a knowledge library that fills up as you use it.
 - Obsidian on your Mac, showing your brain as a map, and the brain graph replaying how it grew.
 - The Mac runner: it lets Claude run jobs on your Mac while it's on and you're logged in.
