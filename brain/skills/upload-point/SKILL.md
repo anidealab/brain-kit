@@ -1,6 +1,6 @@
 ---
 name: upload-point
-description: "The upload point: the small Upload point window on the owner's Windows PC, and My brain in File Explorer's Send to menu, where they drop files and folders for the brain, listed by path in knowledge/systems/upload-point.md on GitHub. How the owner uses it, how to set it up again, and how to sort what's waiting: files moved into the brain or onto the PC, code repos learned where they are, the list cleared. Use when the owner mentions the upload point or files they dropped, or the session start says something's waiting."
+description: "The upload point: the small Upload point window on the owner's Windows PC, and My brain in File Explorer's Send to menu, where they drop files and folders for the brain, listed by path in knowledge/systems/upload-point.md on GitHub. How the owner uses it, how to set it up again, and how to sort what's waiting: files moved into the brain or onto the PC, code repos learned where they are, a big drop passed to file-intake, the list cleared. Use when the owner mentions the upload point or files they dropped, or the session start says something's waiting."
 ---
 
 # The upload point
@@ -28,6 +28,7 @@ It makes the "Upload point" shortcut on the desktop and "My brain" in Send to, b
 
 ## Sorting what's waiting
 1. **Read the list,** after `git pull --rebase`: the window writes it on GitHub, so your copy may be behind. Do what the owner asked. If they didn't say, sort everything into the brain as below, but first ask about anything unclear or personal: what a file is, whose it is, or where it should live.
+   - **A big drop goes to [file-intake](../file-intake/SKILL.md).** When what's waiting is more than about 30 documents (a folder's size on the list says how many files it holds), or a folder that mixes several projects or years, don't sort it here: one agent reading it all gets things wrong and can't say what it missed. That skill surveys the pile first (`intake.py survey --upload-list` reads this list), picks a method by its size and kinds, and keeps a list of what every file became. The steps below are its "small" method, for a few files.
 2. **Look at them on the PC,** with one job ([my-pc](../my-pc/SKILL.md)): `pc-run.yml` with `checkout` on and the command `& "$env:GITHUB_WORKSPACE\skills\upload-point\look.ps1"`. It reads the list from the checkout and, for each path, says whether it's there, its kind and size, and a peek inside: a folder's top two levels, a text file's first lines, and for a code repo its remote, latest commits, what isn't committed, and the start of its README and `CLAUDE.md`. It changes nothing. If a path isn't there any more (a drive unplugged, a file moved), ask the owner.
 3. **Files that belong in the brain,** up to about 25 MB each (documents, PDFs, spreadsheets, notes, the images a note is about), move into their place in the brain's copy on the PC, next to the note each becomes, and are pushed from there, so you can read them in your session. One job does them all; the brain's copy is `C:\AI-Brain-Link\<repo name>`, or the folder in [the PC's note](../../knowledge/systems/my-pc.md):
    ```

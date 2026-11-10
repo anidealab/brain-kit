@@ -65,6 +65,8 @@ python3 skills/file-intake/intake.py convert --work <work folder>
   python -m pip install --quiet "markitdown[all]"
   python $tool convert --work $work
   ```
+- **On a Mac,** the work folder is `~/AI-Brain-Link/_intake/<name>`, Python is `python3`, and the job runs through the Mac's own runner (its skill says how).
+- **When the pile came through the upload point,** take its lines off that list once `check` passes, as the upload-point skill's last step says. The files stay where they are.
 - **The text stays out of the repo.** It's a working copy, it can be made again, and it may hold passwords the secrets gate keeps out of commits.
 
 ## Splitting

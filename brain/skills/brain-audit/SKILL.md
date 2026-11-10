@@ -1,6 +1,6 @@
 ---
 name: brain-audit
-description: "The weekly tidy-up of this second brain: run the library and link checks, fix what they find, a light quality pass on the cards (duplicates, notes doing two jobs, knowledge left in finished tasks, old decisions, stale tasks closed and finished ones moved to history, hand-offs folded in and tidied), turn friction-log blockers into skills, fold in skills' lessons, rewrite where each active project and area stands, then a short report for the owner. Also the monthly deep audit (deep-audit.md): every current decision read for clashes, removed rules hunted down, and a quiz of a fresh agent on the brain. Use when the owner says yes to the weekly tidy-up or monthly deep audit reminder, or asks for a brain cleanup or a deeper check."
+description: "The weekly tidy-up of this second brain: run the library and link checks, fix what they find, a light quality pass on the cards (duplicates, notes doing two jobs, knowledge left in finished tasks, old decisions, stale tasks closed and finished ones moved to history, hand-offs folded in and tidied), turn friction-log blockers into skills, fold in skills' lessons, rewrite where each active project and area stands, then a short report for the owner; in a busy week, an agent per busy project and a links agent. Also the monthly deep audit (deep-audit.md): every current decision read for clashes, removed rules hunted down, and a quiz of a fresh agent on the brain. Use when the owner says yes to the weekly tidy-up or monthly deep audit reminder, or asks for a brain cleanup or a deeper check."
 ---
 
 # The weekly tidy-up
@@ -9,6 +9,21 @@ Once a week, the agent cleans the brain up and gives the owner a short report, s
 **Two levels.** This weekly one is cheap. Once a month, [the deep audit](deep-audit.md) reads every current decision in full and quizzes a fresh agent on the brain, to catch what only reading does.
 
 **Keep it light.** It uses the owner's plan. Read cards, not notes: the shelves' indexes and `library.py find` show every card; open a note only when a card or a script points at a problem. For "what happened this week", read commit messages, not the notes themselves.
+
+## A busy project gets its own agent
+Most weeks the agent does the whole tidy-up alone, as below. But a project that moved a lot fills the agent's memory with one subject's detail, and the rest of the brain gets a tired read. So after step 2 of the clean-up, count what moved for each project and area since the last tidy-up: its notes changed (`git log --since="<the last tidy-up's date>" --name-only --format= -- knowledge/ventures/<name>`), its tasks, and its hand-offs waiting to be folded in (`library.py find --tag <name> --shelf handoffs --all`).
+
+| The week | The method |
+|---|---|
+| **Quiet:** no project with more than about ten notes, tasks and hand-offs moved | The agent alone. No other agents |
+| **One busy project** | One agent for that project; the agent does the rest |
+| **Two or more busy projects** | An agent each, one or two at a time, then a links agent |
+
+It uses more of the owner's plan than a quiet week's tidy-up, so say which projects are getting an agent, and why, before starting them. More than two at once needs the owner's yes.
+
+- **A project's agent** gets a brief ([handoff](../handoff/SKILL.md#briefs-and-reports)) for that project alone, and does this skill's steps for it in place of the coordinator: steps 3 to 7 of the clean-up for the project's own notes, tasks and hand-offs, the links between its own notes, and its "Where it stands" (Part 4, step 1). It edits only notes in the project's folder or tagged with its name, commits only those paths, and reports back: what it changed, what it folded in from which hand-offs, what crosses into other projects (a person, a date, money, a dependency), and what to ask the owner ("keep or drop?" among them).
+- **The links agent** reads those reports, and the "Where it stands" of the projects that had no agent. It reports what crosses between projects and where each link belongs, line by line, and edits nothing ([file-intake](../file-intake/SKILL.md#the-links-agents-brief) has its brief's shape).
+- **The coordinator,** the agent the owner said yes to, checks each report once, writes what crosses projects from the links agent's list, and does everything that belongs to the whole brain: the scripts, updates, decisions, the quiet projects, the friction log, the skills' lessons and the report. Only it writes across projects, so agents side by side don't clash.
 
 ## 1. Clean up
 1. **Brain updates first.** Pull, and if the session can reach github.com, run `python3 skills/brain-spec/brain_update.py check`. For each new update, read the owner its summary and apply it if they say go ([brain updates](../brain-spec/SKILL.md#brain-updates)).

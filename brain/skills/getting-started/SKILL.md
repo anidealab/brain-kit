@@ -1,6 +1,6 @@
 ---
 name: getting-started
-description: "The first session in a new brain: welcome the owner, learn who they are and what they want the brain for, write their first notes, test the PC runner and record what their PC has, show them Obsidian, skills and where keys go, offer the weekly tidy-up and monthly deep audit, then mark the brain set up. Use when the core says the brain is new, or when the owner asks to redo their setup."
+description: "The first session in a new brain: welcome the owner, learn who they are and what they want the brain for, write their first notes, test the PC runner and record what their PC has, show them Obsidian, skills and where keys go, offer the weekly tidy-up and monthly deep audit, ask about files to bring in, then mark the brain set up. Use when the core says the brain is new, or when the owner asks to redo their setup."
 ---
 
 # Getting started
@@ -22,6 +22,7 @@ In a few lines, in plain words:
 - Their first name, and where they live (a town and country is enough), so reminders fall due in their own time.
 - What they'd like the brain to help with: projects, a business, study, life admin, learning to build things. A few words is fine.
 - Any business or project names.
+- Whether they have files they'd like the brain to know: documents for a project, a folder from an old computer, years of paperwork. A rough idea of how much is enough ("a dozen PDFs", "my whole Documents folder").
 - Their Claude plan (Pro, Max or another), and whether agents should check a plan with them before every job or only bigger ones (guide mode's default is bigger ones).
 
 ## 3. Write it down
@@ -64,7 +65,13 @@ The [brain-audit skill](../brain-audit/SKILL.md) tidies the brain once a week. I
 
 Then offer [the monthly deep audit](../brain-audit/deep-audit.md), in a line: once a month it reads every decision in full for rules that clash, and asks a fresh agent questions about the brain to find notes that mislead. It uses more of their plan than the tidy-up, and also runs only when they say yes. If they'd like it, add its row the same way, from the first Saturday of next month.
 
-## 7. Finish
+## 7. Their files, if they have some
+If they said they have files to bring in, it's a job of its own, after this one: don't start reading files in the first session, which is for setting up.
+- **A few files** (up to a few dozen): ask them to drop them on the upload point and say "sort what I dropped" ([upload-point](../upload-point/SKILL.md)).
+- **A lot** (a whole folder, an old drive, years of documents): ask them to drop the folder on the upload point, or tell you where it is on their PC, and say it will be brought in with the [file-intake skill](../file-intake/SKILL.md): a look at what's there first, which costs almost none of their plan, then a plan for them to say go to. Suggest a fresh chat for it.
+- Either way, save it as a task they hold on the tasks shelf ("Drop the files for <what> on the upload point"), so it isn't lost if they do it another day.
+
+## 8. Finish
 - Take the "A new brain" paragraph out of the core, so this skill doesn't run again.
 - Run the checks, commit ("Set up <Name>'s brain") and push.
-- Tell the owner in three lines what's set up, and suggest one small first job that fits what they said they want, sized the guide-mode way.
+- Tell the owner in three lines what's set up, and suggest one small first job that fits what they said they want, sized the guide-mode way: bringing their files in, if they have some.
