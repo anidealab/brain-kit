@@ -101,7 +101,7 @@ The chat the owner talks to is the coordinator, and the agents it hands work to 
 - **The coordinator's own hand-off,** at the nudge like any chat, also says what's in flight (agents running, briefs out).
 
 ## The sub-agent nudge
-An agent you hand work to (a sub-agent) gets one nudge of its own, at 450,000 tokens of its own conversation: later than the chat's, since its work is a single task. Sizing the job first ([guide mode](../guide-mode/SKILL.md)) stays the main way work is split; this is the safety net for when a job turns out bigger than you thought.
+An agent you hand work to (a sub-agent) gets one nudge of its own, at 350,000 tokens of its own conversation: later than the chat's, since its work is a single task. Sizing the job first ([guide mode](../guide-mode/SKILL.md)) stays the main way work is split; this is the safety net for when a job turns out bigger than you thought.
 - **The agent, at its nudge:** finish the step you're on, write your report back as above (what's done, what's left, and where everything is), and stop. The owner has nothing to paste, and there's no second nudge.
 - **The chat that started it** picks up from the report: it checks what's done, and carries on what's left itself or hands it to a fresh agent with the report as its brief.
 - **It's separate from the chat's own nudge:** an agent's nudge doesn't use up the chat's, and the chat's never reaches an agent.
@@ -120,7 +120,7 @@ The policy is in [nudge.json](nudge.json), not the code, so it can change withou
 | `repeat_every` | Tokens between later nudges; 0 means one only | 100000 |
 | `urgent_at` | From this size on, nudges use `urgent_message`; 0 means never | 500000 |
 | `every_prompt_after` | From this size on, every message the owner sends gets `prompt_message` (the `UserPromptSubmit` hook); 0 means never | 500000 |
-| `agent_at` | Tokens in a sub-agent's own conversation at its one nudge, `agent_message`; 0 means never | 450000 |
+| `agent_at` | Tokens in a sub-agent's own conversation at its one nudge, `agent_message`; 0 means never | 350000 |
 | `tell_person` | `true` also shows the message to the owner in Claude Code; off, since it's written for the agent, who tells the owner in plain words | false |
 | `state_dir` | Where it remembers the marks; empty means the temp folder | empty |
 | `message`, `urgent_message`, `prompt_message`, `agent_message` | What it says; `{size}` and `{mark}` are filled in | |
