@@ -27,7 +27,7 @@ By size, from the survey's last lines. The numbers are starting points: a pile o
 | **Small** | Up to 30 documents, 100,000 tokens of text | The coordinator sorts it alone, the upload point's way. No agents; the survey is optional |
 | **Medium** | Up to 150 documents, 300,000 tokens, one or two subjects | The survey, then one or two subject agents. A links agent only if there are two |
 | **Big** | Up to about 1,500 documents, 2 million tokens, several subjects | Every step above: an agent per subject, one or two at a time, then the links agent |
-| **Huge** | More than that | Too big for one chat. Ask the owner what matters first, and bring it in a few subjects at a time, with a session hand-off after each round ([handoff](../handoff/SKILL.md)); the file list carries over, so each chat starts from what's left |
+| **Huge** | More than that | Too big for one chat. Ask the owner what matters first, and bring it in a few subjects at a time, with the job's task note brought up to date after each round ([handoff](../handoff/SKILL.md)); the file list carries over, so each chat starts from what's left |
 
 - **One agent reads about 150,000 tokens of text** (the script's `split` says when a subject is over). Past that, cut the subject by year, by sub-folder or by kind into pieces of that size, each with its own agent under the same coordinator, and let the links agent join them. Don't add a second coordinator between: every layer of reports loses detail.
 - **A subject is whatever the owner would call it:** a business, a project, a client, the house, tax. The folders usually show them. When they don't (one flat folder of everything), have one agent read the survey and a sample of twenty or so files' first lines and propose the subjects and the patterns for `split.txt`, before any subject agent starts.
@@ -114,7 +114,7 @@ python3 skills/file-intake/intake.py check --work <work folder> --record knowled
 - It reads every `outcomes-*.txt` and lists each file with no outcome, each note that isn't there, and each note that doesn't name the file it's said to come from. Fix those (finish the file, or give it an outcome and a reason) until it says every file is accounted for.
 - `--record` writes the pile's record: where it came from, the tally, the notes by subject, what was left out and why, with the whole list saved beside it. Fill in its "How it went", and give its folder a `README.md` if it's the first (the brain spec's shelves).
 - **The owner's files stay where they were.** Each note names its files, and the record's list has every path. Move or delete nothing from a pile unless the owner asks; if they'd like the originals gathered, that's a job of its own, under the upload point's rules for what goes in the repo and what stays on the PC.
-- **A huge pile's rounds:** at each hand-off, run `check --record` as it stands. The record says "not finished", and its list is what the next chat starts from: copy it into the new work folder as `files.txt`, and `convert` makes the text again.
+- **A huge pile's rounds:** at the end of each round, run `check --record` as it stands. The record says "not finished", and its list is what the next chat starts from: copy it into the new work folder as `files.txt`, and `convert` makes the text again.
 
 ## When it lets you down
 Add a dated line to a `LESSONS.md` in this folder (the brain spec's "How skills learn"), above all when the table's numbers were wrong for a pile: how many documents and tokens it had, the method used, and what it should have been.

@@ -22,7 +22,7 @@ Beside them: `README.md` (the owner's front door), `.github/` (the Actions), `.o
 | Shelf | What goes there |
 |---|---|
 | `knowledge/tasks/` | What's in flight, who holds it, what waits on the owner. One note per task. |
-| `knowledge/handoffs/` | Where a conversation or an agent's work stands, for whoever carries it on: session hand-offs, briefs and reports. One note each; its index is the board of open ones. |
+| `knowledge/handoffs/` | Briefs to agents and their reports back, one note each; its index is the board of open ones. Session hand-offs from before brain update 6 are kept there as the record. |
 | `knowledge/ventures/` | Things with a goal: businesses, projects, client work. A note each, or a folder once it has several notes. |
 | `knowledge/areas/` | Ongoing things with no end: the brain itself (`the-brain/`), later money, health, home. Each has a dated "Where it stands", which the weekly tidy-up rewrites as it does a project's. |
 | `knowledge/decisions/` | What the owner decided, standing rules included, on a sub-shelf per project or area. |
@@ -55,7 +55,7 @@ updated: {KIT_DATE}
 | `updated` | When someone last made sure the note and its card are true, like `{KIT_DATE}`. |
 | `holder` | Tasks only: `owner`, `open`, or the session link of the agent holding it. |
 | `parent` | Tasks only, optional: the file name of the task it came from. |
-| `kind` | Hand-offs only: `session`, `brief` or `report`. |
+| `kind` | Hand-offs only: `brief` or `report` (`session` on notes from before brain update 6). |
 | `before` | Hand-offs only, optional: the file name of the hand-off it carries on from. |
 | `due` | Optional: a date. |
 
@@ -76,8 +76,9 @@ All in this folder, plain Python 3 with nothing to install:
 
 ## Tasks and hand-offs
 - **A task note** is for work that will outlive the session, waits on someone, or is handed on. A job finished in one go needs none: git has the change, and anything learned goes to the library.
-- **Whoever hands a task out makes the note,** and closes it when the work comes back. The agent doing the work can add dated lines under `## Progress`.
-- **A hand-off** says where a conversation or an agent's work stands, so the next chat or agent can carry it on: at the end of a stage, at the size nudge, as a brief to an agent and as its report. It's a note on the [hand-offs shelf](../../knowledge/handoffs/README.md), in the format the [handoff skill](../handoff/SKILL.md) gives, which also says what to do at the nudge and when you start from one. The task stays the record of the job; the hand-off links to it.
+- **It's the job's live status:** a status on top that's rewritten in place (where it stands, next, waiting on, where everything is) and a record under it that only grows (the ask, decisions, watch-outs, progress). Its shape, when to update it, and how two chats share one without writing over each other are on [the tasks shelf's page](../../knowledge/tasks/README.md#a-task-note-is-the-jobs-live-status). It took the place of the session hand-off, which left a trail of write-ups to read through: a fresh chat is given the task's path and carries on from the note.
+- **Whoever hands a task out makes the note,** and closes it when the work comes back. The chat named in `holder` keeps its status up to date; any other only adds a dated line under `## Progress`.
+- **A brief and a report** carry a piece of work to an agent and back. Each is a note on the [hand-offs shelf](../../knowledge/handoffs/README.md), in the format the [handoff skill](../handoff/SKILL.md) gives, which also says what to do at the end of a stage, at the size nudge and when you start from a task note. The task stays the record of the job; a brief links to it.
 - **Something only the owner can do** is a task with `holder: owner`. Ask them in your thread as well.
 - **When a task closes,** set its status to `done` or `dropped`, add a dated line, and save what was learned that should outlive it. The weekly tidy-up closes tasks that have gone stale, and moves finished ones to `tasks/history/` after two weeks ([its Part 1](../brain-audit/SKILL.md#1-clean-up)).
 - **One note per task** keeps git conflicts rare.
@@ -98,7 +99,7 @@ Two kinds of hand-off:
 - **A copy of the conversation,** where the tool can make one, needs no brief and knows everything said so far. But it carries the whole conversation into each of its turns, so it uses more, and it can't be fresh eyes. Use it when the piece rests on a long talk with the owner that a brief would lose.
 - Either way, check what comes back once, the normal way: look at the page, read the diff.
 
-**Without an agent tool,** hand a big piece to a fresh session with a hand-off as its brief, or do the steps yourself and keep long output short: the tail of a log, the screenshots that matter, the part of a file you need.
+**Without an agent tool,** hand a big piece to a fresh session with a brief, or a task note of its own, to start from, or do the steps yourself and keep long output short: the tail of a log, the screenshots that matter, the part of a file you need.
 
 ## Saving knowledge
 - **The test:** would an agent starting cold next month need this, and would it be hard to get again? If yes, save it.

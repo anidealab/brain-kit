@@ -14,11 +14,11 @@ What the brain knows, as plain Markdown notes. How to do things is the other lib
 <!-- index:start -->
 - [areas/](areas/README.md): Ongoing things with no end: the brain itself, later others such as money, health or home. Read for the overall picture of an area.
 - [decisions/](decisions/README.md): What the owner decided, standing rules included, one note per decision on a sub-shelf per project or area. Read before changing anything a rule might cover.
-- [handoffs/](handoffs/README.md): Hand-offs: where a conversation or an agent's work stands, for whoever carries it on: session hand-offs, briefs and reports. The index is the board of open ones. Read when you start from a hand-off, or before you write one.
+- [handoffs/](handoffs/README.md): Hand-offs: briefs to agents and their reports back, and any older session hand-offs, from before a job's task note took their place. The index is the board of open ones. Read when you start from one, or before you write a brief or a report.
 - [ideas/](ideas/README.md): Ideas not started yet, the friction log included, one note each. Read before proposing something new, in case it's here already.
 - [people/](people/README.md): The owner, customers, suppliers and contacts, one note per person. Read before working with or writing to someone.
 - [subjects/](subjects/README.md): The open library, one note or folder per field of knowledge, kept when facts took effort to get. Read when a job needs facts about a field rather than about the owner's own work.
 - [systems/](systems/README.md): The machinery the brain runs on: the owner's PC and its runner, accounts and keys, routines, Obsidian and the brain graph. Read before using an account, the PC or a routine.
-- [tasks/](tasks/README.md): What's in flight: open tasks, who holds them, and what waits on the owner. Read to see what needs doing now, or before you hand work on.
+- [tasks/](tasks/README.md): What's in flight: open tasks, who holds them, and what waits on the owner; and a task note's shape, when to update it, and how two chats share one. Read to see what needs doing now, or before you make, update or carry on a task.
 - [ventures/](ventures/README.md): Things with a goal: the owner's projects, businesses and client work, one note or folder each. Read before any work on a project, for what it is, its goal, its code and its look.
 <!-- index:end -->
