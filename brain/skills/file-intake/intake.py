@@ -5,7 +5,7 @@ How it's used: SKILL.md in this folder. In short, everything about one pile live
 outside the repo (on the PC: C:\\AI-Brain-Link\\_intake\\<name>), and the file list in it, files.txt,
 has one row for every file found, so nothing is quietly missed.
 
-    intake.py survey PATH... --work DIR      walk the paths (or --upload-list FILE, the upload point's note):
+    intake.py survey PATH... --work DIR      walk the paths (or --upload-list FILE, the upload point's list):
                                              writes files.txt and survey.md. Changes nothing in the pile.
     intake.py convert --work DIR             turn each document into text, text/<id>.md, with MarkItDown
                                              where it's installed (pip install "markitdown[all]"); plain
@@ -117,10 +117,10 @@ def fingerprint(path, size):
     return h.hexdigest()
 
 
-def upload_list(note):
-    """The paths under "Waiting" in the upload point's note: lines like - `C:\\path`: file, 2.3 MB, ..."""
-    with open(note, encoding="utf-8") as fh:
-        return re.findall(r"^\s*-\s+`([^`]+)`", fh.read(), re.M)
+def upload_list(path):
+    """The paths in the upload point's list on the PC: on each line the time it was sent, a tab, the path."""
+    with open(path, encoding="utf-8-sig") as fh:
+        return [ln.split("\t", 1)[-1].strip() for ln in fh.read().splitlines() if ln.strip()]
 
 
 def walk(top):
@@ -154,7 +154,7 @@ def walk(top):
 def survey(args):
     paths = list(args.paths) + (upload_list(args.upload_list) if args.upload_list else [])
     if not paths:
-        sys.exit("Nothing to survey: give paths, or --upload-list with the upload point's note.")
+        sys.exit("Nothing to survey: give paths, or --upload-list with the upload point's list.")
     os.makedirs(args.work, exist_ok=True)
     rows, missing = [], []
     for top in paths:

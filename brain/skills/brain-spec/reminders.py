@@ -28,10 +28,10 @@ into the session. It prints nothing when nothing is due. It reads only this repo
 needs nothing outside Python's standard library. In a brain started from the AnIdeaLab brain
 kit, it also runs brain_update.py notice beside it, which asks the kit repo at most once a day
 whether AnIdeaLab has sent an update, and prints only when one is waiting, so a day with no
-update costs the session nothing. In a kit brain it also says how many
-things are waiting at the upload point and since when (knowledge/systems/upload-point.md, which the
-owner's Upload point window writes; 31 Oct 2026), so the agent asks the owner what to do with them.
-It's silent when nothing's waiting, and in a brain without the note.
+update costs the session nothing. In a session on the owner's PC, in the brain's copy, it also
+says how many things are waiting at the upload point and since when (_upload/waiting.txt beside the
+brain's copy, which Send to, My brain writes), so the agent asks the owner what to do with them. It's
+silent when nothing's waiting, and anywhere that file isn't, a cloud session included.
 Try it: python3 skills/brain-spec/reminders.py --now 2026-10-24T03:00Z
 """
 import os
@@ -45,7 +45,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))  # skills/brain-spec/ is two folders down
 ROUTINES = os.path.join(ROOT, "knowledge", "systems", "routines.md")
 ROUTINES_DIR = os.path.dirname(ROUTINES)  # the Log links are relative to routines.md
-UPLOAD_POINT = os.path.join(ROOT, "knowledge", "systems", "upload-point.md")  # kit brains only
+UPLOAD_LIST = os.path.join(os.path.dirname(ROOT), "_upload", "waiting.txt")  # on the owner's PC only
 UTC = timezone.utc
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]  # weekday() counts Monday as 0
 MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
@@ -55,9 +55,6 @@ WHEN = re.compile(r"\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\s+(\d{1,2}):(\d{2})", 
 MONTHLY = re.compile(r"\bfirst\s+(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b.*?(\d{1,2}):(\d{2})", re.I)
 FROM = re.compile(r"\bfrom\s+" + DATE, re.I)
 LINK = re.compile(r"\[([^\]]*)\]\(([^)\s#]*)[^)]*\)")
-WAITING = re.compile(r"(?ms)^##\s+Waiting\s*$(.*?)(?=^#{1,2}\s|\Z)")
-ITEM = re.compile(r"(?m)^\s*[-*]\s+(`+)\s?(.+?)\s?\1(?!`)(.*)$")  # - `<path>`: <kind>, <size>, added <when>
-ADDED = re.compile(r"\badded\s+" + DATE + r"(?:\s+(\d{1,2}):(\d{2}))?", re.I)
 # The owner's time zone: a name from the time zone database (Area/City, like Pacific/Auckland), or UTC.
 # The kit's line says "not set yet" until getting-started fills it in, which this doesn't match.
 ZONE_LINE = re.compile(r"(?m)^\*\*Time zone:\*\*[ \t]*([A-Za-z][A-Za-z_]*(?:/[A-Za-z0-9_+-]+)+|UTC)\b")
@@ -192,29 +189,19 @@ def read_reminders():
 def upload_point():
     """A line for the agent when something's waiting at the upload point, or None."""
     try:
-        with open(UPLOAD_POINT, encoding="utf-8") as fh:
-            text = fh.read()
+        with open(UPLOAD_LIST, encoding="utf-8-sig") as fh:
+            lines = [ln for ln in fh.read().splitlines() if ln.strip()]
     except OSError:
+        return None  # not on the owner's PC, or nothing sent yet
+    if not lines:
         return None
-    waiting = WAITING.search(text)
-    items = ITEM.findall(waiting.group(1)) if waiting else []
-    if not items:
-        return None
-    added = []
-    for *_, rest in items:
-        m = ADDED.search(rest)
-        day = to_date(*m.group(1, 2, 3)) if m else None
-        if day:
-            added.append((day, f"{int(m.group(4)):02d}:{m.group(5)}" if m.group(4) else ""))
-    since = ""
-    if added:
-        day, time = min(added)
-        since = f", the oldest since {day.day} {day:%b %Y}" + (f" {time}" if time else "")
-    n = len(items)
-    return (f"Upload point: {n} thing{'s' if n != 1 else ''} waiting{since}, in knowledge/systems/upload-point.md "
-            "(the owner's Upload point window writes it on GitHub, so pull first). In your first reply, tell the owner "
-            "in one line and ask what they'd like done with them, unless they've already said; then sort them with the "
-            "upload-point skill. Ignore this if the owner didn't start this session.")
+    sent = sorted(ln.split("\t", 1)[0].strip() for ln in lines if "\t" in ln)
+    since = f", the oldest since {sent[0]}" if sent else ""
+    n = len(lines)
+    return (f"Upload point: {n} thing{'s' if n != 1 else ''} waiting{since}, in {UPLOAD_LIST} (the owner sent "
+            "them with Send to, My brain). In your first reply, tell the owner in one line and ask what they'd "
+            "like done with them, unless they've already said; then sort them with the upload-point skill. "
+            "Ignore this if the owner didn't start this session.")
 
 
 def main(argv):

@@ -19,7 +19,7 @@ Anything that runs, or falls due, on a beat.
 | Routine | Owner | Kind | When (the owner's time) | What runs | Where it runs | Log |
 |---|---|---|---|---|---|---|
 | Brain update check | The brain | Code on a timer | Once a day, at the day's first session | `brain_update.py notice`, run by `reminders.py`: asks the kit repo, and says so only if an update is waiting | A session the owner starts (Claude Code's session-start hook) | [brain updates](brain-updates/README.md) |
-| Upload point check | The brain | Code on a timer | Every session the owner starts | `reminders.py` reads [the upload point's list](upload-point.md), and says so only if something's waiting | A session the owner starts (Claude Code's session-start hook) | [the upload point](upload-point.md) |
+| Upload point check | The brain | Code on a timer | Every session the owner starts on their PC | `reminders.py` reads [the upload point's](upload-point.md) list on the PC, and says so only if something's waiting. A cloud session can't see the list, so it says nothing there | A session the owner starts in the brain's copy on their PC (Claude Code's session-start hook) | [the upload point](upload-point.md) |
 
 ## The owner's own
 **Time zone:** not set yet. Getting-started asks the owner where they live and puts their time zone's name here, like Pacific/Auckland or Europe/London; `reminders.py` reads every reminder's time in it.

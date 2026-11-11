@@ -1,5 +1,5 @@
 ---
-about: "The upload point: the owner right-clicks files or folders on their PC and picks Send to, My brain, and each path goes on a plain text list on the PC, C:/AI-Brain-Link/_upload/waiting.txt, for an agent to sort into the brain. Read when the owner mentions sending or dropping something."
+about: "The upload point: the owner right-clicks files or folders on their PC and picks Send to, My brain, and each path goes on a plain text list on the PC for an agent to sort into the brain. Read when the owner mentions sending or dropping something."
 tags: [the-brain]
 updated: {KIT_DATE}
 ---

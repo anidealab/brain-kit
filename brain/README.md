@@ -16,6 +16,6 @@ The **[tasks index](knowledge/tasks/README.md)** is the "now" page: everything i
 ## Working with it
 - **Start a session** at [claude.ai/code](https://claude.ai/code) with this repo selected, one session per job. Agents check a plan with me before bigger jobs (guide mode).
 - **My PC:** agents run jobs on it through a GitHub Actions runner whenever it's on ([the PC](knowledge/systems/my-pc.md)). The "AI Brain Link - live jobs" window on my desktop shows what's running.
-- **Giving it files:** I drag files or folders onto the "Upload point" window on my desktop, or right-click them and pick Send to, then My brain, and tell the agent what to do with them. What's waiting is listed in [the upload point](knowledge/systems/upload-point.md).
+- **Giving it files:** I right-click files or folders on my PC and pick Send to, then My brain, and tell the agent what to do with them ([the upload point](knowledge/systems/upload-point.md)).
 - **Brain updates:** AnIdeaLab sends fixes and new parts. The weekly tidy-up tells me what each one does, and applies it only if I say go ([brain updates](knowledge/systems/brain-updates/README.md)).
 - **Keys** for services go in this repo's Actions secrets, never in a chat: the agent gives me one command to paste, which opens the page that makes the key and saves it there ([keys and accounts](knowledge/systems/keys-and-accounts.md)).

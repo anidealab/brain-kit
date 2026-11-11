@@ -432,7 +432,7 @@ Step 'Obsidian, with syncing on' 'done'
 $uploadSetup = Inside $vault 'skills' 'upload-point' 'setup-upload-point.ps1'
 if (Test-Path -LiteralPath $uploadSetup) {
   Step 'The upload point' 'started'
-  Say 'Adding the upload point: a shortcut on your desktop and in Send to, for giving your brain files...'
+  Say 'Adding the upload point: My brain in Send to, for giving your brain files with a right-click...'
   if (-not $check) {
     $uploadOk = $false
     try { Native { & powershell -NoProfile -ExecutionPolicy Bypass -File $uploadSetup }; $uploadOk = $LASTEXITCODE -eq 0 } catch { }
