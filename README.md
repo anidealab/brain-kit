@@ -16,7 +16,7 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 - makes your brain from [brain/](brain/), as of the newest update, with the day you install it as its start, and puts it in a new private repo on your GitHub account;
 - invites AnIdeaLab's testing account to that repo, as the terms say;
 - puts your copy in `C:\AI-Brain-Link\<your brain's name>`, set up for Obsidian with your edits syncing to GitHub;
-- adds the upload point, a desktop shortcut and a Send to entry for giving your brain files;
+- adds the upload point, a Send to entry for giving your brain files with a right-click;
 - sets up the PC runner, so AI agents can run jobs on your PC. It asks for admin rights and your Windows password;
 - opens your brain in Obsidian, last, so it can't hide a question in the PowerShell window.
 - then opens AnIdeaLab's tutorials page in your browser, for connecting Claude and the rest (anidealab.com/second-brain/tutorials, or the site's preview address until the site moves there).
@@ -34,7 +34,7 @@ It's safe to run again: it skips what's already done. Its questions show in yell
 - your copy goes in `~/AI-Brain-Link/<your brain's name>`, and the log in `~/AI-Brain-Link/_logs/install.log`;
 - the brain gets its Mac parts, since [brain/](brain/) is made for a Windows PC: the Mac runner's workflow, skill and note from [install/mac-brain/](install/mac-brain/), and its lines about the PC and PowerShell said for a Mac;
 - the Mac runner runs as a LaunchAgent under your account, so agents can run jobs on your Mac while it's on and you're logged in, and it offers to keep the Mac awake on the charger;
-- there's no upload point window on a Mac yet: you put files for your brain in `~/AI-Brain-Link/_upload`.
+- there's no Send to on a Mac: you put files for your brain in `~/AI-Brain-Link/_upload`.
 
 The steps in plain words, to send someone: [install/START-HERE-MAC.txt](install/START-HERE-MAC.txt). GitHub's own Macs try it on each change ([the workflow](.github/workflows/mac-installer.yml)).
 

@@ -1,14 +1,28 @@
-# Upload point: a look at what's waiting, for an agent sorting it (SKILL.md in this folder). Run it as a
-# job on the PC runner with checkout on (the my-pc skill), with this command:
+# Upload point: a look at what's waiting, for an agent sorting it (SKILL.md in this folder), and the way
+# to take what's been dealt with off the list. From a cloud session, run it as a job on the PC runner with
+# checkout on (the my-pc skill), with this command:
 #   & "$env:GITHUB_WORKSPACE\skills\upload-point\look.ps1"
-# It reads the list, knowledge/systems/upload-point.md, from the checkout, so the paths are exactly as the
-# window wrote them, and for each one says whether it's there, its kind and size, and a peek inside: a
+# It reads the list Send to, My brain writes on the PC, _upload\waiting.txt in the folder that holds the
+# brain's copy (C:\AI-Brain-Link\_upload\waiting.txt): one line per thing, the time it was sent, a tab,
+# and its path. For each path it says whether it's there, its kind and size, and a peek inside: a
 # folder's top two levels, a text file's first lines, and for a code repo its remote, latest commits,
-# what isn't committed, and the start of its README and CLAUDE.md. It changes nothing.
+# what isn't committed, and the start of its README and CLAUDE.md. A look changes nothing.
+#   & "$env:GITHUB_WORKSPACE\skills\upload-point\look.ps1" -Done 'C:\a path','D:\another'
+# takes those paths' lines off the list instead (an apostrophe in a path is written twice), and says
+# what's left. -List <file> names the list when the brain's copy isn't in C:\AI-Brain-Link.
 # Windows PowerShell 5.1, plain ASCII.
-param([string]$List = '')
+param([string]$List = '', [string[]]$Done = @())
 $ErrorActionPreference = 'Continue'
-if (-not $List) { $List = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'knowledge\systems\upload-point.md' }
+if (-not $List) {
+  # Up from this folder to the one that has the list: from the brain's copy, or from the runner's checkout.
+  $d = $PSScriptRoot
+  while ($d) {
+    $try = Join-Path $d '_upload\waiting.txt'
+    if (Test-Path -LiteralPath $try) { $List = $try; break }
+    $d = Split-Path $d -Parent
+  }
+  if (-not $List) { $List = 'C:\AI-Brain-Link\_upload\waiting.txt' }
+}
 $inv = [Globalization.CultureInfo]::InvariantCulture
 
 function Size-Text([double]$b) {
@@ -40,20 +54,39 @@ function Measure-Folder([string]$p, [int]$ms) {
 function Peek([string]$file, [int]$count) {
   Get-Content -LiteralPath $file -TotalCount $count -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { '    | ' + $_ }
 }
-
-$paths = New-Object 'Collections.Generic.List[string]'
-$inWaiting = $false
-foreach ($line in ([IO.File]::ReadAllText($List) -split "`r?`n")) {
-  if ($line -match '^##\s+Waiting\s*$') { $inWaiting = $true; continue }
-  if ($inWaiting -and $line -match '^#{1,2}\s') { break }
-  if ($inWaiting -and $line -match '^\s*[-*]\s+(`+)\s?(.+?)\s?\1(?!`)') { $paths.Add($Matches[2].Trim()) }
+function Path-Of([string]$line) {
+  # A line of the list is the time it was sent, a tab, and the path.
+  $at = $line.IndexOf("`t")
+  if ($at -lt 0) { return $line.Trim() }
+  return $line.Substring($at + 1).Trim()
 }
-if (-not $paths.Count) { 'Nothing waiting.'; exit 0 }
+
+$lines = @()
+if (Test-Path -LiteralPath $List) { $lines = @([IO.File]::ReadAllLines($List) | Where-Object { $_.Trim() }) }
+
+if ($Done.Count) {
+  $gone = New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+  foreach ($p in $Done) { if ("$p".Trim()) { [void]$gone.Add("$p".Trim().TrimEnd('\')) } }
+  $keep = @($lines | Where-Object { -not $gone.Contains((Path-Of $_).TrimEnd('\')) })
+  if ($keep.Count -eq $lines.Count) { 'None of those paths is on the list, ' + $List + ': nothing taken off.' }
+  else {
+    [IO.File]::WriteAllLines($List, [string[]]$keep, (New-Object Text.UTF8Encoding $true))
+    'Taken off the list: ' + ($lines.Count - $keep.Count) + '.'
+  }
+  if ($keep.Count) { 'Still waiting:'; $keep | ForEach-Object { '  ' + $_ } } else { 'Nothing waiting.' }
+  exit 0
+}
+
+if (-not $lines.Count) { 'Nothing waiting. (The list: ' + $List + ')'; exit 0 }
+'The list: ' + $List
 $git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 $readable = '^\.(txt|md|markdown|csv|tsv|json|ya?ml|xml|html?|css|js|ts|py|ps1|sh|ini|cfg|conf|toml|log|sql)$'
-foreach ($p in $paths) {
+foreach ($line in $lines) {
+  $p = Path-Of $line
+  $at = $line.IndexOf("`t")
+  $when = if ($at -gt 0) { '   (sent ' + $line.Substring(0, $at).Trim() + ')' } else { '' }
   ''
-  '== ' + $p
+  '== ' + $p + $when
   if (-not (Test-Path -LiteralPath $p)) { '  not there: moved, deleted, or on a drive that is unplugged'; continue }
   $i = Get-Item -LiteralPath $p -Force
   if (-not $i.PSIsContainer) {

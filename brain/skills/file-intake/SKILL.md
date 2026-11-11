@@ -53,7 +53,7 @@ By kind, whatever the size:
 python3 skills/file-intake/intake.py survey <folder or file>... --work <work folder>
 python3 skills/file-intake/intake.py convert --work <work folder>
 ```
-- **`survey`** walks the paths (or `--upload-list knowledge/systems/upload-point.md`, for what's waiting at the upload point) and writes `files.txt`, one row per file, and `survey.md`: counts by kind and by folder, copies, repos, the biggest files.
+- **`survey`** walks the paths (or `--upload-list C:\AI-Brain-Link\_upload\waiting.txt`, for what's waiting at the upload point, when it runs on the PC) and writes `files.txt`, one row per file, and `survey.md`: counts by kind and by folder, copies, repos, the biggest files.
 - **`convert`** writes each document's text to `text/<id>.md`, and adds how much reading there is, and the method that points to, to `survey.md`. Plain text needs nothing. PDF, Word, Excel, PowerPoint and email need [MarkItDown](https://github.com/microsoft/markitdown) (Microsoft's, free, MIT licence): `python -m pip install "markitdown[all]"`. Tell the owner you're installing it. It's safe to run again, and skips what's done.
 - **In a session on the owner's computer,** run them directly.
 - **In a cloud session,** the files are on the PC, so run both as one job ([my-pc](../my-pc/SKILL.md)) with `checkout` on and `artifact` set to the work folder, then download the artifact into a scratch folder: that copy is your work folder, and the agents you brief read the text from it. If the PC has no Python (the PC's note says), a job installs it first (`winget install --silent Python.Python.3.12`), and the runner restarts before the next job, as the my-pc skill says.
@@ -66,7 +66,7 @@ python3 skills/file-intake/intake.py convert --work <work folder>
   python $tool convert --work $work
   ```
 - **On a Mac,** the work folder is `~/AI-Brain-Link/_intake/<name>`, Python is `python3`, and the job runs through the Mac's own runner (its skill says how).
-- **When the pile came through the upload point,** take its lines off that list once `check` passes, as the upload-point skill's last step says. The files stay where they are.
+- **When the pile came through the upload point,** take its lines off that list once `check` passes, as the upload-point skill's last step says (`look.ps1 -Done`). The files stay where they are.
 - **The text stays out of the repo.** It's a working copy, it can be made again, and it may hold passwords the secrets gate keeps out of commits.
 
 ## Splitting

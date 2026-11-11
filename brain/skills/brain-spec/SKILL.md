@@ -69,7 +69,7 @@ All in this folder, plain Python 3 with nothing to install:
 - **`library.py audit --since <date>`**, for the weekly tidy-up: notes changed a lot since their card was checked, tasks finished since then, and skills with lessons.
 - **`check_links.py`**: broken links, notes nothing links to, big or binary files, and the core's and indexes' sizes.
 - **`move.py MAP`** moves files and folders and fixes every link to them (`--dry-run` first). Paths in plain text aren't links: backticked paths, workflows, script defaults and comments are listed in its report, for fixing by hand.
-- **`reminders.py`** prints the reminders that are due, and what's waiting at the [upload point](../upload-point/SKILL.md); the session-start hook runs it. A Claude Code hook only runs in a new session started in a clone of this repo, never for other agents, so whatever a hook does is also written in the notes (here, the core says to run it) to be done by hand.
+- **`reminders.py`** prints the reminders that are due, and, in a session on the owner's PC, what's waiting at the [upload point](../upload-point/SKILL.md); the session-start hook runs it. A Claude Code hook only runs in a new session started in a clone of this repo, never for other agents, so whatever a hook does is also written in the notes (here, the core says to run it) to be done by hand.
 - **`skill_updates.py`** checks copied skills against their sources ([find-skills](../find-skills/SKILL.md)).
 - **`brain_update.py`** applies brain updates from AnIdeaLab and sends their reports ([below](#brain-updates)).
 - `test_library.py` tests `library.py`.
@@ -117,7 +117,7 @@ Two kinds of hand-off:
 - **Plain English,** short full sentences. Use the owner's own words for what they want.
 - **Link notes with relative Markdown links,** like the ones in this note, so they work for agents, on GitHub and in Obsidian's graph. To link a section, use `note.md#heading`, in lower case with hyphens for spaces. Renaming a heading breaks those links, so search for the old anchor first; `check_links.py` reports any left.
 - **Whatever a note points to, any agent can get:** save it in this repo, a project's repo or on the PC under `C:\AI-Brain-Link\`, and say where. Never make a Claude artifact, or anything else only one AI app's account can open ([the starting rules](../../knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)). A page for the owner is an HTML file saved in one of those places.
-- **Big or binary files** (images, PDFs, video, zips) don't go in the brain: keep them on the PC under `C:\AI-Brain-Link\`, and say in the note where they are, since git keeps every version of a file and the brain would grow slow to sync. One exception: a file the owner drops at the [upload point](../upload-point/SKILL.md) that becomes a note, up to about 25 MB, stays next to its note as the raw original, so what the note came from is kept. Keys go in neither.
+- **Big or binary files** (images, PDFs, video, zips) don't go in the brain: keep them on the PC under `C:\AI-Brain-Link\`, and say in the note where they are, since git keeps every version of a file and the brain would grow slow to sync. One exception: a file the owner sends to the [upload point](../upload-point/SKILL.md) that becomes a note, up to about 25 MB, stays next to its note as the raw original, so what the note came from is kept. Keys go in neither.
 - **Code** for a project lives in the project's own repo, with its own `CLAUDE.md`.
 
 ## A skill

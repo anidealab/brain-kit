@@ -56,7 +56,7 @@ Wait until the run shows as completed, then read its job log. Put what it found 
 - **What waits on them:** the [tasks index](../../knowledge/tasks/README.md), "Waiting on the owner" at the top.
 - **More skills:** they can ask "find me a skill for X" ([find-skills](../find-skills/SKILL.md)).
 - **Long chats:** every reply rereads the whole chat, so a long one uses more of their plan. When a chat gets long, the agent saves where things stand in the job's task note and gives them a line to paste into a new chat, ending in "continue" ([handoff](../handoff/SKILL.md)).
-- **The upload point:** the "Upload point" shortcut on their desktop opens a small window for giving the brain files. They drag files or folders onto it, or right-click them in File Explorer and pick Send to, then My brain (on Windows 11, under "Show more options"), then tell you what to do with them ([upload-point](../upload-point/SKILL.md)). If the shortcut isn't there, give them the setup command in that skill.
+- **The upload point:** to give the brain files, they right-click files or folders in File Explorer and pick Send to, then My brain (on Windows 11, under "Show more options"), then tell you what to do with them ([upload-point](../upload-point/SKILL.md)). If My brain isn't in Send to, give them the setup command in that skill.
 - **Keys** (API keys for services, later): never pasted into a chat. When a job needs one, the agent gives them one command to paste into PowerShell, which opens the page that makes the key, reads it in hidden and saves it in the brain's GitHub secrets ([add-a-key](../add-a-key/SKILL.md)). Adding one by hand on GitHub is in [keys and accounts](../../knowledge/systems/keys-and-accounts.md).
 - **When a site is blocked** in a Claude session, the agent will say which; the owner can allow it in the session's environment settings (the environment menu in the session's title bar, then Edit, then Network access).
 
@@ -67,9 +67,9 @@ Then offer [the monthly deep audit](../brain-audit/deep-audit.md), in a line: on
 
 ## 7. Their files, if they have some
 If they said they have files to bring in, it's a job of its own, after this one: don't start reading files in the first session, which is for setting up.
-- **A few files** (up to a few dozen): ask them to drop them on the upload point and say "sort what I dropped" ([upload-point](../upload-point/SKILL.md)).
-- **A lot** (a whole folder, an old drive, years of documents): ask them to drop the folder on the upload point, or tell you where it is on their PC, and say it will be brought in with the [file-intake skill](../file-intake/SKILL.md): a look at what's there first, which costs almost none of their plan, then a plan for them to say go to. Suggest a fresh chat for it.
-- Either way, save it as a task they hold on the tasks shelf ("Drop the files for <what> on the upload point"), so it isn't lost if they do it another day.
+- **A few files** (up to a few dozen): ask them to send them with Send to, My brain and say "sort what I sent" ([upload-point](../upload-point/SKILL.md)).
+- **A lot** (a whole folder, an old drive, years of documents): ask them to send the folder with Send to, My brain, or tell you where it is on their PC, and say it will be brought in with the [file-intake skill](../file-intake/SKILL.md): a look at what's there first, which costs almost none of their plan, then a plan for them to say go to. Suggest a fresh chat for it.
+- Either way, save it as a task they hold on the tasks shelf ("Send the files for <what> with Send to, My brain"), so it isn't lost if they do it another day.
 
 ## 8. Finish
 - Take the "A new brain" paragraph out of the core, so this skill doesn't run again.

@@ -42,7 +42,7 @@ The kit gives a new owner the shape of a working second brain: a core every agen
 
 ## What the brain starts with
 - **General skills,** for the work most owners do, and the way to find more good ones when they need them: the [find-skills skill](../../../skills/find-skills/SKILL.md). Among them is the kit's own [windows-powershell skill](../../../skills/windows-powershell/SKILL.md), on the traps in Windows PowerShell that break agents' scripts.
-- **The upload point:** a small window on the owner's PC, and My brain in Send to, for files or folders of any kind, listed by path on GitHub for an agent to sort into the brain. Sorting moves files rather than copying them, so nothing is kept twice, and a code repo is learned where it is, so the agent is ready to work on it when asked. Windows only for now. How: the [upload-point skill](../../../skills/upload-point/SKILL.md).
+- **The upload point:** My brain in Send to on the owner's PC, for files or folders of any kind, listed by path in a plain text file on the PC for an agent to sort into the brain. It's a right-click and nothing more, so there's no window to keep open and nothing to sign in to, and an agent reads the list with one job on the PC. Sorting moves files rather than copying them, so nothing is kept twice, and a code repo is learned where it is, so the agent is ready to work on it when asked. Windows only for now. How: the [upload-point skill](../../../skills/upload-point/SKILL.md).
 
 ## Left out on purpose
 - **Notes about people, projects and tasks:** the shelves start empty, for the owner's own.
