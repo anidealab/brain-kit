@@ -27,7 +27,7 @@ It uses more of the owner's plan than a quiet week's tidy-up, so say which proje
 
 ## 1. Clean up
 1. **Brain updates first.** Pull, and if the session can reach github.com, run `python3 skills/brain-spec/brain_update.py check`. For each new update, read the owner its summary and apply it if they say go ([brain updates](../brain-spec/SKILL.md#brain-updates)).
-2. Run `python3 skills/brain-spec/library.py check`, `python3 skills/brain-spec/check_links.py` and `python3 skills/brain-spec/library.py audit --since <the last tidy-up's date>`. Fix what they report. The audit stops on a shallow clone, where every note would look changed; `git fetch --unshallow origin main` fixes that.
+2. Run `python3 skills/brain-spec/library.py check`, `python3 skills/brain-spec/check_links.py` and `python3 skills/brain-spec/library.py audit --since <the last tidy-up's date>`. Fix what they report. In a shallow clone (a cloud session's, often) the audit counts what the clone's history holds and says what it couldn't see; `git fetch --unshallow origin main` first gives the whole picture.
 3. Reread the notes the audit lists as changed a lot since their card's `updated` date; fix any card that no longer matches, and set `updated` to today.
 4. Two cards that say nearly the same thing: merge the notes, and mark the merged-away one `dropped` or `superseded` with a link to the one that stays. Split a note doing two jobs.
 5. For each task finished since the last tidy-up, save anything learned that never became a note ([brain spec](../brain-spec/SKILL.md#saving-knowledge)).

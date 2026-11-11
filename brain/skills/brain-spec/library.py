@@ -602,33 +602,61 @@ def git(lib, *args):
         return ""
 
 
+def shallow_edge(lib):
+    """In a shallow clone (a cloud session's, say): (the commits its history stops at, the day of the newest of them).
+    Each of those commits looks as if it added every file, so the audit leaves them out. (set(), None) in a whole clone."""
+    if git(lib, "rev-parse", "--is-shallow-repository").strip() != "true":
+        return set(), None
+    path = git(lib, "rev-parse", "--git-path", "shallow").strip()
+    try:
+        with open(path if os.path.isabs(path) else os.path.join(lib.root, path), encoding="utf-8") as fh:
+            edge = set(fh.read().split())
+    except OSError:
+        edge = set()
+    days = [to_date(git(lib, "show", "-s", "--format=%cs", c).strip()) for c in edge]
+    return edge, max([d for d in days if d], default=date.today())
+
+
 def audit(lib, since):
-    """Notes changed by more than about 20 lines since their card's date, and tasks finished since `since`."""
-    if git(lib, "rev-parse", "--is-shallow-repository").strip() == "true":
-        # A shallow clone's oldest commit adds every file, so every note looks changed (24 Oct 2026 audit: 151 instead of 2).
-        sys.exit("This clone is shallow, so every note would look changed. Run `git fetch --unshallow origin main` first.")
-    changed, finished = [], []
+    """Notes changed by more than about 20 lines since their card's date, and tasks finished since `since`.
+    In a shallow clone it counts what the clone's history holds, and also returns what it couldn't see:
+    (changed, finished, a line to print or None)."""
+    # A shallow clone's oldest commit adds every file, so every note would look changed (an audit once listed 151 instead of 2).
+    edge, reach = shallow_edge(lib)
+    changed, finished, unseen = [], [], 0
     for path, card in lib.all_notes():
         rel = lib.rel(path)
         checked = to_date(card.get("updated"))
         if checked:
-            log = git(lib, "log", "--follow", "--numstat", "--format=@%an",
+            log = git(lib, "log", "--follow", "--numstat", "--format=@%H %an",
                       f"--since={(checked + timedelta(days=1)).isoformat()}T00:00:00Z", "--", rel)
-            lines, bot = 0, False
+            lines, skip = 0, False
             for row in log.splitlines():
                 if row.startswith("@"):
-                    bot = row[1:].startswith("github-actions")  # the repo's own Actions
+                    commit, _, author = row[1:].partition(" ")
+                    skip = author.startswith("github-actions") or commit in edge  # the repo's own Actions; where a shallow clone stops
                     continue
                 parts = row.split("\t")
-                if not bot and len(parts) == 3 and parts[0].isdigit():
+                if not skip and len(parts) == 3 and parts[0].isdigit():
                     lines += int(parts[0]) + int(parts[1])
             if lines > 20:
                 changed.append(f"{rel}: {lines} lines changed since its card was checked ({card.get('updated')})")
+            elif reach and checked < reach:
+                unseen += 1  # changes between its card's date and where this clone's history starts can't be counted
         if lib.top(path) == "tasks" and card.get("status") in FINISHED:
-            diff = git(lib, "log", "--follow", "-p", "--format=", f"--since={since.isoformat()}T00:00:00Z", "--", rel)
+            diff = git(lib, "log", "--follow", "-p", "--format=@%H", f"--since={since.isoformat()}T00:00:00Z", "--", rel)
+            diff = "".join(part for part in re.split(r"(?m)^@", diff) if part.split("\n", 1)[0].strip() not in edge)
             if re.search(r"^\+status:\s*(" + "|".join(FINISHED) + r")\s*$", diff, re.M):
                 finished.append(f"{rel}: {card.get('status')}: {card.get('about', '')}")
-    return changed, finished
+    note = None
+    if reach:
+        day = f"{reach.day} {reach:%b %Y}"
+        note = (f"This clone is shallow: its history starts on {day}, so changes before then aren't counted. "
+                + (f"{unseen} note{'s' if unseen != 1 else ''} with a card checked before {day} may have changed more than shown"
+                   if unseen else "Every note's card was checked since, so the list of changed notes is whole")
+                + ("" if since >= reach else f", and a task finished before {day} isn't listed")
+                + ". For the whole picture: `git fetch --unshallow origin main`, then run this again. The rest below doesn't need the history.")
+    return changed, finished, note
 
 
 # The command line -------------------------------------------------------------
@@ -667,7 +695,9 @@ def main(argv=None):
         since = to_date(args.since)
         if not since:
             sys.exit(f'--since "{args.since}" isn\'t a date like 17 Oct 2026')
-        changed, finished = audit(lib, since)
+        changed, finished, note = audit(lib, since)
+        if note:
+            print(note)
         print(f"Notes changed a lot since their card was checked: {len(changed)}")
         for c_ in changed:
             print("  " + c_)

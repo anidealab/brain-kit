@@ -224,6 +224,40 @@ class LibraryTest(unittest.TestCase):
         write(older, note("An older one.", status="current") + "Narrowed by [the newer](2026-10-18-newer.md).\n")
         self.assertEqual(library.one_way_decisions(self.lib), [], "a link back answers it")
 
+    def test_audit_in_a_shallow_clone(self):
+        import pathlib
+        import shutil
+        import subprocess
+        from datetime import date
+        if not shutil.which("git"):
+            self.skipTest("no git here")
+        root = self.tmp.name
+
+        def git(*args, day=None, cwd=root):
+            env = dict(os.environ, GIT_AUTHOR_DATE=f"{day}T12:00:00Z", GIT_COMMITTER_DATE=f"{day}T12:00:00Z") if day else None
+            subprocess.run(["git", "-c", "user.name=A test", "-c", "user.email=test@example.com", "-c", "commit.gpgsign=false", *args], cwd=cwd, env=env,
+                           check=True, capture_output=True)
+
+        def grow(rel, day):
+            with open(os.path.join(root, rel), "a", encoding="utf-8") as fh:
+                fh.write("A new line.\n" * 30)
+            git("add", "-A")
+            git("commit", "-q", "-m", "more", day=day)
+
+        git("init", "-q")
+        git("add", "-A")
+        git("commit", "-q", "-m", "start", day="2026-10-18")
+        grow("knowledge/areas/money.md", "2026-10-25")
+        grow("knowledge/ventures/plumbing.md", "2026-10-28")
+        changed, _, note_ = library.audit(self.lib, date(2026, 10, 20))
+        self.assertEqual(sorted(c.split(":")[0] for c in changed), ["knowledge/areas/money.md", "knowledge/ventures/plumbing.md"])
+        self.assertIsNone(note_)
+        with tempfile.TemporaryDirectory() as other:  # a clone holding the last two commits: the first of them looks as if it added every file
+            git("clone", "-q", "--depth", "2", pathlib.Path(root).as_uri(), "clone", cwd=other)
+            changed, _, note_ = library.audit(library.Library(os.path.join(other, "clone")), date(2026, 10, 20))
+            self.assertEqual([c.split(":")[0] for c in changed], ["knowledge/ventures/plumbing.md"], "only what its history holds")
+            self.assertIn("This clone is shallow: its history starts on 25 Oct 2026", note_)
+
 
 if __name__ == "__main__":
     unittest.main()
