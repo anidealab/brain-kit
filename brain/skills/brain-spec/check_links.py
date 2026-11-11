@@ -2,7 +2,8 @@
 """Check the brain's notes for problems a script can find, for the weekly brain audit.
 
 It reports:
-- links in notes that point at files that don't exist,
+- links in notes that point at files that don't exist (a link written as an example, in
+  backticks or a fenced block, isn't a link, and isn't read),
 - links to a section (note.md#heading) whose heading isn't in that note,
 - notes that no other note links to (a finished library note is fine: its index counts it),
 - big or binary files in the repo (they belong on the PC),
@@ -29,6 +30,7 @@ from urllib.parse import unquote
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # skills/brain-spec/ is two folders down
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 FENCE = re.compile(r"```.*?```", re.S)
+CODE = re.compile(r"(`+)(?!`)[^\n]+?(?<!`)\1(?!`)")  # words in backticks on one line: a link written there is an example, not a link
 TEXT = {".md", ".py", ".js", ".mjs", ".cjs", ".css", ".json", ".yml", ".yaml", ".txt", ".html", ".gitignore", ".sh", ".ps1", ".gyroflow", ".xml", ".xsd", ".dtd", ".ent", ".patch"}
 SKILLS = "skills/"
 LISTS = "lists/"  # inside skills/: the lists by topic, linked from its README
@@ -108,7 +110,7 @@ def main():
     broken, sections, inbound = [], [], collections.Counter()
     for note in notes:
         with open(os.path.join(ROOT, note), encoding="utf-8") as fh:
-            text = FENCE.sub("", fh.read())
+            text = CODE.sub("", FENCE.sub("", fh.read()))
         for target in LINK.findall(text):
             if re.match(r"^[a-z]+:", target):
                 continue
