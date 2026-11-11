@@ -8,7 +8,8 @@ This brain was started from the AnIdeaLab brain kit, and AnIdeaLab sends updates
 - updates/NNNN-<words>.md is each update's message: a summary for the owner, what changed and
   why, and anything to do beyond the files. The commit that added it holds brain/ as of that update.
 
-The owner decides each update: the agent reads them its summary, and applies it only if they say go.
+The owner decides each update: the agent reads them its summary, and applies it only if they say go
+after hearing it, even when they asked for the update by name.
 
     python3 skills/brain-spec/brain_update.py check        # updates this brain hasn't had, with each one's summary
     python3 skills/brain-spec/brain_update.py apply 3      # the owner said go: bring update 3's files in, start its report, print its message
@@ -27,14 +28,27 @@ goes too, and the agent puts back what's the owner's own (but not the brain's ow
 which give way to the kit's: the brain spec's "Brain updates" says why). Obsidian's settings files
 are the exception: there the brain's own lines stay, since the owner set them (two owners' brains,
 26 Oct 2026). A file the update adds is written, one it changed that this brain no longer has is
-written again, and one it deleted is deleted. Then it records the
+written again, and one it deleted is deleted.
+
+Three things `apply` never merges line by line. A copied skill (one with a line in skills/lists/sources.md)
+is kept as it came, so the update's copy of each changed file replaces this brain's whole, with the
+brain's "In this brain" section put back at the end of its SKILL.md and its LESSONS.md untouched. But
+where this brain has brought a source up to date itself (`skill_updates.py update` moved its commit on
+in sources.md, so it isn't the kit's), the skill is left whole as it is, with that source's "From" line
+and its entry in the copied skills' map: an update never takes a skill back to an older copy. A copied
+skill whose set has no commit is replaced only if this brain's copy is the kit's earlier one. A shelf's
+index, between its markers, is left for `library.py build`, which `finish` runs. And the "On kit update"
+line of the brain-updates note is this script's own; the rest of that note is merged like any other. `apply`
+says what it left. Then it records the
 update in knowledge/systems/brain-updates/README.md and starts knowledge/systems/brain-updates/NNNN-report.md
 with what it did and a section for each thing the agent must say. `finish` runs the brain's checks, adds
 them to the report, and won't finish while a section is still empty, so every report says enough. A skipped update can still be applied later, if the owner asks.
 
 `compare` checks this brain against the exemplar, the kit's brain/ at the update this brain is on
 (26 Oct 2026, from update 3). Files that should match the kit exactly (the scripts, workflows, the
-kit's own skills, the copied skills, the brain graph) are listed where they differ; files the owner
+kit's own skills, the copied skills, the brain graph) are listed where they differ, with the copied
+skills this brain has brought up to date itself, and those with no source commit, listed apart as
+expected; files the owner
 fills in (the core, the front door, the skills list and lists, the knowledge library) are checked for
 their shape, not their words. It prints counts and file names only, and only counts the owner's own
 notes and files. `finish` runs it and puts its summary in the report.
@@ -241,7 +255,9 @@ def do_check(_args):
         path, _, day = found[n]
         text = message(head, found, n)
         print(f"Update {n}, sent {day}: {text.splitlines()[0].lstrip('# ')}\n\nSummary for the owner:\n{summary(text)}\n")
-    print(f"Read the owner update {new[0]}'s summary, and ask whether to go ahead. Go: brain_update.py apply {new[0]}. No: brain_update.py skip {new[0]}.")
+    print(f"Read the owner update {new[0]}'s summary before anything else, then ask whether to go ahead and wait for their answer. That holds "
+          f"even if they asked for the update by name (\"apply the brain update\"): asking for it isn't the go, since they haven't heard what "
+          f"it does. Go: brain_update.py apply {new[0]}. No: brain_update.py skip {new[0]}.")
 
 
 def do_apply(args):
@@ -258,22 +274,40 @@ def do_apply(args):
     base = found[n - 1][1] if n - 1 in found else git("rev-list", "--max-parents=0", head).split()[0]
     start = kit_start()
     changes = git("diff", "--name-status", "--no-renames", base, target, "--", "brain/").splitlines()
-    done = {"added": [], "merged": [], "clashed": [], "kept": [], "restored": [], "deleted": [], "same": []}
+    done = {"added": [], "merged": [], "clashed": [], "kept": [], "replaced": [], "restored": [], "deleted": [], "same": []}
     places = []  # (file, how, [(brain's lines, update's lines)])
+
+    # The copied skills, by the kit's record before and after the update, and the sources this brain has brought up to date itself.
+    def kit_sources(commit):
+        data = blob(commit, "brain/" + SOURCES)
+        return read_sources(fill(data, start).decode("utf-8", errors="replace")) if data else ({}, {})
+    (old_skills, old_repos), (new_skills, new_repos) = kit_sources(base), kit_sources(target)
+    mine_repos = {}
+    if os.path.isfile(os.path.join(ROOT, SOURCES)):
+        mine_repos = read_sources(open(os.path.join(ROOT, SOURCES), encoding="utf-8", errors="replace").read())[1]
+    own = own_commits(mine_repos, old_repos, new_repos)
+    kit_copied = {**old_skills, **new_skills}  # each copied skill's source
+    copied = {}  # {copied skill: its files the update changed}, taken or left a whole skill at a time, below
+
     for line in changes:
         status, kit_path = line.split("\t", 1)
         rel = fill(kit_path[len("brain/"):].encode(), start).decode()
-        if rel == f"{FOLDER}/README.md" and os.path.isfile(os.path.join(ROOT, rel)):
-            continue  # this brain's own record of its updates; kept below
         dest = os.path.join(ROOT, rel)
         mine = open(dest, "rb").read() if os.path.isfile(dest) else None
+        if rel == f"{FOLDER}/README.md" and mine is not None and status != "M":
+            continue  # this brain's own record of its updates: never replaced or deleted, only merged
+        parts = rel.split("/")
+        if len(parts) >= 3 and parts[0] == "skills" and parts[1] in kit_copied:
+            copied.setdefault(parts[1], []).append((status, rel, dest, mine, kit_path))
+            continue
         if status == "D":
             if mine is not None:
                 os.remove(dest)
                 done["deleted"].append(rel)
             continue
-        theirs = fill(blob(target, kit_path), start)
-        old = blob(base, kit_path) if status == "M" else None
+        # What's this brain's whatever the update says (a shelf's index, its own sources' commits) goes into both kit copies first.
+        theirs = with_own(rel, mine, fill(blob(target, kit_path), start), own)
+        old = with_own(rel, mine, fill(blob(base, kit_path), start), own) if status == "M" else None
         if mine == theirs:
             done["same"].append(rel)
             continue
@@ -286,20 +320,74 @@ def do_apply(args):
             done["kept" if setting else "clashed"].append(rel)
             places.append((rel, "whole", []))
         else:
-            new, hunks = merge3(mine, fill(old, start), theirs, keep="ours" if setting else "theirs")
+            new, hunks = merge3(mine, old, theirs, keep="ours" if setting else "theirs")
+            if new == mine and not hunks:  # the update only changed what's this brain's to keep, or this brain had the change already
+                done["same"].append(rel)
+                continue
             done[("kept" if setting else "clashed") if hunks else "merged"].append(rel)
             if hunks:
                 places.append((rel, "ours" if setting else "theirs", hunks))
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         open(dest, "wb").write(new)
 
+    # A copied skill is kept as it came, so it's never merged line by line: the update's copy of each changed file goes in
+    # whole, or the whole skill stays as this brain has it.
+    left, edited = [], []  # (skill, why it was left); files replaced that had this brain's own changes
+    for name in sorted(copied):
+        repo = kit_copied[name]
+        files = [(status, rel, dest, mine,
+                  fill(blob(base, kit_path), start) if status != "A" else None,
+                  fill(blob(target, kit_path), start) if status != "D" else None)
+                 for status, rel, dest, mine, kit_path in copied[name]]
+        if repo in own:
+            kit_commit = (new_repos.get(repo) or old_repos[repo])[0][:7]
+            left.append((name, f"this brain has brought {repo} up to date itself, to commit `{mine_repos[repo][0][:7]}` (the kit's copy is at `{kit_commit}`)"))
+            continue
+        if repo is None and any(mine is not None and as_it_came(rel, mine) not in (as_it_came(rel, old), as_it_came(rel, new))
+                                for _, rel, _, mine, old, new in files):
+            left.append((name, "its set has no source commit to go by, and this brain's copy isn't the kit's earlier one, so it may be a newer copy this brain brought in"))
+            continue
+        for status, rel, dest, mine, old, new in files:
+            if new is None:
+                if mine is not None:
+                    os.remove(dest)
+                    done["deleted"].append(rel)
+                continue
+            if mine is not None and rel == f"skills/{name}/SKILL.md":
+                new = with_section(mine, new)
+            if mine == new:
+                done["same"].append(rel)
+                continue
+            if mine is None:
+                done["added" if status == "A" else "restored"].append(rel)
+            else:
+                done["replaced"].append(rel)
+                if as_it_came(rel, mine) != as_it_came(rel, old):
+                    edited.append(rel)
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            open(dest, "wb").write(new)
+
     before = subprocess.run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip() or "unknown"
     record(n, "applied")
-    report = start_report(n, path, day, done, on, start, before, places)
+    report = start_report(n, path, day, done, on, start, before, places, left)
     text = message(head, found, n)
     print(f"Update {n} ({day}): {len(done['added'])} added, {len(done['merged'])} merged, {len(done['clashed'])} with the update's lines "
-          f"over this brain's, {len(done['kept'])} Obsidian settings kept as this brain had them, {len(done['restored'])} brought back, "
-          f"{len(done['deleted'])} deleted, {len(done['same'])} already the same.")
+          f"over this brain's, {len(done['kept'])} Obsidian settings kept as this brain had them, {len(done['replaced'])} copied-skill files "
+          f"replaced whole, {len(done['restored'])} brought back, {len(done['deleted'])} deleted, {len(done['same'])} already the same.")
+    if done["replaced"]:
+        print("\nCopied skills are kept as they came, so the update's copy of each changed file replaced this brain's whole, with no "
+              "line-by-line merge. Each one's \"In this brain\" section and LESSONS.md stay.")
+        if edited:
+            print("These had changes of this brain's own outside that section, which went with the old copy (`git diff HEAD -- <file>` "
+                  "shows them; put back only what's the owner's own, in the \"In this brain\" section): " + ", ".join(edited))
+    if left:
+        print("\nCopied skills the update changed that were left whole as this brain has them. Nothing to do for these: don't take the "
+              "kit's copies back, and `compare` lists them apart.")
+        for name, why in left:
+            print(f"  - {name}: {why}.")
+        if own:
+            print(f"  Those sources' \"From\" lines in {SOURCES} and their entries in {MAP} stay this brain's too; "
+                  "the weekly tidy-up's `skill_updates.py check` carries them on from there.")
     if places:
         print_places(places)
     print(f"Report started: {report}\n\nThe update's message, to do now:\n\n{text}\n\n"
@@ -376,7 +464,7 @@ OLD_PLACEHOLDER = re.compile(r"^\*The agent that applied it fills this in[^\n]*\
 KIT_PATHS = ("skills/", ".github/", ".obsidian/", "CLAUDE.md", "README.md", f"{FOLDER}/")  # problems here aren't the owner's notes
 
 
-def start_report(n, path, day, done, on, start, before, places):
+def start_report(n, path, day, done, on, start, before, places, left=()):
     today = f"{date.today().day} {date.today():%b %Y}"
     sent = date.fromisoformat(day)
     sent = f"{sent.day} {sent:%b %Y}"
@@ -389,17 +477,21 @@ def start_report(n, path, day, done, on, start, before, places):
              "## What the script did",
              f"{sum(len(v) for k, v in done.items() if k != 'same')} files changed: " + ", ".join(
                  f"{len(done[k])} {label}" for k, label in (("added", "added"), ("merged", "merged"), ("clashed", "with the update's lines over this brain's"),
-                                                           ("kept", "Obsidian settings kept as the owner had them"), ("restored", "brought back"), ("deleted", "deleted"))
+                                                           ("kept", "Obsidian settings kept as the owner had them"),
+                                                           ("replaced", "copied-skill files replaced whole"), ("restored", "brought back"), ("deleted", "deleted"))
                  if done[k]) + f"; {len(done['same'])} already the same.", ""]
     names = {"added": "New files", "merged": "Merged with this brain's own changes",
              "clashed": "The update's lines over this brain's, where both changed the same place",
              "kept": "This brain's Obsidian settings kept over the update's, where both changed the same place",
+             "replaced": "Copied skills' files replaced whole with the update's copies (never merged line by line)",
              "restored": "Brought back (the update changed them, and this brain had deleted them)", "deleted": "Deleted"}
     for key, label in names.items():
         if done[key]:
             lines.append(f"- **{label}:** " + ", ".join(f"`{p}`" for p in done[key]))
     if not any(done[k] for k in names):
         lines.append("- Nothing: every file was already the same.")
+    if left:
+        lines.append("- **Copied skills the update changed, left whole as this brain has them:** " + "; ".join(f"`{name}` ({why})" for name, why in left))
     if places:
         lines += ["", "Where both changed the same lines (how many lines each side had there; what each said is in the section below, in the agent's words):"]
         for rel, how, hunks in places:
@@ -481,6 +573,87 @@ LESSONS_LINK = re.compile(rb"(?m)^Lessons from using this skill in (?:the|this) 
 SKILL_LINK = re.compile(r"\]\(\.\./([a-z0-9-]+)/SKILL\.md\)")
 SOURCE_LINE = re.compile(r"From \[[^\]]+\]\(https://github\.com/[^)\s]+\), commit `[0-9a-f]{7,40}`")
 INDEX_MARKS = ("<!-" + "- index:start -->", "<!-" + "- index:end -->")
+INDEX_PART = re.compile("(?s)(?<=" + re.escape(INDEX_MARKS[0]) + ").*?(?=" + re.escape(INDEX_MARKS[1]) + ")")  # a shelf's index: library.py build writes it
+SOURCES = "skills/lists/sources.md"  # the record of copied skills: a "From" line with the commit for each source, and its skills
+MAP = "skills/sources/upstream.json"  # where each copied skill sits in its source, which skill_updates.py writes
+FROM_LINE = re.compile(r"From \[[^\]]+\]\(https://github\.com/([\w.-]+/[\w.-]+?)/?\), commit `([0-9a-f]{7,40})`[^\r\n]*")
+ON_LINE = re.compile(r"(?m)^\*\*On kit update:\*\*[^\r\n]*")
+
+
+def read_sources(text):
+    """The record of copied skills, read: ({copied skill: its source's repo, or None where its set has no commit},
+    {repo: (the commit this copy is at, its whole "From" line)})."""
+    skills, repos, repo = {}, {}, None
+    for line in re.sub(r"(?s)```.*?```", "", text).splitlines():
+        m = FROM_LINE.search(line)
+        if re.match(r"^#{1,6} ", line):
+            repo = None
+        elif m:
+            repo = m.group(1)
+            repos[repo] = (m.group(2), m.group(0))
+        elif line.lstrip().startswith("- "):
+            for name in SKILL_LINK.findall(line):
+                skills[name] = repo
+    return skills, repos
+
+
+def own_commits(mine, *kit):
+    """The sources this brain has brought up to date itself (skill_updates.py update moves a source's commit on in
+    sources.md): {repo: this brain's "From" line} for each source the kit has too, at a commit that isn't this brain's.
+    `mine` and each of `kit` are a sources.md's {repo: (commit, line)}; commits are written at different lengths."""
+    same = lambda a, b: a.startswith(b) or b.startswith(a)
+    return {repo: line for repo, (commit, line) in mine.items()
+            if any(repo in k for k in kit) and not any(same(commit, k[repo][0]) for k in kit if repo in k)}
+
+
+def with_own(rel, mine, data, own):
+    """A kit copy of a file with the parts that are this brain's whatever an update says put into it, so a merge finds
+    nothing changed there and they stay: a shelf's index, which library.py build writes from this brain's notes; the
+    "On kit update" line of the brain-updates note, which this script writes; and, for each source this brain has
+    brought up to date itself, its "From" line in sources.md and its entry in the copied skills' map."""
+    if data is None or mine is None or b"\0" in data or b"\0" in mine or not rel.endswith((".md", ".json")):
+        return data
+    text, was = data.decode("utf-8", errors="surrogateescape"), mine.decode("utf-8", errors="surrogateescape")
+    if rel.endswith(".md"):
+        index = INDEX_PART.search(was)
+        if index:
+            text = INDEX_PART.sub(lambda _: index.group(0), text, count=1)
+        line = ON_LINE.search(was) if rel == f"{FOLDER}/README.md" else None
+        if line:
+            text = ON_LINE.sub(lambda _: line.group(0), text, count=1)
+        if rel == SOURCES and own:
+            text = FROM_LINE.sub(lambda m: own.get(m.group(1), m.group(0)), text)
+    elif rel == MAP and own:
+        try:
+            was = json.loads(was)
+            kept = {s.get("repo"): s for s in was["sources"]}
+            now = json.loads(text)
+            now["made"] = was.get("made", now.get("made"))  # this brain made its map again when it brought them up to date
+            now["sources"] = [kept.get(s.get("repo"), s) if s.get("repo") in own else s for s in now["sources"]]
+            text = json.dumps(now, indent=1) + "\n"  # as skill_updates.py map writes it
+        except (ValueError, KeyError, TypeError, AttributeError):
+            pass
+    return text.encode("utf-8", errors="surrogateescape")
+
+
+def as_it_came(rel, data):
+    """A copied skill's file without what a brain adds to one: the "In this brain" section at the end of its SKILL.md,
+    the line linking its LESSONS.md, and its own line endings. None for no file."""
+    if data is None:
+        return None
+    data = data.replace(b"\r\n", b"\n")
+    if rel.count("/") == 2 and rel.endswith("/SKILL.md"):
+        data = re.sub(rb"\n{3,}", b"\n\n", LESSONS_LINK.sub(b"", IN_THIS_BRAIN.split(data)[0]))
+    return data.rstrip()
+
+
+def with_section(mine, new):
+    """The kit's copy of a copied skill's SKILL.md with this brain's "In this brain" section, which links its lessons,
+    put back at the end: skill_updates.py update keeps it too."""
+    m = IN_THIS_BRAIN.search(mine)
+    if not m or IN_THIS_BRAIN.search(new):
+        return new
+    return new.rstrip() + b"\n\n" + mine[m.start():]
 
 
 def kind(rel):
@@ -577,11 +750,20 @@ def compare(n=None):
             return ""
 
     kit_copied = {skill for skill, _ in topic_lines(kit_text("skills/lists/sources.md"))}  # a line in the record, not a link in its prose
+    # A copied skill this brain has brought up to date from its source itself differs from the kit's, as it should: the commit
+    # in each sources.md says so. One whose set has no commit can't say which copy is newer. Both are listed apart, by skill.
+    skill_source, kit_repos = read_sources(kit_text(SOURCES))
+    mine_repos = read_sources(mine_text(SOURCES))[1]
+    own = own_commits(mine_repos, kit_repos)
+    ahead, unsure = {}, {}  # {copied skill: its files that differ from the kit's or aren't here}
     rows = {k: {"same": 0, "changed": [], "missing": []} for k in ("kit", "settings", "filled")}
     for p in sorted(kit):
         row = rows[kind(p)]
+        parts = p.split("/")
+        skill = parts[1] if len(parts) >= 3 and parts[0] == "skills" and parts[1] in skill_source and kind(p) == "kit" else None
+        aside = None if not skill else ahead if skill_source[skill] in own else unsure if skill_source[skill] is None else None
         if p not in have:
-            row["missing"].append(p)
+            (ahead.setdefault(skill, []) if aside is ahead else row["missing"]).append(p)
             continue
         if p not in differ:
             row["same"] += 1
@@ -589,7 +771,6 @@ def compare(n=None):
         theirs = texts.get(kit[p])
         theirs = fill(theirs, start).replace(b"\r\n", b"\n") if theirs is not None else None
         ours = open(os.path.join(ROOT, p), "rb").read().replace(b"\r\n", b"\n")
-        parts = p.split("/")
         if len(parts) == 3 and parts[0] == "skills" and parts[2] == "SKILL.md" and parts[1] in kit_copied:
             ours = IN_THIS_BRAIN.split(ours)[0]  # a copied skill's "In this brain" section is the brain's own
         if len(parts) == 3 and parts[0] == "skills" and parts[2] == "SKILL.md" and theirs is not None:
@@ -598,7 +779,7 @@ def compare(n=None):
         if theirs is not None and ours.rstrip() == theirs.rstrip():
             row["same"] += 1
         else:
-            row["changed"].append(p)
+            (row["changed"] if aside is None else aside.setdefault(skill, [])).append(p)
 
     # What's in this brain and not the kit: the owner's own. Skill folders and lists are named; notes and other files are counted.
     kit_skills = {p.split("/")[1] for p in kit if p.startswith("skills/") and p.count("/") >= 2}
@@ -663,13 +844,23 @@ def compare(n=None):
     k, s, fl = rows["kit"], rows["settings"], rows["filled"]
     url = EXEMPLAR.format(commit)
     total = lambda r: r["same"] + len(r["changed"]) + len(r["missing"])
+    apart = sum(len(v) for v in ahead.values()) + sum(len(v) for v in unsure.values())
     out = [f"Compared with the kit's brain at update {on}: {url}", "",
-           f"Should match the kit (the scripts, workflows, the kit's own skills, the copied skills, the brain graph): {total(k)} files, "
-           f"{k['same']} the same, {len(k['changed'])} changed, {len(k['missing'])} missing."]
+           f"Should match the kit (the scripts, workflows, the kit's own skills, the copied skills, the brain graph): {total(k) + apart} files, "
+           f"{k['same']} the same, {len(k['changed'])} changed, {len(k['missing'])} missing"
+           + (f", {apart} in copied skills listed apart" if apart else "") + "."]
     if k["changed"]:
         out.append("  changed: " + files(k["changed"]))
     if k["missing"]:
         out.append("  missing: " + files(k["missing"]))
+    if ahead:
+        out.append("  Copied skills this brain has brought up to date from their sources itself, so they differ from the kit's as they should. "
+                   "Leave them, and never take the kit's copies back: " + "; ".join(
+                       f"{name} ({skill_source[name]} at `{mine_repos[skill_source[name]][0][:7]}` here and `{kit_repos[skill_source[name]][0][:7]}` "
+                       f"in the kit, {len(paths)} file{'s' if len(paths) != 1 else ''})" for name, paths in sorted(ahead.items())) + ".")
+    if unsure:
+        out.append("  Copied skills with no source commit (the ones a Claude session supplies) that differ from the kit's, where no commit "
+                   "says which copy is newer: " + "; ".join(f"{name} ({files(paths, 6)})" for name, paths in sorted(unsure.items())) + ".")
     out.append(f"The owner's settings (Obsidian's settings, .gitignore, the copied skills' map): {total(s)} files, {s['same']} the same, "
                f"{len(s['changed'])} changed, {len(s['missing'])} missing. Differences here are expected.")
     out.append(f"Filled in by the owner, checked for shape (the core, the front door, the skills list and lists, the knowledge library): "
@@ -705,6 +896,15 @@ def do_compare(args):
             sys.exit(f"brain_update: the kit's brain at update {on} has no {path}.")
         theirs = fill(blobs([kit[path]])[kit[path]] or b"", start)
         dest = os.path.join(ROOT, path)
+        if args.take and path.startswith("skills/") and SOURCES in kit and os.path.isfile(os.path.join(ROOT, SOURCES)):
+            # One of the kit's files among a newer copy's would leave a copied skill at no commit at all.
+            skill_source, kit_repos = read_sources(fill(blobs([kit[SOURCES]])[kit[SOURCES]] or b"", start).decode("utf-8", errors="replace"))
+            mine_repos = read_sources(open(os.path.join(ROOT, SOURCES), encoding="utf-8", errors="replace").read())[1]
+            repo = skill_source.get(path.split("/")[1])
+            if repo in own_commits(mine_repos, kit_repos):
+                sys.exit(f"brain_update: {path} is in a copied skill this brain has brought up to date from {repo} itself (commit "
+                         f"`{mine_repos[repo][0][:7]}` here, `{kit_repos[repo][0][:7]}` in the kit), so the kit's copy isn't the one to keep, "
+                         f"and nothing was changed. `skill_updates.py check` says how the skill stands against its source.")
         if args.take:
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             open(dest, "wb").write(theirs)
@@ -719,9 +919,12 @@ def do_compare(args):
         return
     out, _ = compare(args.number)
     print("\n".join(out))
-    print("\nWhere a file that should match the kit differs, the kit's copy is the one to keep, unless it holds the owner's own (the brain spec's "
+    print("\nWhere a file listed as changed or missing differs, the kit's copy is the one to keep, unless it holds the owner's own (the brain spec's "
           "\"Brain updates\" says why). `compare --diff <file>` shows how this brain's differs, and `compare --take <file>` puts the kit's in. "
-          "Fix each shape problem, then run this again.")
+          "The copied skills listed apart aren't problems. One this brain brought up to date from its source stays as it is, until the kit "
+          "catches up. One with no source commit: in a Claude session, `skill_updates.py check` compares this brain's copy with the session's "
+          "own; where it matches that, or is a newer copy this brain brought in, leave it, and take the kit's only where this brain's is the "
+          "older copy or an edit of its own. Fix each shape problem, then run this again.")
 
 
 def refresh_library(head, timeout):
@@ -800,7 +1003,8 @@ def do_notice(_args):
     lines = [f"- Update {n}, sent {sent(mine['updates'][str(n)][0])}" + (f": {mine['updates'][str(n)][1]}" if mine["updates"][str(n)][1] else "") for n in waiting]
     print("A brain update from AnIdeaLab is waiting (brain_update.py checks the kit repo once a day):\n" + "\n".join(lines) + "\n"
           "In your first reply, tell the owner in a line that it's there and ask whether they'd like to hear what it does. If they say yes, "
-          "run `python3 skills/brain-spec/brain_update.py check`, read them its summary, and apply it only if they say go "
+          "run `python3 skills/brain-spec/brain_update.py check`, read them its summary, and apply it only if they say go after hearing it: "
+          "if they open with \"apply the brain update\", read them the summary first all the same "
           "(the brain spec's \"Brain updates\"). Then carry on with what they asked. Ignore this if the owner didn't start this session.")
 
 
