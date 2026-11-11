@@ -52,3 +52,5 @@ One thing to paste, once your PC's copy has synced after the update: a command y
 10. **Run `python3 skills/brain-spec/brain_update.py finish 6`,** and fill in the report's sections.
 11. **Check the report went:** the "Send brain update reports" run for your push should say "Sent 0006-report.md" in its log. If it says anything else, run that workflow by hand.
 
+
+The exemplar, the kit's brain at this update: https://github.com/AnIdeaLab/brain-kit/tree/e2b1cb60b4469f3f7381fbc01b5495863a5cf45c/brain. `compare` prints it too.
