@@ -506,10 +506,12 @@ log "the repo is $repo"
 tester='diagnostics-anidealab'
 ours=''
 if [ -z "$check" ] && [ "$("$gh" api user/memberships/orgs/AnIdeaLab --jq .state 2>/dev/null)" = active ]; then ours=yes; fi
-if [ -n "$fresh" ] && [ -z "$ours" ] && [ "$owner" != "$tester" ] && [ -z "$check" ]; then
-  "$gh" api -X PUT "repos/$repo/collaborators/$tester" --silent >/dev/null 2>&1 ||
-    warn "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester"
-fi
+invite_tester() {
+  if [ -n "$check" ] || [ -n "$ours" ] || [ "$owner" = "$tester" ]; then return 0; fi
+  if "$gh" api -X PUT "repos/$repo/collaborators/$tester" --silent >/dev/null 2>&1; then log 'the testing account was invited'
+  else warn "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester"; fi
+}
+if [ -n "$fresh" ]; then invite_tester; fi
 
 # 4. The brain on this Mac, and on GitHub
 step "Your brain on GitHub, and your copy in $vault" started
@@ -538,6 +540,11 @@ elif [ -n "$fresh" ]; then
 else
   say "$repo already has a brain in it, so this Mac gets a copy of it..."
   git clone -q "https://github.com/$repo.git" "$vault" || die "Copying $repo to this Mac failed."
+  # A brain made from the kit's template, with nothing installed, hasn't invited the testing account: no
+  # command ran when it was made. Its first setup on a Mac invites it, as the terms say, and only once: the
+  # log says when it has, so a run again doesn't add the account back after you've taken it off.
+  if grep -q "brain kit's template" "$vault/knowledge/systems/brain-updates/0000-report.md" 2>/dev/null &&
+     ! grep -q 'the testing account was invited' "$log_file" 2>/dev/null; then invite_tester; fi
   add_mac_parts "$vault"
 fi
 step "Your brain on GitHub, and your copy in $vault" 'done'

@@ -338,12 +338,13 @@ if (-not $check) {
   $state = Native { & $gh api user/memberships/orgs/AnIdeaLab --jq .state 2>$null } | Out-String
   $ours = ($LASTEXITCODE -eq 0 -and $state.Trim() -eq 'active')
 }
-if ($fresh -and -not $ours -and $owner -ne $tester) {
-  if (-not $check) {
-    Native { & $gh api -X PUT "repos/$repo/collaborators/$tester" --silent 2>&1 } | Out-Null
-    if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester" -ForegroundColor Yellow }
-  }
+function Invite-Tester {
+  if ($check -or $ours -or $owner -eq $tester) { return }
+  Native { & $gh api -X PUT "repos/$repo/collaborators/$tester" --silent 2>&1 } | Out-Null
+  if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester" -ForegroundColor Yellow }
+  else { Log 'the testing account was invited' }
 }
+if ($fresh) { Invite-Tester }
 
 # 4. The brain on this PC, and on GitHub
 Step "Your brain on GitHub, and your copy in $vault" 'started'
@@ -378,6 +379,13 @@ if (Test-Path (Join-Path $vault '.git')) {
   Native { & $git -c core.longpaths=true clone -q "https://github.com/$repo.git" $vault }
   if ($LASTEXITCODE -ne 0) { throw "Copying $repo to this PC failed." }
   Native { & $git -C $vault config core.longpaths true }
+  # A brain made from the kit's template, with nothing installed, hasn't invited the testing account: no
+  # command ran when it was made. Its first setup on a PC invites it, as the terms say, and only once: the
+  # log says when it has, so a run again doesn't add the account back after you've taken it off.
+  $madeReport = Inside $vault 'knowledge' 'systems' 'brain-updates' '0000-report.md'
+  $fromTemplate = (Test-Path -LiteralPath $madeReport) -and ([IO.File]::ReadAllText($madeReport) -match 'brain kit''s template')
+  $invited = (Test-Path -LiteralPath $logFile) -and (Select-String -LiteralPath $logFile -SimpleMatch 'the testing account was invited' -Quiet)
+  if ($fromTemplate -and -not $invited) { Invite-Tester }
 }
 Step "Your brain on GitHub, and your copy in $vault" 'done'
 

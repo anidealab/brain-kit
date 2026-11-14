@@ -19,7 +19,9 @@
   Write-Host "`n1. The template's repo"
   & $gh repo view $template --json name 2>$null | Out-Null
   if ($LASTEXITCODE -ne 0) {
-    & $gh repo create $template --public --description 'Your own second brain for working with AI agents, from the AnIdeaLab brain kit. Press "Use this template" to make yours.'
+    # No double quotes inside the description: Windows PowerShell 5.1 doesn't pass them on to a program, and
+    # the words between them arrive as arguments of their own.
+    & $gh repo create $template --public --description 'Your own second brain for working with AI agents, from the AnIdeaLab brain kit. Press Use this template to make yours.'
     if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't make $template. Is gh signed in as an owner of AnIdeaLab? (gh auth status)" -ForegroundColor Red; return }
   } else { Write-Host "$template is already there." }
 
