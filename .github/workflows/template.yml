@@ -1,14 +1,16 @@
 # Publishes the template, the no-install way to get a brain: the public repo an owner makes their brain
 # from with GitHub's "Use this template", no command and nothing installed. Its files are brain/ as it is
-# on main, marked with the newest update, plus template/'s first-run parts (tools/kit.py template).
-# Runs on a push to main that changes what a new brain is made of, and by hand from the Actions tab.
+# on next, marked with the newest update, plus template/'s first-run parts (tools/kit.py template).
+# It takes next, not main, so a new brain starts with the newest work while an update for brains already
+# made is held back: main's brain/ changes only when an update is sent.
+# Runs on a push to next that changes what a new brain is made of, and by hand from the Actions tab.
 # It pushes with a deploy key of the template repo, kept in this repo's secret TEMPLATE_DEPLOY_KEY
 # (tools/template-setup.ps1 makes the repo, the key and the secret); without the secret it does nothing.
 name: Publish the template
 
 on:
   push:
-    branches: [main]
+    branches: [next]
     paths:
       - "brain/**"
       - "template/**"
@@ -33,6 +35,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: next
       - name: Publish
         env:
           DEPLOY_KEY: ${{ secrets.TEMPLATE_DEPLOY_KEY }}
@@ -55,7 +59,7 @@ jobs:
           if git -C "$out" diff --cached --quiet; then
             echo "The template is already up to date."
           else
-            git -C "$out" commit -q -m "The AnIdeaLab brain kit, as of ${GITHUB_SHA::7}"
+            git -C "$out" commit -q -m "The AnIdeaLab brain kit, as of $(git rev-parse --short HEAD)"
             git -C "$out" push -q origin HEAD:main
             echo "Published to https://github.com/$TEMPLATE_REPO"
           fi
