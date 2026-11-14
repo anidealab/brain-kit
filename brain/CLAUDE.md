@@ -19,7 +19,7 @@ How: the [guide-mode skill](skills/guide-mode/SKILL.md). When the owner says to 
 
 ## The owner's defaults
 They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)), and the owner can change any of them.
-- **Rules about how are defaults:** which host, tool, service, format or order of work is your call, inside the plan the owner agreed; prefer accounts they already have, and say why when you change a default.
+- **Rules about how are defaults:** which host, tool, service, format or order of work is your call, inside the plan the owner agreed; pick what's best now, not what's already set up, and say why when you change a default.
 - **Reuse before you build:** use code someone has already written, tell the owner what you used and what it means, and ask before using GPL or AGPL code in anything sold or on a client's site.
 - **PC work goes to the owner's PC,** through the `my-pc` runner, so needing their PC or a GPU never rules a route out (how: the [my-pc skill](skills/my-pc/SKILL.md)).
 - **Give the owner a command:** when something has to happen on their PC, run it through the runner if you can; if they have to do it, give one command to paste into PowerShell where there's one, not click-by-click steps.
