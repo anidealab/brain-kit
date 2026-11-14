@@ -4,7 +4,7 @@ description: "How to find and add a good skill from outside the brain: what's al
 ---
 
 # Finding skills
-The brain starts with 66 skills. Everything else comes in when a job needs it, and only good ones: Anthropic's first, then very popular or highly rated ones on GitHub.
+The brain starts with 67 skills. Everything else comes in when a job needs it, and only good ones: Anthropic's first, then very popular or highly rated ones on GitHub.
 
 ## First, check what's here
 - The [skills list](../README.md).
@@ -16,6 +16,8 @@ The brain starts with 66 skills. Everything else comes in when a job needs it, a
 3. **Community collections with a big following.** The bar is tens of thousands of GitHub stars, or an official company repo. Stars as counted on 19 Oct 2026: [obra/superpowers](https://github.com/obra/superpowers) about 302k (planning, debugging, testing), [mattpocock/skills](https://github.com/mattpocock/skills) about 296k, [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) about 108k, [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) about 55k, [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) about 50k; also [pbakaus/impeccable](https://github.com/pbakaus/impeccable), [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) and [emilkowalski/skills](https://github.com/emilkowalski/skills) for better-looking sites, and [trailofbits/skills](https://github.com/trailofbits/skills) for security. Rankings to check: [skills.sh](https://skills.sh) and `LinklyAI/best-skills` on GitHub.
 
 If nothing passes the bar, write a skill from the tool's official docs, with [skill-creator](../skill-creator/SKILL.md).
+
+A skill someone sends as a link to one file ("apply <link>"), from AnIdeaLab or anyone, is saved with [apply-a-skill](../apply-a-skill/SKILL.md), which also says the shape such a file takes.
 
 ## Copying one in
 1. **Get the source at a fixed commit:** clone it shallowly into a temporary folder outside the brain, and note the commit (`git rev-parse --short HEAD`).

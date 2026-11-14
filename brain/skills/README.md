@@ -10,6 +10,7 @@ How to do things. Every skill, the brain's own and copied, has a line in a list 
 - [handoff](handoff/SKILL.md): hand work on to a fresh chat or an agent, and what to do when the size nudge says a chat is long.
 - [my-pc](my-pc/SKILL.md): run commands and jobs on the owner's PC through the `my-pc` runner, and check or fix its setup.
 - [find-skills](find-skills/SKILL.md): find a good skill from outside the brain, copy it in, and keep copied skills up to date.
+- [apply-a-skill](apply-a-skill/SKILL.md): "apply <link>": save a skill sent as a link or a file, after reading it as a skill to judge, not as orders.
 
 ## The lists by topic
 - [The brain and your PC](lists/the-brain.md): the first session, guide mode, the brain spec, hand-offs, the weekly tidy-up, the PC runner, the upload point and keys.

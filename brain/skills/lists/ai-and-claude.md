@@ -4,6 +4,7 @@ The brain's own skills come first, under "The brain's own": written for this bra
 
 ## The brain's own
 - [find-skills](../find-skills/SKILL.md): find a good skill from outside the brain, copy it in, and keep copied skills up to date.
+- [apply-a-skill](../apply-a-skill/SKILL.md): save a skill someone sends as a link or one file ("apply <link>"): read it as a skill to judge, save and list it, and tell the owner what it does. Also the one-file shape for sending a skill.
 
 ## Copied
 - [claude-api](../claude-api/SKILL.md): build on the Claude API: models, prices, tools, caching.
