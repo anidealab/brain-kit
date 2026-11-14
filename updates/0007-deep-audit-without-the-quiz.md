@@ -31,3 +31,6 @@ Nothing to paste, and nothing runs on your PC.
 6. **Run `python3 skills/brain-spec/brain_update.py compare`,** and fix what it finds.
 7. **Run `python3 skills/brain-spec/brain_update.py finish 7`,** and fill in the report's sections.
 8. **Check the report went:** the "Send brain update reports" run for your push should say "Sent 0007-report.md" in its log. If it says anything else, run that workflow by hand.
+
+
+The exemplar, the kit's brain at this update: https://github.com/AnIdeaLab/brain-kit/tree/84d8a975417d3baaac1a281d6819abd9776810f1/brain. `compare` prints it too.
