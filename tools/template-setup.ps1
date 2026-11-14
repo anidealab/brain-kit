@@ -4,8 +4,9 @@
 # It needs GitHub's command line (gh), signed in as an owner of the AnIdeaLab organisation. It makes the
 # public repo AnIdeaLab/second-brain if it isn't there, gives it a deploy key that can push, puts the
 # key's private half in the kit repo's secret TEMPLATE_DEPLOY_KEY, marks the repo as a template, and
-# starts the kit's "Publish the template" workflow, which fills it. Safe to run again: it adds a new
-# key and replaces the secret. The key is made in a temporary folder and deleted at the end; nothing
+# starts the kit's "Publish the template" workflow, which fills it, unless it's filled already. If the
+# organisation has deploy keys turned off, it turns them on, asking for that permission in the browser.
+# Safe to run again: it adds a new key and replaces the secret. The key is made in a temporary folder and deleted at the end; nothing
 # is kept in a file.
 # Kept to Windows PowerShell 5.1 and plain ASCII.
 & {
@@ -33,20 +34,38 @@
     # Windows PowerShell 5.1 drops an empty argument, so the empty passphrase is written with its quotes.
     & ssh-keygen -q -t ed25519 -N '""' -C 'brain-kit publishes the template' -f $key
     if (-not (Test-Path "$key.pub")) { Write-Host "Couldn't make a key: ssh-keygen didn't run (it comes with Windows 10 and 11's OpenSSH client)." -ForegroundColor Red; return }
-    & $gh repo deploy-key add "$key.pub" --repo $template --allow-write --title ('brain-kit publishes the template, ' + (Get-Date).ToString('yyyy-MM-dd'))
-    if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't add the deploy key to $template." -ForegroundColor Red; return }
+    $title = 'brain-kit publishes the template, ' + (Get-Date).ToString('yyyy-MM-dd')
+    & $gh repo deploy-key add "$key.pub" --repo $template --allow-write --title $title
+    if ($LASTEXITCODE -ne 0) {
+      # An organisation can have deploy keys turned off for its repos ("Deploy keys are disabled for this
+      # repository"). Turning them on is an owner's setting, which gh's usual sign-in can't change: it asks
+      # for that permission in the browser first.
+      Write-Host "Turning deploy keys on for the AnIdeaLab organisation's repos..."
+      & $gh api -X PATCH orgs/AnIdeaLab -F deploy_keys_enabled_for_repositories=true --silent 2>$null
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host 'GitHub needs one more permission for that. Copy the code shown, press Enter, and paste it in your browser.' -ForegroundColor Yellow
+        & $gh auth refresh --hostname github.com --scopes admin:org
+        & $gh api -X PATCH orgs/AnIdeaLab -F deploy_keys_enabled_for_repositories=true --silent
+      }
+      & $gh repo deploy-key add "$key.pub" --repo $template --allow-write --title $title
+      if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't add the deploy key to $template. In the organisation's settings on GitHub, under Deploy keys, allow them, then paste this command again." -ForegroundColor Red; return }
+    }
     Get-Content -LiteralPath $key -Raw | & $gh secret set TEMPLATE_DEPLOY_KEY --repo $kit
     if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't save the secret in $kit." -ForegroundColor Red; return }
   } finally { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue }
 
   Write-Host "`n3. Filling it"
-  & $gh workflow run template.yml --repo $kit --ref main
-  if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't start the kit's Publish the template workflow. Start it by hand: https://github.com/$kit/actions/workflows/template.yml" -ForegroundColor Yellow }
-  $filled = $false
-  foreach ($i in 1..30) {
-    Start-Sleep -Seconds 6
-    & $gh api "repos/$template/contents/CLAUDE.md" --silent 2>$null
-    if ($LASTEXITCODE -eq 0) { $filled = $true; break }
+  & $gh api "repos/$template/contents/CLAUDE.md" --silent 2>$null
+  $filled = $LASTEXITCODE -eq 0
+  if ($filled) { Write-Host 'It has the brain in it already; the kit fills it again at its next change.' }
+  else {
+    & $gh workflow run template.yml --repo $kit --ref main
+    if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't start the kit's Publish the template workflow. Start it by hand: https://github.com/$kit/actions/workflows/template.yml" -ForegroundColor Yellow }
+    foreach ($i in 1..30) {
+      Start-Sleep -Seconds 6
+      & $gh api "repos/$template/contents/CLAUDE.md" --silent 2>$null
+      if ($LASTEXITCODE -eq 0) { $filled = $true; break }
+    }
   }
   if (-not $filled) { Write-Host "The template hasn't filled yet. Look at https://github.com/$kit/actions, then paste this command again." -ForegroundColor Yellow; return }
 
