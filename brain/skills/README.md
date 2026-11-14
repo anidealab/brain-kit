@@ -17,6 +17,7 @@ How to do things. Every skill, the brain's own and copied, has a line in a list 
 - [Building and fixing code](lists/code.md): building, testing, debugging, reviewing and shipping code.
 - [Websites and design](lists/web-and-design.md): how a site looks, its words, testing it, and putting it live.
 - [AI, Claude and skills](lists/ai-and-claude.md): finding and making skills, building on Claude, MCP servers, and writing for agents.
+- [Pictures, video, sound and 3D](lists/media.md): making and changing pictures, video clips, sound, voices and 3D models with AI models, on the owner's own fal key.
 - [Obsidian](lists/obsidian.md): Obsidian's Markdown, bases, canvases, and web pages into notes.
 - [Business, marketing and money](lists/business.md): marketing, customers, prices, proposals, invoices, data and sums.
 - [Life admin](lists/life-admin.md): planning an event.

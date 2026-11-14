@@ -1,0 +1,75 @@
+# Runs a short Python job on GitHub's machines with this brain's keys, so no agent needs a key itself:
+# paid AI models through fal (FAL_KEY), free Hugging Face Spaces (HF_TOKEN, a free account's read token).
+# Start it with the GitHub tool's run-workflow method on main, then read the job log.
+# How agents use it: skills/fal/SKILL.md.
+# - code: the Python to run, from the brain's top folder. The keys are in the environment
+#   (os.environ["FAL_KEY"], ...); never print them. `requests` and `pillow` are installed.
+# - files: a branch holding input files (for example transfer/<name>, made as skills/my-pc/SKILL.md says);
+#   its files are unpacked into ./in before the code runs. Empty for none.
+# - Whatever the code writes to ./out is attached to the run for 3 days, as "out-<run id>".
+# A key the brain doesn't have yet comes through empty. A job that needs another key gets its line under
+# "Run", from the repo's Actions secrets (skills/add-a-key/SKILL.md).
+# Spending needs the owner's go (the core's money gate): say the estimate first, and keep inside what they agreed.
+# Safety: this runs code with the brain's keys. Keep the trigger to workflow_dispatch (only people with
+# write access can start it). Never add pull_request or other triggers.
+name: AI job
+run-name: "AI job: ${{ inputs.label }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "What the job is for, shown in the Actions list"
+        required: true
+      code:
+        description: "Python to run, with the keys in the environment"
+        required: true
+      files:
+        description: "A branch whose files are unpacked into ./in first. Empty for none."
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get the input files
+        if: inputs.files != ''
+        env:
+          FILES: ${{ inputs.files }}
+        run: |
+          git fetch --depth 1 origin "$FILES"
+          mkdir -p in
+          git archive FETCH_HEAD | tar -x -C in
+          find in -type f | head -50
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the clients
+        run: pip install -q requests pillow
+
+      - name: Run
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          CODE: ${{ inputs.code }}
+        run: |
+          mkdir -p out
+          printf '%s' "$CODE" > "$RUNNER_TEMP/job.py"
+          python "$RUNNER_TEMP/job.py"
+
+      - name: Attach the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: out-${{ github.run_id }}
+          path: out
+          retention-days: 3
+          if-no-files-found: ignore
