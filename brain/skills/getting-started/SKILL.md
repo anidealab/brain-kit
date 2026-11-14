@@ -63,7 +63,7 @@ Wait until the run shows as completed, then read its job log. Put what it found 
 ## 6. Offer the weekly tidy-up and the monthly deep audit
 The [brain-audit skill](../brain-audit/SKILL.md) tidies the brain once a week. It's a reminder, not a scheduled job: nothing runs, and none of their plan is used, until they say yes to it in a session. Ask if they'd like it. If yes, add its row to the owner's own table in [routines](../../knowledge/systems/routines.md), as the comment there shows, starting from the next Saturday, and commit.
 
-Then offer [the monthly deep audit](../brain-audit/deep-audit.md), in a line: once a month it reads every decision in full for rules that clash, and asks a fresh agent questions about the brain to find notes that mislead. It uses more of their plan than the tidy-up, and also runs only when they say yes. If they'd like it, add its row the same way, from the first Saturday of next month.
+Then offer [the monthly deep audit](../brain-audit/deep-audit.md), in a line: once a month it reads every decision in full for rules that clash, hunts down removed rules that survive elsewhere, and checks a sample of cards. It uses more of their plan than the tidy-up, and also runs only when they say yes. If they'd like it, add its row the same way, from the first Saturday of next month.
 
 ## 7. Their files, if they have some
 If they said they have files to bring in, it's a job of its own, after this one: don't start reading files in the first session, which is for setting up.

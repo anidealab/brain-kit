@@ -1,12 +1,12 @@
 ---
 name: brain-audit
-description: "The weekly tidy-up of this second brain: run the library and link checks, fix what they find, a light quality pass on the cards (duplicates, notes doing two jobs, knowledge left in finished tasks, old decisions, stale tasks closed and finished ones moved to history, hand-offs folded in and tidied), turn friction-log blockers into skills, fold in skills' lessons, rewrite where each active project and area stands, then a short report for the owner; in a busy week, an agent per busy project and a links agent. Also the monthly deep audit (deep-audit.md): every current decision read for clashes, removed rules hunted down, and a quiz of a fresh agent on the brain. Use when the owner says yes to the weekly tidy-up or monthly deep audit reminder, or asks for a brain cleanup or a deeper check."
+description: "The weekly tidy-up of this second brain: run the library and link checks, fix what they find, a light quality pass on the cards (duplicates, notes doing two jobs, knowledge left in finished tasks, old decisions, stale tasks closed and finished ones moved to history, hand-offs folded in and tidied), turn friction-log blockers into skills, fold in skills' lessons, rewrite where each active project and area stands, then a short report for the owner; in a busy week, an agent per busy project and a links agent. Also the monthly deep audit (deep-audit.md): every current decision read for clashes, removed rules hunted down, and a sample of cards checked. Use when the owner says yes to the weekly tidy-up or monthly deep audit reminder, or asks for a brain cleanup or a deeper check."
 ---
 
 # The weekly tidy-up
 Once a week, the agent cleans the brain up and gives the owner a short report, so the brain stays tidy and true as it grows. It's light on purpose, and a reminder, not a scheduled job: `reminders.py` says when it's due, the agent tells the owner, and it runs only if they say yes. What past ones found is in [the audit log](../../knowledge/areas/the-brain/audit-log.md).
 
-**Two levels.** This weekly one is cheap. Once a month, [the deep audit](deep-audit.md) reads every current decision in full and quizzes a fresh agent on the brain, to catch what only reading does.
+**Two levels.** This weekly one is cheap. Once a month, [the deep audit](deep-audit.md) reads every current decision in full, to catch what only reading does.
 
 **Keep it light.** It uses the owner's plan. Read cards, not notes: the shelves' indexes and `library.py find` show every card; open a note only when a card or a script points at a problem. For "what happened this week", read commit messages, not the notes themselves.
 
