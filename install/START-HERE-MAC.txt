@@ -3,8 +3,10 @@ Your own second brain, started from the AnIdeaLab brain kit, on a Mac.
 What you'll have at the end:
 - Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 66 skills
   (how to do things) and a knowledge library that fills up as you use it.
-- Obsidian on your Mac, showing your brain as a map, and the brain graph replaying how it grew.
-- The Mac runner: it lets Claude run jobs on your Mac while it's on and you're logged in.
+- Obsidian on your Mac, if you'd like it, showing your brain as a map, and the brain graph
+  replaying how it grew.
+- The Mac runner, if you'd like it: it lets Claude run jobs on your Mac while it's on and
+  you're logged in.
 
 You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for installs.
 
@@ -14,22 +16,25 @@ You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for install
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.sh)"
 
-   It installs Apple's command line tools (they have Git), GitHub's command line and Obsidian,
-   if they're missing. It doesn't need your Mac's password. Its questions show in yellow.
+   It installs Apple's command line tools (they have Git) and GitHub's command line, if they're
+   missing, and Obsidian if you say yes to it. It doesn't need your Mac's password. Its
+   questions show in yellow.
    It asks you to:
    - accept AnIdeaLab's terms of use: type Y and press Enter. Read them first, here or by typing
      V in the setup: https://github.com/AnIdeaLab/brain-kit/blob/main/TERMS.md
    - sign in to Claude: press Enter and it opens Claude in your browser. Sign in, or make an
      account and choose a paid plan (Pro or above), since your brain works in Claude Code.
      Already set up? Type S to skip;
+   - say whether you'd like Obsidian (press Enter for yes). Your brain works without it;
    - if a window asks to install the command line developer tools: click Install, then Agree.
      It takes 5 to 20 minutes, and the setup carries on by itself once they're in;
    - sign in to GitHub in your browser, copying a code from the window (no account yet? make
      one on that page, it's free);
    - name your brain (press Enter for my-brain). Your brain's repo is private;
    - say yes to the Mac runner. macOS then says background items were added: that's the runner;
-   - say yes to keeping the Mac awake while it's on the charger (jobs can't run while it sleeps);
-   - last, Obsidian opens your brain: choose "Trust author and enable plugins", then come
+   - say yes to keeping the Mac awake while it's on the charger. Most people say no here, and
+     then your brain can't reach the Mac whenever it has gone to sleep. The screen still turns off;
+   - last, if you chose it, Obsidian opens your brain: choose "Trust author and enable plugins", then come
      back to Terminal, which lists each step and what to do next.
 
    If it stops partway, paste the same line again: it skips what's already done. What it

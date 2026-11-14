@@ -1,12 +1,14 @@
 #!/bin/bash
 # Sets up your own second brain on this Mac, from the AnIdeaLab brain kit. It asks you to accept AnIdeaLab's
 # terms of use (TERMS.md, at the kit repo's root) first, and stops if you don't. It opens Claude in the
-# browser, to sign in or sign up for a paid plan (S skips it). Then it installs Apple's
-# command line tools (they have Git), GitHub's command line (gh) and Obsidian if they're missing, signs you in
-# to GitHub, makes your brain's private repo (inviting AnIdeaLab's testing account to it, as the terms say)
-# and puts the brain in it, puts your copy in ~/AI-Brain-Link with Obsidian's syncing on, sets up the Mac
-# runner, so AI agents can run jobs on this Mac, and opens Obsidian last. It needs no password: gh and
-# Obsidian come from their own releases on GitHub, each checked against its checksum, not from Homebrew.
+# browser, to sign in or sign up for a paid plan (S skips it), and asks whether you'd like Obsidian. Then it
+# installs Apple's command line tools (they have Git) and GitHub's command line (gh) if they're missing, and
+# Obsidian if you said yes, signs you in to GitHub, makes your brain's private repo (inviting AnIdeaLab's
+# testing account to it, as the terms say) and puts the brain in it, puts your copy in ~/AI-Brain-Link, with
+# Obsidian's syncing on if you chose Obsidian, sets up the Mac runner if you say yes to it, so AI agents can
+# run jobs on this Mac, and opens Obsidian last. Obsidian and the runner are extras: your brain works without
+# either, and pasting the same command again adds one later. It needs no password: gh and Obsidian come from
+# their own releases on GitHub, each checked against its checksum, not from Homebrew.
 # Safe to run again: it skips what's already done. It ends with a list of which steps finished, and keeps it
 # in ~/AI-Brain-Link/_logs/install.log, which the setup check reads.
 # It's install-windows.ps1 for a Mac: the same steps in the same order, with the same questions. The brain is
@@ -399,7 +401,7 @@ add_mac_parts() {
   say 'Adding the Mac parts to your brain (the Mac runner workflow, its skill and a note for this Mac)...'
   mac_brain add "$1" || { warn "Couldn't add the Mac parts. Your brain works without them, but agents can't run jobs on this Mac until it has them: ask Claude to add them from the AnIdeaLab brain kit (install/mac-brain)."; return; }
   git -C "$1" add -A && git -C "$1" commit -q -m 'Added the Mac parts from the AnIdeaLab brain kit' >/dev/null
-  if [ -z "$check" ]; then git -C "$1" push -q origin HEAD >/dev/null 2>&1 || warn "Couldn't send the Mac parts to GitHub yet; Obsidian Git sends them at its next sync."; fi
+  if [ -z "$check" ]; then git -C "$1" push -q origin HEAD >/dev/null 2>&1 || warn "Couldn't send the Mac parts to GitHub yet. Pasting the same command again sends them, and so does Obsidian Git's next sync, if you have Obsidian."; fi
 }
 
 # Where the brain comes from (the notes at the top).
@@ -444,19 +446,29 @@ if [ -z "$check" ]; then
   esac
 fi
 
+# Obsidian is an extra, so it's asked about, here, before anything is installed: the answer covers the app, its
+# Git plugin, the brain in its list of vaults and opening it at the end, and a no leaves an Obsidian that's
+# already on the Mac alone. Enter is yes. The kit's check answers yes, so it still tries Obsidian's steps.
+want_obsidian=''
+if yes_to "Would you like Obsidian too? It's a free app that shows your brain as a map on this Mac, where you can read and edit your notes. Your brain works without it, and you can add it later by pasting the same command again."; then want_obsidian=yes; fi
+if [ -n "$want_obsidian" ]; then log 'Obsidian: wanted'; else log 'Obsidian: not wanted, so its steps are skipped'; fi
+
 # 1. The tools
-step "The tools (Git, GitHub's command line, Obsidian)" started
+if [ -n "$want_obsidian" ]; then tools_step="The tools (Git, GitHub's command line, Obsidian)"; else tools_step="The tools (Git, GitHub's command line)"; fi
+step "$tools_step" started
 if [ -z "$check" ]; then ensure_git; fi
 if [ -z "$check" ] || [ -n "$tools_check" ]; then
   gh=$(find_gh)
   if [ -z "$gh" ]; then install_gh; gh=$(find_gh); fi
-  obsidian_app=$(find_obsidian)
-  if [ -z "$obsidian_app" ]; then install_obsidian; fi
+  if [ -n "$want_obsidian" ]; then
+    obsidian_app=$(find_obsidian)
+    if [ -z "$obsidian_app" ]; then install_obsidian; fi
+  fi
 fi
 command -v git >/dev/null 2>&1 || die "Git is installed, but this window can't see it yet. Close Terminal, open it again and paste the same command."
 python3 -c 'import json' >/dev/null 2>&1 || die "Python 3, which comes with Apple's command line tools, doesn't run. Close Terminal, open it again and paste the same command."
 if [ -z "$check" ] && [ -z "$gh" ]; then die "GitHub's command line is installed, but this window can't see it yet. Close Terminal, open it again and paste the same command."; fi
-step "The tools (Git, GitHub's command line, Obsidian)" 'done'
+step "$tools_step" 'done'
 
 # 2. GitHub
 step 'Signed in to GitHub' started
@@ -518,7 +530,12 @@ step "Your brain on GitHub, and your copy in $vault" started
 mkdir -p "$root"
 if [ -d "$vault/.git" ]; then
   say "Your brain is already on this Mac, in $vault."
-  if [ -z "$check" ]; then git -C "$vault" push -u origin main >/dev/null 2>&1; fi
+  # Brought up to date first, where that changes nothing of yours (a fast-forward only): the runner's setup
+  # runs from this copy, and without Obsidian nothing else on the Mac syncs it.
+  if [ -z "$check" ]; then
+    git -C "$vault" pull --ff-only -q origin main >/dev/null 2>&1
+    git -C "$vault" push -u origin main >/dev/null 2>&1
+  fi
   add_mac_parts "$vault"
 elif [ -n "$fresh" ]; then
   say "Putting the brain in $vault, and on GitHub..."
@@ -549,38 +566,40 @@ else
 fi
 step "Your brain on GitHub, and your copy in $vault" 'done'
 
-# 5. Obsidian, with the Git plugin that syncs your edits (its code isn't kept in the repo). It opens at the
-# end, so it can't come up in front of this window while a question waits behind it.
-step 'Obsidian, with syncing on' started
-plugin="$vault/.obsidian/plugins/obsidian-git"
-if { [ -z "$check" ] || [ -n "$tools_check" ]; } && [ ! -f "$plugin/main.js" ]; then
-  say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
-  mkdir -p "$plugin"
-  # Through gh first: GitHub's plain release-download links can answer 504 for hours while gh's route, through
-  # its API, works (8 Nov 2026). The plain link stays for when gh isn't there or isn't signed in. main.js is
-  # moved in last, because it's what says the plugin is done.
-  got_plugin=""
-  plugin_tmp=$(mktemp -d)
-  if [ -n "$gh" ] && "$gh" release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir "$plugin_tmp" 2>/dev/null; then got_plugin=yes; fi
-  for f in manifest.json styles.css main.js; do
-    if [ -z "$got_plugin" ]; then
-      curl -fsSL --retry 3 -o "$plugin_tmp/$f" "https://github.com/Vinzent03/obsidian-git/releases/latest/download/$f" ||
-        { rm -rf "$plugin_tmp"; die "Couldn't download the Obsidian Git plugin. Check the Mac is online, then paste the same command again."; }
-    fi
-    mv "$plugin_tmp/$f" "$plugin/$f" || die "Couldn't put the Obsidian Git plugin in $plugin."
-  done
-  rm -rf "$plugin_tmp"
-fi
-# Add the brain to Obsidian's list of vaults, so it opens straight into it. Obsidian writes the list when it
-# quits, so it's closed first.
-if [ -z "$check" ] && pgrep -x Obsidian >/dev/null 2>&1; then
-  osascript -e 'quit app "Obsidian"' >/dev/null 2>&1
-  i=0
-  while pgrep -x Obsidian >/dev/null 2>&1 && [ "$i" -lt 10 ]; do sleep 1; i=$((i + 1)); done
-fi
-if [ -n "$check" ]; then cfg_dir="$root/obsidian"; else cfg_dir="$HOME/Library/Application Support/obsidian"; fi
-mkdir -p "$cfg_dir"
-python3 - "$cfg_dir/obsidian.json" "$vault" <<'PY' || die "Couldn't add your brain to Obsidian's list of vaults ($cfg_dir/obsidian.json)."
+# 5. Obsidian, if it's wanted, with the Git plugin that syncs your edits (its code isn't kept in the repo). It
+# opens at the end, so it can't come up in front of this window while a question waits behind it. Without
+# Obsidian, the Mac runner brings this copy up to date at the start of each job (mac-run.yml, in the Mac parts).
+if [ -z "$want_obsidian" ]; then step 'Obsidian, with syncing on' skipped; else
+  step 'Obsidian, with syncing on' started
+  plugin="$vault/.obsidian/plugins/obsidian-git"
+  if { [ -z "$check" ] || [ -n "$tools_check" ]; } && [ ! -f "$plugin/main.js" ]; then
+    say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
+    mkdir -p "$plugin"
+    # Through gh first: GitHub's plain release-download links can answer 504 for hours while gh's route, through
+    # its API, works (8 Nov 2026). The plain link stays for when gh isn't there or isn't signed in. main.js is
+    # moved in last, because it's what says the plugin is done.
+    got_plugin=""
+    plugin_tmp=$(mktemp -d)
+    if [ -n "$gh" ] && "$gh" release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir "$plugin_tmp" 2>/dev/null; then got_plugin=yes; fi
+    for f in manifest.json styles.css main.js; do
+      if [ -z "$got_plugin" ]; then
+        curl -fsSL --retry 3 -o "$plugin_tmp/$f" "https://github.com/Vinzent03/obsidian-git/releases/latest/download/$f" ||
+          { rm -rf "$plugin_tmp"; die "Couldn't download the Obsidian Git plugin. Check the Mac is online, then paste the same command again."; }
+      fi
+      mv "$plugin_tmp/$f" "$plugin/$f" || die "Couldn't put the Obsidian Git plugin in $plugin."
+    done
+    rm -rf "$plugin_tmp"
+  fi
+  # Add the brain to Obsidian's list of vaults, so it opens straight into it. Obsidian writes the list when it
+  # quits, so it's closed first.
+  if [ -z "$check" ] && pgrep -x Obsidian >/dev/null 2>&1; then
+    osascript -e 'quit app "Obsidian"' >/dev/null 2>&1
+    i=0
+    while pgrep -x Obsidian >/dev/null 2>&1 && [ "$i" -lt 10 ]; do sleep 1; i=$((i + 1)); done
+  fi
+  if [ -n "$check" ]; then cfg_dir="$root/obsidian"; else cfg_dir="$HOME/Library/Application Support/obsidian"; fi
+  mkdir -p "$cfg_dir"
+  python3 - "$cfg_dir/obsidian.json" "$vault" <<'PY' || die "Couldn't add your brain to Obsidian's list of vaults ($cfg_dir/obsidian.json)."
 import json, os, random, shutil, sys, time
 cfg, vault = sys.argv[1], sys.argv[2]
 data = {}
@@ -594,7 +613,8 @@ if not any(isinstance(v, dict) and v.get("path") == vault for v in vaults.values
 with open(cfg, "w", encoding="utf-8") as f:
     json.dump(data, f, separators=(",", ":"))
 PY
-step 'Obsidian, with syncing on' 'done'
+  step 'Obsidian, with syncing on' 'done'
+fi
 
 # 5b. The upload point's window and Send to are on Windows only for now. On a Mac, files for the brain go in
 # ~/AI-Brain-Link/_upload, and the owner tells an agent (the my-mac skill).
@@ -625,16 +645,19 @@ else
 fi
 
 # 7. Obsidian opens last, so it can't hide a question in this window.
-step 'Obsidian opened on your brain' started
-if [ -z "$check" ]; then
-  link=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$vault")
-  open "obsidian://open?path=$link" >/dev/null 2>&1 || open -a "${obsidian_app:-Obsidian}" >/dev/null 2>&1
-  sleep 3
+if [ -z "$want_obsidian" ]; then step 'Obsidian opened on your brain' skipped; else
+  step 'Obsidian opened on your brain' started
+  if [ -z "$check" ]; then
+    link=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$vault")
+    open "obsidian://open?path=$link" >/dev/null 2>&1 || open -a "${obsidian_app:-Obsidian}" >/dev/null 2>&1
+    sleep 3
+  fi
+  step 'Obsidian opened on your brain' 'done'
 fi
-step 'Obsidian opened on your brain' 'done'
 
 show_steps
-say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
+if [ -n "$want_obsidian" ]; then say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
+else say 'No Obsidian, as you chose. To add it later, paste the same command again, give the same brain name, and answer Y to the Obsidian question.'; fi
 if [ -n "$runner_ok" ]; then say 'All done on this Mac.'; else
   echo ''
   warn "Your brain is set up, but the Mac runner isn't working yet, so agents can't run jobs on this Mac."
@@ -642,7 +665,7 @@ if [ -n "$runner_ok" ]; then say 'All done on this Mac.'; else
   echo 'Or carry on below, and ask Claude to help get the runner working.'
 fi
 echo "Your brain on GitHub: https://github.com/$repo"
-echo "Your copy on this Mac: $vault (open in Obsidian)"
+if [ -n "$want_obsidian" ]; then echo "Your copy on this Mac: $vault (open in Obsidian)"; else echo "Your copy on this Mac: $vault"; fi
 echo "Files for your brain: put them in $root/_upload, and tell Claude."
 echo ''
 printf '\033[36m%s\033[0m\n' 'Last step, in Claude:'

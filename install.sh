@@ -3,8 +3,8 @@
 #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.sh)"
 # It downloads this repo from GitHub (no Git needed yet), unpacks it in a temporary folder and runs the
 # installer in it, install/install-mac.sh, which does the rest and says what it's doing: Apple's command
-# line tools (they have Git), GitHub's command line and Obsidian, your brain's private repo made from brain/,
-# your copy in ~/AI-Brain-Link, and the Mac runner. Safe to run again. macOS's own bash 3.2.
+# line tools (they have Git), GitHub's command line and, if you'd like it, Obsidian, your brain's private repo
+# made from brain/, your copy in ~/AI-Brain-Link, and the Mac runner, if you'd like it. Safe to run again. macOS's own bash 3.2.
 # The Windows one is install.ps1, beside this. BRAIN_KIT_REF, a branch or commit to download instead of main,
 # is for the kit's own test on GitHub's Macs (.github/workflows/mac-installer.yml).
 

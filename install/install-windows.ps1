@@ -1,10 +1,12 @@
 # Sets up your own second brain on this Windows PC, from the AnIdeaLab brain kit. It asks you to accept
 # AnIdeaLab's terms of use (TERMS.md, at the kit repo's root) first, and stops if you don't. It opens Claude
-# in the browser, to sign in or sign up for a paid plan (S skips it). Then it installs
-# Git, GitHub's command line (gh) and Obsidian if they're missing, signs you in to GitHub, makes your brain's
-# private repo (inviting AnIdeaLab's testing account to it, as the terms say) and puts the brain in it,
-# puts your copy in C:\AI-Brain-Link with Obsidian's syncing on, adds the upload point if the brain has one,
-# sets up the PC runner, so AI agents can run jobs on this PC, and opens Obsidian last.
+# in the browser, to sign in or sign up for a paid plan (S skips it), and asks whether you'd like Obsidian.
+# Then it installs Git and GitHub's command line (gh) if they're missing, and Obsidian if you said yes, signs
+# you in to GitHub, makes your brain's private repo (inviting AnIdeaLab's testing account to it, as the terms
+# say) and puts the brain in it, puts your copy in C:\AI-Brain-Link, with Obsidian's syncing on if you chose
+# Obsidian, adds the upload point if the brain has one, sets up the PC runner if you say yes to it, so AI
+# agents can run jobs on this PC, and opens Obsidian last. Obsidian and the runner are extras: your brain
+# works without either, and pasting the same command again adds one later.
 # Safe to run again: it skips what's already done. It ends with a list of which steps finished, and
 # keeps it in C:\AI-Brain-Link\_logs\install.log, which the setup check reads.
 # Where the brain comes from, first found:
@@ -261,13 +263,20 @@ if (-not $check) {
   Log $(if ($a -match '^[Ss]') { 'Claude: skipped, already set up' } else { 'Claude: opened claude.ai/code to sign in or sign up' })
 }
 
+# Obsidian is an extra, so it's asked about, here, before anything is installed: the answer covers the app, its
+# Git plugin, the brain in its list of vaults and opening it at the end, and a no leaves an Obsidian that's
+# already on the PC alone. Enter is yes. The kit's check answers yes, so it still tries Obsidian's steps.
+$wantObsidian = Yes 'Would you like Obsidian too? It''s a free app that shows your brain as a map on this PC, where you can read and edit your notes. Your brain works without it, and you can add it later by pasting the same command again.'
+Log $(if ($wantObsidian) { 'Obsidian: wanted' } else { 'Obsidian: not wanted, so its steps are skipped' })
+
 # 1. The tools
-Step "The tools (Git, GitHub's command line, Obsidian)" 'started'
+$toolsStep = if ($wantObsidian) { "The tools (Git, GitHub's command line, Obsidian)" } else { "The tools (Git, GitHub's command line)" }
+Step $toolsStep 'started'
 if (-not $check) {
   if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { throw "winget (Windows' app installer) isn't on this PC. Install 'App Installer' from the Microsoft Store, then paste the same command again." }
   if (-not (Find-Git)) { Install-App 'Git.Git' 'Git' { Find-Git } }
   if (-not (Find-Gh)) { Install-App 'GitHub.cli' "GitHub's command line" { Find-Gh } }
-  if (-not (Find-Obsidian)) { Install-App 'Obsidian.Obsidian' 'Obsidian' { Find-Obsidian } -optional }
+  if ($wantObsidian -and -not (Find-Obsidian)) { Install-App 'Obsidian.Obsidian' 'Obsidian' { Find-Obsidian } -optional }
 }
 $git = Find-Git
 if (-not $git) { throw "Git is installed, but this window can't see it yet. Close PowerShell, open it again and paste the same command." }
@@ -276,7 +285,7 @@ if (-not $git) { throw "Git is installed, but this window can't see it yet. Clos
 if (-not (Get-Command git -CommandType Application -ErrorAction SilentlyContinue)) { $env:Path = "$env:Path;$(Split-Path $git -Parent)" }
 $gh = Find-Gh
 if (-not $check -and -not $gh) { throw "GitHub's command line is installed, but this window can't see it yet. Close PowerShell, open it again and paste the same command." }
-Step "The tools (Git, GitHub's command line, Obsidian)" 'done'
+Step $toolsStep 'done'
 
 # 2. GitHub
 Step 'Signed in to GitHub' 'started'
@@ -351,7 +360,12 @@ Step "Your brain on GitHub, and your copy in $vault" 'started'
 New-Item -ItemType Directory -Force -Path $root | Out-Null
 if (Test-Path (Join-Path $vault '.git')) {
   Say "Your brain is already on this PC, in $vault."
-  if (-not $check) { Native { & $git -C $vault push -u origin main 2>&1 } | Out-Null }
+  # Brought up to date first, where that changes nothing of yours (a fast-forward only): the runner's setup
+  # and the upload point run from this copy, and without Obsidian nothing else on the PC syncs it.
+  if (-not $check) {
+    Native { & $git -C $vault pull --ff-only -q origin main 2>&1 } | Out-Null
+    Native { & $git -C $vault push -u origin main 2>&1 } | Out-Null
+  }
 } elseif ($fresh) {
   Say "Putting the brain in $vault, and on GitHub..."
   $source = if ($fromFolder) { New-BrainRepo $Brain } else { $Brain }
@@ -389,52 +403,57 @@ if (Test-Path (Join-Path $vault '.git')) {
 }
 Step "Your brain on GitHub, and your copy in $vault" 'done'
 
-# 5. Obsidian, with the Git plugin that syncs your edits (its code isn't kept in the repo). It opens at the
-# end: opened here, it came up in front of this window while the runner's question waited behind it.
-Step 'Obsidian, with syncing on' 'started'
-# winget gets Obsidian from GitHub's plain release link at the tools step, and the setup carries on if that
-# answers 504 (see Get-Release). gh is signed in by here, so Obsidian gets a second try through it.
-if (-not $check -and -not (Find-Obsidian)) {
-  Say "Installing Obsidian through GitHub's command line, about 340 MB..."
-  $dl = Join-Path $env:TEMP 'brain-kit-obsidian'
-  try {
-    $obsTag = "$(Native { & $gh api repos/obsidianmd/obsidian-releases/releases/latest --jq .tag_name })".Trim()
-    $obsExe = "Obsidian-$($obsTag.TrimStart('v')).exe"
-    if ($obsTag -and (Get-Release 'obsidianmd/obsidian-releases' $obsTag @($obsExe) $dl)) {
-      $obsPath = Join-Path $dl $obsExe
-      if ((Get-AuthenticodeSignature -LiteralPath $obsPath).Status -eq 'Valid') { Start-Process -FilePath $obsPath -ArgumentList '/S' -Wait }
-      else { Log "Obsidian's download isn't validly signed, so it wasn't run" }
-    }
-  } catch { Log "couldn't install Obsidian through gh: $($_.Exception.Message)" }
-  Remove-Item -LiteralPath $dl -Recurse -Force -ErrorAction SilentlyContinue
-}
-$plugin = Join-Path (Join-Path (Join-Path $vault '.obsidian') 'plugins') 'obsidian-git'
-if (-not $check -and -not (Test-Path (Join-Path $plugin 'main.js'))) {
-  Say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
-  New-Item -ItemType Directory -Force -Path $plugin | Out-Null
-  if (-not (Get-Release 'Vinzent03/obsidian-git' '' @('main.js', 'manifest.json', 'styles.css') $plugin)) {
-    Remove-Item -LiteralPath (Join-Path $plugin 'main.js') -Force -ErrorAction SilentlyContinue # so a run again doesn't take a part-download for done
-    throw "The Obsidian Git plugin's download didn't come through: GitHub didn't answer, three times. That's on their side and usually passes. Wait a few minutes, then paste the same command again."
+# 5. Obsidian, if it's wanted, with the Git plugin that syncs your edits (its code isn't kept in the repo). It
+# opens at the end: opened here, it came up in front of this window while the runner's question waited behind
+# it. Without Obsidian, the PC runner brings this copy up to date at the start of each job, so the upload
+# point and the setup scripts in it stay current (the brain's pc-run.yml does it: a brain made from the
+# template has that now, and one made from brain\ gets it with the next brain update).
+if (-not $wantObsidian) { Step 'Obsidian, with syncing on' 'skipped' } else {
+  Step 'Obsidian, with syncing on' 'started'
+  # winget gets Obsidian from GitHub's plain release link at the tools step, and the setup carries on if that
+  # answers 504 (see Get-Release). gh is signed in by here, so Obsidian gets a second try through it.
+  if (-not $check -and -not (Find-Obsidian)) {
+    Say "Installing Obsidian through GitHub's command line, about 340 MB..."
+    $dl = Join-Path $env:TEMP 'brain-kit-obsidian'
+    try {
+      $obsTag = "$(Native { & $gh api repos/obsidianmd/obsidian-releases/releases/latest --jq .tag_name })".Trim()
+      $obsExe = "Obsidian-$($obsTag.TrimStart('v')).exe"
+      if ($obsTag -and (Get-Release 'obsidianmd/obsidian-releases' $obsTag @($obsExe) $dl)) {
+        $obsPath = Join-Path $dl $obsExe
+        if ((Get-AuthenticodeSignature -LiteralPath $obsPath).Status -eq 'Valid') { Start-Process -FilePath $obsPath -ArgumentList '/S' -Wait }
+        else { Log "Obsidian's download isn't validly signed, so it wasn't run" }
+      }
+    } catch { Log "couldn't install Obsidian through gh: $($_.Exception.Message)" }
+    Remove-Item -LiteralPath $dl -Recurse -Force -ErrorAction SilentlyContinue
   }
+  $plugin = Join-Path (Join-Path (Join-Path $vault '.obsidian') 'plugins') 'obsidian-git'
+  if (-not $check -and -not (Test-Path (Join-Path $plugin 'main.js'))) {
+    Say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
+    New-Item -ItemType Directory -Force -Path $plugin | Out-Null
+    if (-not (Get-Release 'Vinzent03/obsidian-git' '' @('main.js', 'manifest.json', 'styles.css') $plugin)) {
+      Remove-Item -LiteralPath (Join-Path $plugin 'main.js') -Force -ErrorAction SilentlyContinue # so a run again doesn't take a part-download for done
+      throw "The Obsidian Git plugin's download didn't come through: GitHub didn't answer, three times. That's on their side and usually passes. Wait a few minutes, then paste the same command again."
+    }
+  }
+  # Add the brain to Obsidian's list of vaults, so it opens straight into it.
+  if (-not $check) {
+    Get-Process Obsidian -ErrorAction SilentlyContinue | ForEach-Object { [void]$_.CloseMainWindow() }
+    Start-Sleep -Seconds 2
+  }
+  $cfgDir = if ($check) { Join-Path $root 'obsidian' } else { Join-Path $env:APPDATA 'obsidian' }
+  $cfg = Join-Path $cfgDir 'obsidian.json'
+  New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
+  $data = [pscustomobject]@{}
+  if (Test-Path $cfg) { Copy-Item $cfg "$cfg.bak" -Force; $data = Get-Content $cfg -Raw | ConvertFrom-Json }
+  if (-not $data.PSObject.Properties['vaults']) { $data | Add-Member -NotePropertyName vaults -NotePropertyValue ([pscustomobject]@{}) }
+  if (-not ($data.vaults.PSObject.Properties | Where-Object { $_.Value.path -eq $vault })) {
+    $id = -join ((1..16) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) })
+    $ts = [long]([DateTime]::UtcNow - [DateTime]'1970-01-01').TotalMilliseconds
+    $data.vaults | Add-Member -NotePropertyName $id -NotePropertyValue ([pscustomobject]@{ path = $vault; ts = $ts; open = $true })
+  }
+  [IO.File]::WriteAllText($cfg, ($data | ConvertTo-Json -Depth 10 -Compress), $noBom)
+  Step 'Obsidian, with syncing on' 'done'
 }
-# Add the brain to Obsidian's list of vaults, so it opens straight into it.
-if (-not $check) {
-  Get-Process Obsidian -ErrorAction SilentlyContinue | ForEach-Object { [void]$_.CloseMainWindow() }
-  Start-Sleep -Seconds 2
-}
-$cfgDir = if ($check) { Join-Path $root 'obsidian' } else { Join-Path $env:APPDATA 'obsidian' }
-$cfg = Join-Path $cfgDir 'obsidian.json'
-New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
-$data = [pscustomobject]@{}
-if (Test-Path $cfg) { Copy-Item $cfg "$cfg.bak" -Force; $data = Get-Content $cfg -Raw | ConvertFrom-Json }
-if (-not $data.PSObject.Properties['vaults']) { $data | Add-Member -NotePropertyName vaults -NotePropertyValue ([pscustomobject]@{}) }
-if (-not ($data.vaults.PSObject.Properties | Where-Object { $_.Value.path -eq $vault })) {
-  $id = -join ((1..16) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) })
-  $ts = [long]([DateTime]::UtcNow - [DateTime]'1970-01-01').TotalMilliseconds
-  $data.vaults | Add-Member -NotePropertyName $id -NotePropertyValue ([pscustomobject]@{ path = $vault; ts = $ts; open = $true })
-}
-[IO.File]::WriteAllText($cfg, ($data | ConvertTo-Json -Depth 10 -Compress), $noBom)
-Step 'Obsidian, with syncing on' 'done'
 
 # 5b. The upload point, if this brain has one (from the kit after brain update 3): your brain is fine without it.
 $uploadSetup = Inside $vault 'skills' 'upload-point' 'setup-upload-point.ps1'
@@ -485,18 +504,22 @@ if (-not $check) {
 } else { Step 'The PC runner' 'skipped' }
 
 # 7. Obsidian opens last, so it can't hide a question in this window.
-Step 'Obsidian opened on your brain' 'started'
-# Without Obsidian, the link only gets Windows asking which app should open it (a friend's PC, 8 Nov 2026).
-$hasObsidian = $check -or (Find-Obsidian)
-if (-not $check -and $hasObsidian) {
-  try { Start-Process ('obsidian://open?path=' + [uri]::EscapeDataString($vault)) } catch { $o = Find-Obsidian; if ($o) { Start-Process $o } }
-  Start-Sleep -Seconds 3
+$hasObsidian = $false
+if (-not $wantObsidian) { Step 'Obsidian opened on your brain' 'skipped' } else {
+  Step 'Obsidian opened on your brain' 'started'
+  # Without Obsidian, the link only gets Windows asking which app should open it (a friend's PC, 8 Nov 2026).
+  $hasObsidian = $check -or (Find-Obsidian)
+  if (-not $check -and $hasObsidian) {
+    try { Start-Process ('obsidian://open?path=' + [uri]::EscapeDataString($vault)) } catch { $o = Find-Obsidian; if ($o) { Start-Process $o } }
+    Start-Sleep -Seconds 3
+  }
+  Step 'Obsidian opened on your brain' $(if ($hasObsidian) { 'done' } else { 'not done' })
 }
-Step 'Obsidian opened on your brain' $(if ($hasObsidian) { 'done' } else { 'not done' })
 
 Show-Steps
 if (-not $check) { Set-QuickEdit $true }
-if ($hasObsidian) { Say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.' }
+if (-not $wantObsidian) { Say 'No Obsidian, as you chose. To add it later, paste the same command again, give the same brain name, and answer Y to the Obsidian question.' }
+elseif ($hasObsidian) { Say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.' }
 else {
   Write-Host ''
   Write-Host "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again, and give the same brain name." -ForegroundColor Yellow
@@ -508,7 +531,7 @@ if ($runnerOk) { Say 'All done on this PC.' } else {
   Write-Host 'Or carry on below, and ask Claude to help get the runner working.'
 }
 Write-Host "Your brain on GitHub: https://github.com/$repo"
-Write-Host "Your copy on this PC: $vault (open in Obsidian)"
+Write-Host "Your copy on this PC: $vault$(if ($wantObsidian) { ' (open in Obsidian)' })"
 Write-Host ''
 Write-Host 'Last step, in Claude:' -ForegroundColor Cyan
 Write-Host '  1. Go to https://claude.ai/code. If it asks, connect GitHub and let Claude see your brain repo.'
