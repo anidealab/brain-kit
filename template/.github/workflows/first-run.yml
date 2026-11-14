@@ -1,0 +1,51 @@
+# Starts a brain made from the AnIdeaLab brain kit's template, a moment after it's made, on GitHub's
+# machines: it fills in the brain's start date, writes the setup report (the day it was started,
+# nothing else) and sends it to AnIdeaLab's inbox, so new brains can be counted. Then it turns
+# itself off, its job done. It never runs in the template itself.
+# If it didn't run (Actions off, or a failure), .github/first_run.py is still in the brain, and the
+# getting-started skill runs it in the first session instead. Once the brain is set up, this file
+# can be deleted.
+name: Start this brain
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  actions: write
+
+jobs:
+  start:
+    if: ${{ !github.event.repository.is_template && github.repository != 'AnIdeaLab/second-brain' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fill in the start date and write the setup report
+        id: start
+        run: |
+          if [ ! -f .github/first_run.py ]; then
+            echo "This brain is already started."
+            exit 0
+          fi
+          python3 .github/first_run.py
+          git config user.name "AnIdeaLab brain kit"
+          git config user.email "brain-kit@anidealab.com"
+          git add -A
+          git commit -q -m "Started this brain from the AnIdeaLab brain kit, $(date -u +'%-d %b %Y')"
+          git pull -q --rebase origin main
+          git push -q origin HEAD:main
+          echo "started=yes" >> "$GITHUB_OUTPUT"
+      - name: Send the setup report
+        if: steps.start.outputs.started == 'yes'
+        continue-on-error: true
+        run: python3 skills/brain-spec/brain_update.py send
+      - name: Turn this workflow off
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f .github/first_run.py ]; then
+            gh workflow disable first-run.yml --repo "$GITHUB_REPOSITORY" || echo "::notice::Couldn't turn this workflow off; it does nothing from here on."
+          fi

@@ -1,0 +1,62 @@
+# Publishes the template, the no-install way to get a brain: the public repo an owner makes their brain
+# from with GitHub's "Use this template", no command and nothing installed. Its files are brain/ as it is
+# on main, marked with the newest update, plus template/'s first-run parts (tools/kit.py template).
+# Runs on a push to main that changes what a new brain is made of, and by hand from the Actions tab.
+# It pushes with a deploy key of the template repo, kept in this repo's secret TEMPLATE_DEPLOY_KEY
+# (tools/template-setup.ps1 makes the repo, the key and the secret); without the secret it does nothing.
+name: Publish the template
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "brain/**"
+      - "template/**"
+      - "updates/**"
+      - "tools/kit.py"
+      - ".github/workflows/template.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: template
+  cancel-in-progress: false
+
+env:
+  TEMPLATE_REPO: AnIdeaLab/second-brain
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        env:
+          DEPLOY_KEY: ${{ secrets.TEMPLATE_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::notice::No TEMPLATE_DEPLOY_KEY secret, so the template wasn't published. tools/template-setup.ps1 sets it up."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/template_key
+          chmod 600 ~/.ssh/template_key
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/template_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          out="$RUNNER_TEMP/template"
+          git clone -q "git@github.com:$TEMPLATE_REPO.git" "$out"
+          git -C "$out" symbolic-ref HEAD refs/heads/main
+          python3 tools/kit.py template "$out"
+          git -C "$out" config user.name "AnIdeaLab brain kit"
+          git -C "$out" config user.email "brain-kit@anidealab.com"
+          git -C "$out" add -A
+          if git -C "$out" diff --cached --quiet; then
+            echo "The template is already up to date."
+          else
+            git -C "$out" commit -q -m "The AnIdeaLab brain kit, as of ${GITHUB_SHA::7}"
+            git -C "$out" push -q origin HEAD:main
+            echo "Published to https://github.com/$TEMPLATE_REPO"
+          fi
+          rm -f ~/.ssh/template_key

@@ -13,6 +13,12 @@ kit by changing those files here, then run:
                                          change, and fix what it reports.
     python3 tools/kit.py zip [folder]    the zip an owner can install from instead of the one command: the brain as a
                                          git bundle started today, the installer, the setup check and START-HERE.txt
+    python3 tools/kit.py template <folder>   the template's files, for the no-install way to get a brain: brain/ as it
+                                         is, placeholders and all, marked with the newest update, with template/'s
+                                         first-run parts added. .github/workflows/template.yml publishes them to the
+                                         template repo on each push to main; a brain made from it fills in its own
+                                         start date (template/.github/first_run.py). The build checks that such a
+                                         brain comes out the same as one the installers make.
 
 The kit's promises: no one person's names, accounts or setup anywhere in the repo (the copied skills aside, kept as
 they came), every date placeholder filled in a new brain, the core under 6 KB (a core may be 8 KB, so each owner has
@@ -53,6 +59,10 @@ ONE_COMMAND = "irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/in
 ONE_COMMAND_MAC = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.sh)"'
 INSTALL_MAC = os.path.join(INSTALL, "install-mac.sh")
 MAC_PARTS = os.path.join(INSTALL, "mac-brain")
+# The parts a brain made from the template has on top of brain/ (files as they go in the brain): the script that
+# starts it and the workflow that runs it.
+TEMPLATE_PARTS = os.path.join(REPO, "template")
+FIRST_RUN = os.path.join(".github", "first_run.py")
 # START-HERE.txt is for the one command; the zip's copy has the line that unpacks the zip from Downloads instead.
 ZIP_START = (
     "2. PASTE THIS LINE into the blue window and press Enter:\n\n" + ONE_COMMAND + "\n",
@@ -241,6 +251,7 @@ def build():
                 notes.append(f"rebuilt brain/{rel}")
     finally:
         shutil.rmtree(work, ignore_errors=True)
+    problems += template_check()
     mac = mac_check(notes)
     problems += mac or []
     for n in notes:
@@ -248,6 +259,83 @@ def build():
     if problems:
         sys.exit("The kit didn't pass its checks.\n\n" + "\n\n".join(problems))
     print(f"The kit passed its checks ({skill_count()} skills)" + (", and so did a brain made on a Mac." if mac is not None else "."))
+
+
+def make_template(out):
+    """The template's files in out: brain/ as it is, with its placeholders, marked with the newest update (its
+    date a placeholder too), and template/'s parts on top. Nothing of out's own is kept, except a .git folder."""
+    os.makedirs(out, exist_ok=True)
+    for name in os.listdir(out):
+        if name != ".git":
+            path = os.path.join(out, name)
+            shutil.rmtree(path) if os.path.isdir(path) and not os.path.islink(path) else os.remove(path)
+    for top in (BRAIN, TEMPLATE_PARTS):
+        for dirpath, dirs, files in os.walk(top):
+            dirs[:] = [d for d in dirs if d != "__pycache__"]
+            for f in files:
+                src = os.path.join(dirpath, f)
+                dest = os.path.join(out, os.path.relpath(src, top))
+                if top == TEMPLATE_PARTS and os.path.exists(dest):
+                    sys.exit(f"brain/ has {os.path.relpath(src, top)} too, so template/'s copy would replace it: take one out.")
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                shutil.copy2(src, dest)
+    n = newest_update()
+    if n:
+        path = os.path.join(out, "knowledge", "systems", "brain-updates", "README.md")
+        text = open(path, encoding="utf-8", newline="").read()
+        text, found = UPDATE_LINE.subn(f"**On kit update:** {n} (in the kit this brain started from, made on {{KIT_DATE}})", text, count=1)
+        if not found:
+            sys.exit("The \"**On kit update:**\" line isn't in brain/knowledge/systems/brain-updates/README.md any more; "
+                     "change make_template and zip_kit here, and New-BrainRepo in install/install-windows.ps1, to match.")
+        open(path, "w", encoding="utf-8", newline="").write(text)
+
+
+def tree(top):
+    """Every file under top, but .git: its path, whether it's a program, and its bytes."""
+    out = {}
+    for dirpath, dirs, files in os.walk(top):
+        dirs[:] = [d for d in dirs if d not in (".git", "__pycache__")]
+        for f in files:
+            path = os.path.join(dirpath, f)
+            out[os.path.relpath(path, top).replace(os.sep, "/")] = (bool(os.stat(path).st_mode & 0o111), open(path, "rb").read())
+    return out
+
+
+def template_check():
+    """A brain made from the template, started by its own first-run script, against one made the installers' way
+    on the same day: the same files, bar the template's own parts and the setup report. Returns the problems."""
+    day, iso = SENTINEL
+    work = tempfile.mkdtemp()
+    try:
+        made, usual = os.path.join(work, "template"), os.path.join(work, "usual")
+        make_template(made)
+        r = subprocess.run([sys.executable, os.path.join(made, FIRST_RUN), "--date", iso], capture_output=True, text=True)
+        if r.returncode:
+            return ["the template's first-run script failed (template/.github/first_run.py):\n" + r.stdout + r.stderr]
+        copy_brain(usual, day, iso)
+        n = newest_update()
+        if n:
+            path = os.path.join(usual, "knowledge", "systems", "brain-updates", "README.md")
+            text = open(path, encoding="utf-8", newline="").read()
+            open(path, "w", encoding="utf-8", newline="").write(
+                UPDATE_LINE.sub(f"**On kit update:** {n} (in the kit this brain started from, made on {day})", text, count=1))
+        a, b = tree(made), tree(usual)
+        own = {os.path.relpath(os.path.join(dirpath, f), TEMPLATE_PARTS).replace(os.sep, "/")
+               for dirpath, _, files in os.walk(TEMPLATE_PARTS) for f in files}
+        problems = []
+        if FIRST_RUN.replace(os.sep, "/") in a:
+            problems.append("the template's first-run script didn't delete itself")
+        if "knowledge/systems/brain-updates/0000-report.md" not in a:
+            problems.append("the template's first-run script didn't write the setup report")
+        extra = sorted(set(a) - set(b) - own - {"knowledge/systems/brain-updates/0000-report.md"})
+        missing = sorted(set(b) - set(a))
+        differ = sorted(k for k in set(a) & set(b) if a[k] != b[k])
+        for what, names in (("has files the installers' brain doesn't", extra), ("is missing", missing), ("differs in", differ)):
+            if names:
+                problems.append(f"a brain made from the template {what}: " + ", ".join(names[:20]))
+        return problems
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 def newest_update():
@@ -309,6 +397,9 @@ def main():
         return build()
     if args[:1] == ["zip"]:
         return zip_kit(os.path.abspath(args[1] if len(args) > 1 else "."))
+    if args[:1] == ["template"] and len(args) > 1:
+        make_template(os.path.abspath(args[1]))
+        return print(f"The template's files are in {os.path.abspath(args[1])} (update {newest_update()}, {skill_count()} skills).")
     sys.exit(__doc__)
 
 
