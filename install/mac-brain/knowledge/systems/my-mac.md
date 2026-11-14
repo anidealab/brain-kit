@@ -14,7 +14,7 @@ The Mac is a GitHub Actions self-hosted runner for this brain's repo, labelled `
   _logs/          the installer's install.log, and mac-run output, one log per run
   _upload/        files and folders the owner puts here for the brain, until they're sorted
   Tools/          GitHub's command line (Tools/bin), watch-jobs.sh and other shared tools
-  <repo name>/    the owner's copy of this brain, opened in Obsidian
+  <repo name>/    the owner's copy of this brain, opened in Obsidian if they have it
   <Project>/<Stage>/<job>/   a job's data, made when a job first needs it
   AI Brain Link - live jobs.command   opens Terminal on the jobs as they run
 ```

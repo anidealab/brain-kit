@@ -2,8 +2,9 @@
 #   irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 # It downloads this repo as a zip from GitHub (no Git needed yet), unpacks it in a temporary folder and
 # runs the installer in it, install\install-windows.ps1, as a file, which does the rest and says what it's
-# doing: Git, GitHub's command line and Obsidian, your brain's private repo made from brain\, your copy in
-# C:\AI-Brain-Link, and the PC runner. Safe to run again. Windows PowerShell 5.1, plain ASCII.
+# doing: Git, GitHub's command line and, if you'd like it, Obsidian, your brain's private repo made from
+# brain\, your copy in C:\AI-Brain-Link, and the PC runner, if you'd like it. Safe to run again.
+# Windows PowerShell 5.1, plain ASCII.
 & {
   $ErrorActionPreference = 'Stop'
   $ProgressPreference = 'SilentlyContinue' # Windows PowerShell 5.1 downloads far slower with its progress bar

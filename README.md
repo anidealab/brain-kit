@@ -12,13 +12,14 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 [install.ps1](install.ps1) downloads this repo as a zip (no Git needed yet), unpacks it in a temporary folder and runs [install/install-windows.ps1](install/install-windows.ps1) from it, which:
 - asks you to accept AnIdeaLab's [terms of use](TERMS.md) first (Y or N), and stops if you don't;
 - opens Claude in your browser, to sign in or make an account and choose a paid plan (you can skip it if you're already set up);
-- installs Git, GitHub's command line and Obsidian if they're missing, and signs you in to GitHub in your browser;
+- asks whether you'd like Obsidian (Enter is yes): it's an extra, and the brain works without it;
+- installs Git and GitHub's command line if they're missing, and Obsidian if you said yes, and signs you in to GitHub in your browser;
 - makes your brain from [brain/](brain/), as of the newest update, with the day you install it as its start, and puts it in a new private repo on your GitHub account;
 - invites AnIdeaLab's testing account to that repo, as the terms say;
-- puts your copy in `C:\AI-Brain-Link\<your brain's name>`, set up for Obsidian with your edits syncing to GitHub;
+- puts your copy in `C:\AI-Brain-Link\<your brain's name>`, set up for Obsidian with your edits syncing to GitHub, if you chose Obsidian;
 - adds the upload point, a Send to entry for giving your brain files with a right-click;
-- sets up the PC runner, so AI agents can run jobs on your PC. It asks for admin rights and your Windows password;
-- opens your brain in Obsidian, last, so it can't hide a question in the PowerShell window.
+- sets up the PC runner, if you say yes to it, so AI agents can run jobs on your PC. It asks for admin rights and your Windows password, then whether to keep the PC awake while it's plugged in, and says to answer yes: a sleeping PC can't run jobs;
+- opens your brain in Obsidian, if you chose it, last, so it can't hide a question in the PowerShell window.
 - then opens AnIdeaLab's tutorials page in your browser, for connecting Claude and the rest (anidealab.com/second-brain/tutorials, or the site's preview address until the site moves there).
 
 It's safe to run again: it skips what's already done. Its questions show in yellow, and a click in its window can't pause it. At the end it lists each step and how it went, keeps that in `C:\AI-Brain-Link\_logs\install.log` (which the brain's setup check reads), and says what to send Claude to get started. The steps in plain words, to send someone: [install/START-HERE.txt](install/START-HERE.txt).

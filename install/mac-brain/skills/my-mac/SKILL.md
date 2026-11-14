@@ -28,6 +28,7 @@ Then find your run in the workflow's run list, wait until it shows as completed,
 - **A job can open things on the owner's screen** (`open <a link or an app>`), because the runner runs inside their login. Do it only when they expect it.
 - **The jobs' PATH was saved at setup,** in `~/AI-Brain-Link/_runner/.path`, so a tool installed later may not be found. Use its full path, or put its folder at the front of `PATH` in the command. GitHub's command line is in `~/AI-Brain-Link/Tools/bin`; Homebrew's tools, if the owner has Homebrew, are in `/opt/homebrew/bin` (Apple silicon) or `/usr/local/bin` (Intel).
 - **`gh` in a job can't use the owner's sign-in:** gh keeps it in their login keychain, and on a Mac runner a job's `gh auth status` calls the token invalid. git's pushes from the brain's copy and Obsidian are fine, since they run in the owner's own session. Nothing in the brain needs `gh` in a job; one that does needs a token passed in by its workflow.
+- **The owner's copy of the brain,** `~/AI-Brain-Link/<repo name>`, is synced by Obsidian's Git plugin where the owner has Obsidian. Where they don't, each job brings it up to date before its command runs (a fast-forward only, in `mac-run.yml`), so the setup scripts in it are current once any job has run. Nothing sends the owner's own edits in that copy without Obsidian: a job commits and pushes them when they ask.
 - **Code lives in the repo, data lives on the Mac.** Scripts stay in the repo (a skill's folder); a job checks the repo out and reads and writes its data under `~/AI-Brain-Link/<Project>/<Stage>/<job>/`.
 - **Deleting the owner's files** needs their say first. A job moves what's going into `~/AI-Brain-Link/_trash/<date>/` instead, since the Trash isn't reliable from a job.
 - **Workflows for the Mac** use `runs-on: [self-hosted, my-mac]`. Everything else keeps `ubuntu-latest`, so the index workflow stays on GitHub's machines.
@@ -65,7 +66,7 @@ It needs GitHub's `gh` signed in, which the installer did. `~/AI-Brain-Link/<rep
 
 ## The first session
 A new brain's [getting-started skill](../getting-started/SKILL.md) was written for a Windows PC. On a Mac, follow it, with these in place of its PC parts:
-- **What the installer did:** it put the brain's copy in `~/AI-Brain-Link/<repo name>`, opened it in Obsidian with Obsidian Git syncing it, and set up the Mac runner (label `my-mac`, a LaunchAgent under the owner's account), unless they skipped it.
+- **What the installer did:** it put the brain's copy in `~/AI-Brain-Link/<repo name>`; opened it in Obsidian with Obsidian Git syncing it, if they said yes to Obsidian; and set up the Mac runner (label `my-mac`, a LaunchAgent under the owner's account), unless they skipped it. Its questions on a Mac are the same as on a PC, with "Keep this Mac awake" for the PC's.
 - **Step 1:** the Mac runner lets agents run jobs on their Mac while it's on, awake and they're logged in.
 - **Step 4, testing the runner:** start `mac-run.yml`, not `pc-run.yml`, with `workdir` left as it is and this `command`:
   ```

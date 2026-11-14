@@ -45,6 +45,27 @@ jobs:
         if: inputs.checkout
         uses: actions/checkout@v4
 
+      # The owner's copy of the brain on this Mac, brought up to date before the command runs. Where the owner
+      # has Obsidian, its Git plugin syncs the copy, and this leaves it alone. Without Obsidian nothing else
+      # would, and the setup scripts the owner pastes run from that copy. A fast-forward only, signed in as
+      # this job (the owner's own sign-in is in their keychain, which a job can't read), and it never stops
+      # the job: a copy with changes of its own in the way stays as it is, and the log says why.
+      - name: Bring the Mac's copy of the brain up to date
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          MAC_REPO_NAME: ${{ github.event.repository.name }}
+          MAC_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          copy="$HOME/AI-Brain-Link/$MAC_REPO_NAME"
+          if [ -d "$copy/.git" ] && [ ! -f "$copy/.obsidian/plugins/obsidian-git/main.js" ]; then
+            auth=$(printf 'x-access-token:%s' "$MAC_TOKEN" | base64 | tr -d '\n')
+            echo "::add-mask::$auth"
+            git -c credential.helper= -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" -C "$copy" pull --ff-only --quiet origin main 2>&1 || echo "The copy in $copy wasn't brought up to date."
+          fi
+          exit 0
+
       - name: Run
         env:
           MAC_COMMAND: ${{ inputs.command }}

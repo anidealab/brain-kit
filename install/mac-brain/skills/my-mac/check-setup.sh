@@ -75,7 +75,7 @@ else
 fi
 obsidian=""
 for o in /Applications/Obsidian.app "$HOME/Applications/Obsidian.app"; do if [ -d "$o" ]; then obsidian="$o"; break; fi; done
-if [ -n "$obsidian" ]; then ok "Obsidian is installed ($obsidian)"; else fix 'Obsidian is not installed' "Paste the install line from the kit's README again: it installs what's missing"; fi
+if [ -n "$obsidian" ]; then ok "Obsidian is installed ($obsidian)"; else note "Obsidian isn't installed. It's an extra: the brain works without it" "To add it, paste the install line from the kit's README again and answer Y at its Obsidian question"; fi
 
 # The runner on this Mac ---------------------------------------------------------------------------
 section 'The Mac runner'
@@ -169,6 +169,10 @@ if [ -z "$vault" ]; then
   else note "Couldn't find a copy of the brain on this Mac" 'Run this again with: --vault <folder>'; fi
 else
   info "Your copy: $vault"
+  # With Obsidian, its Git plugin syncs the copy. Without it (the app isn't here and the copy has no Git plugin),
+  # the Mac runner brings the copy up to date at the start of each job (mac-run.yml).
+  with_obsidian=yes
+  if [ -z "$obsidian" ] && [ ! -f "$vault/.obsidian/plugins/obsidian-git/main.js" ]; then with_obsidian=''; fi
   case "$vault" in *"Mobile Documents"*|*Dropbox*|*CloudStorage*|*OneDrive*) fix "It's inside a synced folder (iCloud, Dropbox or OneDrive), and two sync systems on one git folder can corrupt it" "Clone it again into $root and open that copy in Obsidian instead" ;; esac
   if [ -n "$git" ]; then
     st=$(git -C "$vault" status --porcelain -b 2>&1); code=$?
@@ -179,12 +183,14 @@ else
       if [ -n "$repo" ] && [ "$(repo_of "$u")" != "$repo" ]; then fix "It syncs with $u, not $repo" "git -C \"$vault\" remote set-url origin https://github.com/$repo.git"
       elif [ -n "$u" ]; then ok "It syncs with $u"; fi
       changed=$(printf '%s\n' "$st" | grep -vc '^##')
-      if [ "$changed" -gt 0 ]; then note "$changed file(s) changed here and not yet synced" 'Obsidian Git syncs them every 10 minutes while Obsidian is open'; fi
+      if [ "$changed" -gt 0 ] && [ -n "$with_obsidian" ]; then note "$changed file(s) changed here and not yet synced" 'Obsidian Git syncs them every 10 minutes while Obsidian is open'
+      elif [ "$changed" -gt 0 ]; then note "$changed file(s) changed here, and without Obsidian nothing sends them to GitHub" "Tell an agent, which can commit and push them; or: git -C \"$vault\" add -A && git -C \"$vault\" commit -m 'My edits' && git -C \"$vault\" push"; fi
       if [ -n "$gh" ] && [ -n "$repo" ]; then
         remote=$(ghq api "repos/$repo/commits/$branch" --jq .sha)
         local_head=$(git -C "$vault" rev-parse HEAD 2>/dev/null)
         if [ -n "$remote" ] && [ "$remote" = "$local_head" ]; then ok 'It matches GitHub'
-        elif [ -n "$remote" ]; then note "It isn't at the same commit as GitHub" "Obsidian Git catches up while Obsidian is open; or: git -C \"$vault\" pull"; fi
+        elif [ -n "$remote" ] && [ -n "$with_obsidian" ]; then note "It isn't at the same commit as GitHub" "Obsidian Git catches up while Obsidian is open; or: git -C \"$vault\" pull"
+        elif [ -n "$remote" ]; then note "It isn't at the same commit as GitHub" "The Mac runner catches it up at the start of its next job; or: git -C \"$vault\" pull"; fi
       fi
     fi
     if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ]; then fix "Git doesn't know your name and email, so commits from Obsidian fail" 'git config --global user.name "Your Name"; git config --global user.email "you@users.noreply.github.com"'; fi
@@ -193,7 +199,8 @@ else
   fi
   plugins="$vault/.obsidian/plugins"
   enabled=$(cat "$vault/.obsidian/community-plugins.json" 2>/dev/null)
-  if [ ! -f "$plugins/obsidian-git/main.js" ]; then
+  if [ -z "$with_obsidian" ]; then info "No Obsidian, so this copy isn't a vault: the Mac runner brings it up to date at the start of each job"
+  elif [ ! -f "$plugins/obsidian-git/main.js" ]; then
     fix "The Obsidian Git plugin isn't installed in this vault, so edits don't sync" "gh release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir \"$plugins/obsidian-git\""
   elif ! printf '%s' "$enabled" | grep -q '"obsidian-git"'; then fix "The Obsidian Git plugin is switched off, so the vault doesn't sync" 'In Obsidian: Settings, Community plugins, and switch on Git'
   else ok 'The Obsidian Git plugin is installed and on, so edits sync'; fi
@@ -201,6 +208,7 @@ else
     if printf '%s' "$enabled" | grep -q '"brain-graph"'; then ok 'The brain graph is installed and on'; else note 'The brain graph is installed but switched off' 'In Obsidian: Settings, Community plugins, and switch on Brain graph'; fi
   fi
   if python3 -c 'import json,sys; v=json.load(open(sys.argv[1])).get("vaults", {}); sys.exit(0 if any(x.get("path") == sys.argv[2] for x in v.values()) else 1)' "$obs_cfg" "$vault" 2>/dev/null; then ok 'Obsidian has it as a vault'
+  elif [ -z "$with_obsidian" ]; then :
   else fix "Obsidian hasn't opened this folder as a vault" "In Obsidian: Open folder as vault (from the vault list), and pick $vault"; fi
 fi
 

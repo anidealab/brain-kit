@@ -3,8 +3,9 @@ Your own second brain, started from the AnIdeaLab brain kit.
 What you'll have at the end:
 - Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 65 skills
   (how to do things) and a knowledge library that fills up as you use it.
-- Obsidian on your PC, showing your brain as a map, and the brain graph replaying how it grew.
-- The PC runner: it lets Claude run jobs on your PC whenever it's on.
+- Obsidian on your PC, if you'd like it, showing your brain as a map, and the brain graph
+  replaying how it grew.
+- The PC runner, if you'd like it: it lets Claude run jobs on your PC whenever it's on.
 
 You need: a Windows PC, a Claude plan, and about 30 minutes, mostly waiting for installs.
 
@@ -14,21 +15,23 @@ You need: a Windows PC, a Claude plan, and about 30 minutes, mostly waiting for 
 
 irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 
-   It installs Git, GitHub's command line and Obsidian, and Windows may ask you to allow each.
-   Its questions show in yellow. It asks you to:
+   It installs Git and GitHub's command line, and Obsidian if you say yes to it, and Windows
+   may ask you to allow each. Its questions show in yellow. It asks you to:
    - accept AnIdeaLab's terms of use: type Y and press Enter. Read them first, here or by typing
      V in the setup: https://github.com/AnIdeaLab/brain-kit/blob/main/TERMS.md
    - sign in to Claude: press Enter and it opens Claude in your browser. Sign in, or make an
      account and choose a paid plan (Pro or above), since your brain works in Claude Code.
      Already set up? Type S to skip;
+   - say whether you'd like Obsidian (press Enter for yes). Your brain works without it;
    - sign in to GitHub in your browser, copying a code from the window (no account yet? make
      one on that page, it's free);
    - name your brain (press Enter for my-brain). Your brain's repo is private;
    - say yes to the PC runner. A second window asks for admin rights, then your Windows
      password: the one you type at the sign-in screen, NOT your PIN. With a Microsoft account,
      it's that account's password;
-   - say yes to keeping the PC awake while it's plugged in (jobs can't run while it sleeps);
-   - last, Obsidian opens your brain: choose "Trust author and enable plugins", then come
+   - say yes to keeping the PC awake while it's plugged in. Most people say no here, and then
+     your brain can't reach the PC whenever it has gone to sleep. The screen still turns off;
+   - last, if you chose it, Obsidian opens your brain: choose "Trust author and enable plugins", then come
      back to the blue window, which lists each step and what to do next.
 
    If it stops partway, paste the same line again: it skips what's already done. What it
