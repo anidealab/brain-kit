@@ -74,7 +74,8 @@ if ($git) {
 }
 $script:gh = Find-Gh
 if ($gh) { Ok "GitHub's command line: $((& $gh --version) | Select-Object -First 1)" } else { Fix "GitHub's command line (gh) is not installed, so the repo can't be checked from here" 'winget install --id GitHub.cli -e   then: gh auth login --web --scopes workflow' }
-if (Find-Obsidian) { Ok 'Obsidian is installed' } else { Fix 'Obsidian is not installed' 'winget install --id Obsidian.Obsidian -e' }
+$obsidian = Find-Obsidian
+if ($obsidian) { Ok 'Obsidian is installed' } else { Note "Obsidian isn't installed. It's an extra: the brain works without it" 'winget install --id Obsidian.Obsidian -e   or paste the install line from the kit''s README again and answer Y at its Obsidian question' }
 $login = $null
 if ($gh) {
   $st = (& $gh auth status --hostname github.com 2>&1) | Out-String
@@ -272,6 +273,9 @@ if (-not $Vault) {
   else { Note "Couldn't find a copy of the brain on this PC" 'Run this again with: -Vault <folder>' }
 } else {
   Info "Your copy: $Vault"
+  # With Obsidian, its Git plugin syncs the copy. Without it (the app isn't here and the copy has no Git plugin),
+  # the PC runner brings the copy up to date at the start of each job (pc-run.yml).
+  $withObsidian = $obsidian -or (Test-Path (Join-Path $Vault '.obsidian\plugins\obsidian-git\main.js'))
   if ($Vault -match 'OneDrive|Dropbox|iCloud') { Fix "It's inside a synced folder (OneDrive, Dropbox or iCloud), and two sync systems on one git folder can corrupt it" "Clone it again into $Root and open that copy in Obsidian instead" }
   if ($git) {
     $st = (& $git -C $Vault status --porcelain -b 2>&1) | Out-String
@@ -281,11 +285,13 @@ if (-not $Vault) {
       $u = Origin $Vault
       if ($Repo -and -not (Same-Repo $u $Repo)) { Fix "It syncs with $u, not $Repo" "git -C `"$Vault`" remote set-url origin https://github.com/$Repo.git" } elseif ($u) { Ok "It syncs with $u" }
       $changed = @($st -split "`n" | Where-Object { $_.Trim() -and $_ -notmatch '^##' }).Count
-      if ($changed) { Note "$changed file(s) changed here and not yet synced" 'Obsidian Git syncs them every 10 minutes while Obsidian is open' }
+      if ($changed -and $withObsidian) { Note "$changed file(s) changed here and not yet synced" 'Obsidian Git syncs them every 10 minutes while Obsidian is open' }
+      elseif ($changed) { Note "$changed file(s) changed here, and without Obsidian nothing sends them to GitHub" "Tell an agent, which can commit and push them; or: git -C `"$Vault`" add -A; git -C `"$Vault`" commit -m edits; git -C `"$Vault`" push" }
       if ($gh -and $Repo -and $r) {
         $remote = Gh api "repos/$Repo/commits/$($r.default_branch)" --jq .sha
         $local = "$(& $git -C $Vault rev-parse HEAD 2>$null)".Trim()
-        if ($remote -and $local -eq $remote) { Ok 'It matches GitHub' } elseif ($remote) { Note "It isn't at the same commit as GitHub" 'Obsidian Git catches up while Obsidian is open; or: git -C "<folder>" pull' }
+        if ($remote -and $local -eq $remote) { Ok 'It matches GitHub' } elseif ($remote -and $withObsidian) { Note "It isn't at the same commit as GitHub" 'Obsidian Git catches up while Obsidian is open; or: git -C "<folder>" pull' }
+        elseif ($remote) { Note "It isn't at the same commit as GitHub" 'The PC runner catches it up at the start of its next job; or: git -C "<folder>" pull' }
       }
     }
     if (-not "$(& $git config --global user.name 2>$null)".Trim() -or -not "$(& $git config --global user.email 2>$null)".Trim()) { Fix "Git doesn't know your name and email, so commits from Obsidian fail" 'git config --global user.name "Your Name"; git config --global user.email "you@users.noreply.github.com"' }
@@ -296,11 +302,12 @@ if (-not $Vault) {
   # In PowerShell 5.1 ConvertFrom-Json hands a JSON list back as one item, so it's piped on to split it.
   $on = @(); if (Test-Path (Join-Path $obs 'community-plugins.json')) { try { $on = @((Get-Content (Join-Path $obs 'community-plugins.json') -Raw | ConvertFrom-Json) | ForEach-Object { $_ }) } catch { } }
   $pluginDir = Join-Path $obs 'plugins\obsidian-git'
-  if (-not (Test-Path (Join-Path $pluginDir 'main.js'))) { Fix "The Obsidian Git plugin isn't installed in this vault, so edits don't sync" "gh release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir '$pluginDir'" }
+  if (-not $withObsidian) { Info 'No Obsidian, so this copy is not a vault: the PC runner brings it up to date at the start of each job' }
+  elseif (-not (Test-Path (Join-Path $pluginDir 'main.js'))) { Fix "The Obsidian Git plugin isn't installed in this vault, so edits don't sync" "gh release download --repo Vinzent03/obsidian-git --pattern main.js --pattern manifest.json --pattern styles.css --clobber --dir '$pluginDir'" }
   elseif ($on -notcontains 'obsidian-git') { Fix 'The Obsidian Git plugin is switched off, so the vault doesn''t sync' 'In Obsidian: Settings, Community plugins, and switch on Git' }
   else { Ok 'The Obsidian Git plugin is installed and on, so edits sync' }
   if (Test-Path (Join-Path $obs 'plugins\brain-graph\main.js')) { if ($on -contains 'brain-graph') { Ok 'The brain graph is installed and on' } else { Note 'The brain graph is installed but switched off' 'In Obsidian: Settings, Community plugins, and switch on Brain graph' } }
-  if (@($obsVaults | Where-Object { $_ -ieq $Vault }).Count) { Ok 'Obsidian has it as a vault' } else { Fix "Obsidian hasn't opened this folder as a vault" "In Obsidian: Manage vaults (bottom left), Open folder as vault, and pick $Vault" }
+  if (@($obsVaults | Where-Object { $_ -ieq $Vault }).Count) { Ok 'Obsidian has it as a vault' } elseif (-not $withObsidian) { } else { Fix "Obsidian hasn't opened this folder as a vault" "In Obsidian: Manage vaults (bottom left), Open folder as vault, and pick $Vault" }
 }
 
 # The installer's last run ---------------------------------------------------------------------------

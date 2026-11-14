@@ -14,7 +14,7 @@ C:\AI-Brain-Link\
   _logs\          pc-run output, one UTF-16 log per run
   _upload\        the upload point: waiting.txt, the list of what the owner sent, and copies off a USB stick until they're sorted
   Tools\          shared tools, and watch-jobs.ps1 (the live jobs window)
-  <repo name>\    the owner's copy of this brain, opened in Obsidian
+  <repo name>\    the owner's copy of this brain, opened in Obsidian if they have it
   <Project>\<Stage>\<job>\   a job's data, made when a job first needs it
 ```
 

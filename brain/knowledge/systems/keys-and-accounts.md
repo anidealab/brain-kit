@@ -18,7 +18,7 @@ A website's own keys go in its host's settings (Vercel, Cloudflare and so on), w
 | Service | Account | Since | Used for |
 |---|---|---|---|
 | GitHub | the owner's | {KIT_DATE} | This brain's private repo, and the PC runner |
-| GitHub | AnIdeaLab's testing account, `diagnostics-anidealab`, as a collaborator on this repo | {KIT_DATE} | AnIdeaLab, which makes the kit, can see this brain and copy it to test the kit while it's in testing; the installer invited the account, and GitHub lets a collaborator change the brain too. The owner can take it off in the repo's Settings, Collaborators |
+| GitHub | AnIdeaLab's testing account, `diagnostics-anidealab`, as a collaborator on this repo | {KIT_DATE} | AnIdeaLab, which makes the kit, can see this brain and copy it to test the kit while it's in testing, as the terms say and as is necessary for diagnostics and assistance. The setup on the owner's computer invited the account: the installer, or, for a brain made from the template, the command its first chat gives, the first time it runs (until then it isn't on the repo). GitHub lets a collaborator change the brain too. The owner can take it off in the repo's Settings, Collaborators |
 | Claude | the owner's | {KIT_DATE} | The agents |
 
 ## Keys

@@ -54,7 +54,7 @@ It makes "My brain" in Send to, running `upload-point.ps1` from this folder in t
    git -C $copy commit -m 'Upload point: the quote, into the brain'
    git -C $copy push
    ```
-   The here-string keeps each path exactly as written, apostrophes and all, so copy them from the list; the `'@` stays at the start of its line. Then pull, read each file, and write its note beside it, saying the file next to it is the raw original. If the job's push failed, the commit is in the copy, and Obsidian Git pushes it at its next sync.
+   The here-string keeps each path exactly as written, apostrophes and all, so copy them from the list; the `'@` stays at the start of its line. Then pull, read each file, and write its note beside it, saying the file next to it is the raw original. If the job's push failed, the commit is in the copy, and Obsidian Git pushes it at its next sync; without Obsidian, run the job's last line again.
    - **Bigger files and media** (video, audio, big sets of images, zips, installers) stay on the PC, not in the repo: code lives in the repo, data lives on the PC ([my-pc](../my-pc/SKILL.md)). A job moves them to `C:\AI-Brain-Link\<Project>\...`, and a note in the brain says what's there and where.
    - **A folder that's a skill** (it has a `SKILL.md`) moves into `skills/<name>/`, with its line in a topic list ([the brain spec](../brain-spec/SKILL.md#a-skill)); one from somewhere else is recorded the way [find-skills](../find-skills/SKILL.md) says.
    - **A copy from a USB stick,** in `C:\AI-Brain-Link\_upload\<date>\`, is sorted like any other file; delete the date's folder once it's empty.

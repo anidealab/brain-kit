@@ -46,6 +46,29 @@ jobs:
         if: inputs.checkout
         uses: actions/checkout@v4
 
+      # The owner's copy of the brain on this PC, brought up to date before the command runs. Where the owner
+      # has Obsidian, its Git plugin syncs the copy, and this leaves it alone. Without Obsidian nothing else
+      # would, and the setup scripts the owner pastes run from that copy. A fast-forward only, signed in as
+      # this job, and it never stops the job: a copy with changes of its own in the way stays as it is, and
+      # the log says why. safe.directory: the copy belongs to the owner, and this job runs with admin rights.
+      - name: Bring the PC's copy of the brain up to date
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          PC_REPO_NAME: ${{ github.event.repository.name }}
+          PC_TOKEN: ${{ github.token }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $copy = "C:\AI-Brain-Link\$env:PC_REPO_NAME"
+          if ((Test-Path "$copy\.git") -and -not (Test-Path "$copy\.obsidian\plugins\obsidian-git\main.js")) {
+            $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:PC_TOKEN"))
+            Write-Output "::add-mask::$auth"
+            $out = & git -c credential.helper= -c safe.directory=* -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" -C $copy pull --ff-only --quiet origin main 2>&1 | ForEach-Object { "$_" }
+            if ($LASTEXITCODE -ne 0) { $out; "The copy in $copy wasn't brought up to date." }
+          }
+          exit 0
+
       - name: Run
         working-directory: ${{ inputs.workdir }}
         env:
