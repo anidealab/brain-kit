@@ -1,7 +1,7 @@
 ---
 about: "Which AnIdeaLab.com page the sign-off links to, by the reader's field. AnIdeaLab's file, refreshed from the kit repo by itself: never edit it here. Read before signing off an email to someone outside."
 tags: [the-brain]
-updated: 5 Nov 2026
+updated: 16 Nov 2026
 ---
 # The sign-off's links, by field
 
@@ -9,11 +9,22 @@ This is AnIdeaLab's file, not the owner's. AnIdeaLab keeps it in the kit's repo,
 
 **How to use it.** When an email can carry a link, "AnIdeaLab.com" in the sign-off ([the core](../../CLAUDE.md)) links to the page for the reader's field, from the table below. Work the field out from what you know about the person: their business, their website, the job you're writing about. If no line fits, or you're not sure, use the general page. The words of the sign-off never change, and plain text keeps the bare words.
 
-**Use only lines marked live.** If the reader's line isn't live yet, use the general page if that one is; if neither is, the sign-off carries no link. Until AnIdeaLab.com's pages are built, none is live.
+**Use only lines marked live.** If the reader's line isn't live yet, use the general page if that one is; if neither is, the sign-off carries no link. Every line below is live. A field's address works from the day its line is here: until AnIdeaLab.com has that field's own page, the address shows the general page.
+
+**Pick the closest line.** An electrician gets the electricians' line, not the builders'; a café that also caters gets the cafés'. A tradie with no line of their own (a roofer, a tiler) gets the general page.
 
 | Field | Counts as | Link | Status |
 |---|---|---|---|
-| Anyone else | Everyone no other line fits | `https://anidealab.com/assistant?from=message` | planned |
-| Builders | Builders, building companies, carpenters, renovation firms | `https://anidealab.com/assistant/builder?from=message` | planned: the first trade page |
+| Anyone else | Everyone no other line fits | `https://anidealab.com/assistant?from=message` | live |
+| Builders | Builders, building companies, carpenters, renovation firms | `https://anidealab.com/assistant/builder?from=message` | live |
+| Electricians | Electricians, electrical contractors, solar and data installers | `https://anidealab.com/assistant/electrician?from=message` | live |
+| Plumbers | Plumbers, gasfitters, drainlayers | `https://anidealab.com/assistant/plumber?from=message` | live |
+| Painters | Painters, decorators | `https://anidealab.com/assistant/painter?from=message` | live |
+| Landscapers | Landscapers, gardeners, lawn and garden care | `https://anidealab.com/assistant/landscaper?from=message` | live |
+| Cafés | Cafés, coffee shops, bakeries | `https://anidealab.com/assistant/cafe?from=message` | live |
+| Restaurants | Restaurants, bars, pubs, takeaways, caterers | `https://anidealab.com/assistant/restaurant?from=message` | live |
+| Real estate agents | Real estate agents, agencies, people who sell property | `https://anidealab.com/assistant/real-estate?from=message` | live |
+| Property managers | Property managers, rental and letting agents | `https://anidealab.com/assistant/property-manager?from=message` | live |
+| Shops | Shops, online stores, other retail | `https://anidealab.com/assistant/shop?from=message` | live |
 
 **A field that isn't here** gets the general page. Only AnIdeaLab adds fields, and they reach this brain within a day.
