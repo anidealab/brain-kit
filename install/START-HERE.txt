@@ -29,8 +29,9 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
    - say yes to the PC runner. A second window asks for admin rights, then your Windows
      password: the one you type at the sign-in screen, NOT your PIN. With a Microsoft account,
      it's that account's password;
-   - say yes to keeping the PC awake while it's plugged in. Most people say no here, and then
-     your brain can't reach the PC whenever it has gone to sleep. The screen still turns off;
+   - say yes to keeping the PC awake while it's plugged in. Most people say no here. A PC that
+     sleeps can leave its runner disconnected after it wakes, until you restart the runner by
+     hand; staying awake is the simple way round that. The screen still turns off;
    - last, if you chose it, Obsidian opens your brain: choose "Trust author and enable plugins", then come
      back to the blue window, which lists each step and what to do next.
 
