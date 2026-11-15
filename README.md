@@ -1,8 +1,33 @@
 # The AnIdeaLab brain kit
 
-A second brain for working with AI agents: a private GitHub repo of plain Markdown that agents work from. It has a core every agent reads (`CLAUDE.md`), a library of skills for how to do things, and a knowledge library of what the brain knows, with a custom AnIdeaLab Obsidian plugin to see it and a runner on the owner's PC or Mac for jobs that need it. An owner starts one with one command, in PowerShell on Windows or Terminal on a Mac ([Install](#install)).
+A second brain for working with AI agents: a private GitHub repo of plain Markdown that agents work from. It has a core every agent reads (`CLAUDE.md`), a library of skills for how to do things, and a knowledge library of what the brain knows. It's free, and an owner starts one in three steps, with nothing to install ([Start a brain](#start-a-brain)). Two extras go on the owner's PC or Mac, if they'd like them: a runner for jobs that need their computer, and Obsidian with a custom AnIdeaLab plugin to see the brain as a map ([On your computer](#on-your-computer-if-you-like)).
 
-## Install
+## Start a brain
+Three steps, about ten minutes, and a phone will do. Your brain is kept on GitHub, in a private repo that's yours, and your AI agent works in it from your browser.
+
+1. **Get a Claude Pro plan,** or above: [claude.com/pricing](https://claude.com/pricing). Your agent is Claude, and working in a brain needs a paid plan. If you have one already, go on to step 2.
+2. **[Make your brain](https://github.com/new?template_owner=AnIdeaLab&template_name=second-brain&name=my-brain&visibility=private).** The link opens GitHub, where your brain is kept. Sign in, or make a free account, then press "Create repository". Leave it set to Private.
+3. **Send your first message.** Open [claude.ai/code](https://claude.ai/code). If it asks, connect GitHub and let it see `my-brain`. Start a session with `my-brain` selected, and send this:
+
+   ```
+   This is my new second brain. Read CLAUDE.md and get me set up.
+   ```
+
+It asks you a few questions and sets everything up from there. Every chat after that starts the same way: a new session with `my-brain` selected.
+
+What those steps do:
+- step 2 copies the template repo, [AnIdeaLab/second-brain](https://github.com/AnIdeaLab/second-brain), into a new private repo on your GitHub account. The template is [brain/](brain/) as it is on this repo's `next` branch, so a new brain has the newest work;
+- a moment later a workflow in your new repo runs once, on GitHub's machines: it fills in that day as your brain's start, sends AnIdeaLab a setup report (the day the brain was started, nothing else), so new brains can be counted, and turns itself off;
+- your first chat follows the brain's [getting-started skill](brain/skills/getting-started/SKILL.md): it checks the repo is private, asks who you are and what you'd like the brain for, writes your first notes, offers the two extras for your computer, and shows you around;
+- the kit is free under AnIdeaLab's [terms of use](TERMS.md), which your first chat points you to.
+
+## On your computer, if you like
+A brain works with nothing on your computer. There are two extras, a few minutes each, and your first chat offers both:
+- **The runner:** your agents can then run jobs on your PC or Mac from any chat, on your phone too, whenever it's on.
+- **Obsidian:** a free app that shows your brain as a map on your computer, where you can read and edit your notes.
+
+Both come from one command, below, which your first chat gives you along with what to answer. For a brain you've already made, type your brain's name at the name question (`my-brain`, unless you changed it in step 2), so the command uses that brain: it puts a copy of it on your computer and adds what you chose. The command also makes a brain by itself, for anyone who'd rather start from their computer: with a name that isn't a brain of yours yet, it makes one.
+
 **On a Windows PC,** open PowerShell (press the Windows key, type powershell, press Enter), paste this line and press Enter:
 
 ```
@@ -14,7 +39,7 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 - opens Claude in your browser, to sign in or make an account and choose a paid plan (you can skip it if you're already set up);
 - asks whether you'd like Obsidian (Enter is yes): it's an extra, and the brain works without it;
 - installs Git and GitHub's command line if they're missing, and Obsidian if you said yes, and signs you in to GitHub in your browser;
-- makes your brain from [brain/](brain/), as of the newest update, with the day you install it as its start, and puts it in a new private repo on your GitHub account;
+- asks your brain's name, and makes your brain from [brain/](brain/), as of the newest update, with the day you install it as its start, in a new private repo on your GitHub account. If the name is a brain you've already made, it uses that one;
 - invites AnIdeaLab's testing account to that repo, as the terms say;
 - puts your copy in `C:\AI-Brain-Link\<your brain's name>`, set up for Obsidian with your edits syncing to GitHub, if you chose Obsidian;
 - adds the upload point, a Send to entry for giving your brain files with a right-click;
@@ -44,8 +69,8 @@ AnIdeaLab sends fixes, new rules and new parts to brains made from the kit. A br
 
 ## What's here
 - **[brain/](brain/)**: the kit's brain as a new one gets it, with `{KIT_DATE}` and `{KIT_ISO}` where each brain has its own start date.
-- **[install.ps1](install.ps1), [install.sh](install.sh) and [install/](install/)**: the one command's script for Windows and for a Mac, and the installers and START-HEREs they run and point to, with the parts a Mac brain gets in [install/mac-brain/](install/mac-brain/).
-- **[template/](template/)**: what a brain made the no-install way has on top of `brain/`: the script that fills in its start date and writes its setup report, and the workflow that runs it once. The kit's "Publish the template" workflow puts `brain/` (as it is on the `next` branch) and these in the template repo, [AnIdeaLab/second-brain](https://github.com/AnIdeaLab/second-brain), which an owner makes their brain from with GitHub's "Use this template". `tools/template-setup.ps1` sets that repo up.
+- **[install.ps1](install.ps1), [install.sh](install.sh) and [install/](install/)**: the one command for a brain's extras on a computer, which can also make a brain by itself: its script for Windows and for a Mac, and the installers and START-HEREs they run and point to, with the parts a Mac brain gets in [install/mac-brain/](install/mac-brain/).
+- **[template/](template/)**: what a brain made the no-install way ([Start a brain](#start-a-brain)) has on top of `brain/`: the script that fills in its start date and writes its setup report, and the workflow that runs it once. The kit's "Publish the template" workflow puts `brain/` (as it is on the `next` branch) and these in the template repo, [AnIdeaLab/second-brain](https://github.com/AnIdeaLab/second-brain), which an owner makes their brain from with GitHub's "Use this template". `tools/template-setup.ps1` sets that repo up.
 - **[sign-off-links.md](sign-off-links.md)**: which AnIdeaLab.com page the sign-off links to, by the reader's field. A brain's daily update check takes the newest copy by itself, without asking its owner.
 - **[updates/](updates/)**: one message per update, newest last, each starting with a summary for the owner. The commit that added each one holds `brain/` as of that update, and `brain_update.py` merges the difference into a brain with a three-way merge, so the brain's own changes elsewhere stay.
 - **[inbox/](inbox/)**: after each update, a brain sends a report of how it went to AnIdeaLab's private inbox, so the kit gets better.
