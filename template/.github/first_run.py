@@ -4,7 +4,8 @@
 A brain made from the template is the kit's brain as it came, with {KIT_DATE} and {KIT_ISO} still where its start
 date goes. This fills them in with today's date (UTC), in file names and in text files, as the installers do on a
 PC or a Mac, writes the setup report (the day it was started, nothing else), and then deletes itself, so it runs
-once. It only changes files: whoever runs it commits and pushes.
+once, and the template's page for visitors (.github/README.md), which GitHub shows in place of the brain's own
+front door while it's there. It only changes files: whoever runs it commits and pushes.
 
     python3 .github/first_run.py                  from the top of the brain
     python3 .github/first_run.py --date 2026-01-31    with a date given, for the kit's own check
@@ -22,6 +23,8 @@ TOP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEXT = {".md", ".py", ".ps1", ".yml", ".json", ".txt", ".css", ".js", ".mjs", ".sh"}
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 REPORT = os.path.join("knowledge", "systems", "brain-updates", "0000-report.md")
+# The template repo's page for visitors: GitHub shows a README in .github ahead of the one at the top.
+VISITORS = os.path.join(".github", "README.md")
 
 
 def fill(text, day, iso):
@@ -33,6 +36,7 @@ def main():
     when = datetime.strptime(args[1], "%Y-%m-%d") if args[:1] == ["--date"] and len(args) > 1 else datetime.now(timezone.utc)
     day, iso = f"{when.day} {MONTHS[when.month - 1]} {when.year}", when.strftime("%Y-%m-%d")
     me = os.path.abspath(__file__)
+    visitors = os.path.join(TOP, VISITORS)
     changed = 0
     # Deepest first, so a folder is renamed after what's in it.
     for dirpath, dirs, files in os.walk(TOP, topdown=False):
@@ -40,7 +44,7 @@ def main():
             continue
         for f in files:
             path = os.path.join(dirpath, f)
-            if path == me:
+            if path in (me, visitors):
                 continue
             if os.path.splitext(f)[1] in TEXT or f == ".gitignore":
                 try:
@@ -65,6 +69,8 @@ def main():
             "---\n"
             "# Setup report\n\n"
             f"This brain was started from the AnIdeaLab brain kit's template on {day} (UTC).\n")
+    if os.path.exists(visitors):
+        os.remove(visitors)
     os.remove(me)
     print(f"This brain starts on {day}: {changed} files and names filled in, and the setup report written.")
 

@@ -325,6 +325,8 @@ def template_check():
         problems = []
         if FIRST_RUN.replace(os.sep, "/") in a:
             problems.append("the template's first-run script didn't delete itself")
+        if ".github/README.md" in a:
+            problems.append("the template's first-run script didn't delete the template's page for visitors (.github/README.md)")
         if "knowledge/systems/brain-updates/0000-report.md" not in a:
             problems.append("the template's first-run script didn't write the setup report")
         extra = sorted(set(a) - set(b) - own - {"knowledge/systems/brain-updates/0000-report.md"})

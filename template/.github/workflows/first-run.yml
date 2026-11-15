@@ -1,7 +1,7 @@
 # Starts a brain made from the AnIdeaLab brain kit's template, a moment after it's made, on GitHub's
 # machines: it fills in the brain's start date, writes the setup report (the day it was started,
-# nothing else) and sends it to AnIdeaLab's inbox, so new brains can be counted. Then it turns
-# itself off, its job done. It never runs in the template itself.
+# nothing else) and sends it to AnIdeaLab's inbox, so new brains can be counted, and takes out the
+# template's page for visitors (.github/README.md). Then it turns itself off, its job done. It never runs in the template itself.
 # If it didn't run (Actions off, or a failure), .github/first_run.py is still in the brain, and the
 # getting-started skill runs it in the first session instead. Once the brain is set up, this file
 # can be deleted.

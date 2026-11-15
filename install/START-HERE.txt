@@ -1,5 +1,11 @@
 Your own second brain, started from the AnIdeaLab brain kit.
 
+THE QUICKEST WAY NEEDS NOTHING INSTALLED: three steps in your browser, about ten minutes, and a
+phone will do. They're here: https://github.com/AnIdeaLab/brain-kit#start-a-brain
+This page is the other way: starting from your Windows PC. It's also how you add Obsidian and
+the PC runner to a brain you've already made: when it asks your brain's name, type that
+brain's name, and it uses that one.
+
 What you'll have at the end:
 - Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 68 skills
   (how to do things) and a knowledge library that fills up as you use it.
