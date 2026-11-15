@@ -79,6 +79,7 @@ fal's prices on 13 Nov 2026, as a guide to what's cheap; they change, and `--pri
 - **Image to video keeps a look steady.** Make the still first, which is cheap and quick to try again, then animate the pick.
 - **Price a model you haven't used** before planning a batch around it. Some are priced per token or per "unit", where the estimate is rougher: read the docs page's Pricing lines, and start with one run.
 - **Model names and ids change.** If an endpoint named here isn't found, search for it.
+- **For better prompts, fal publishes skills of its own** at [fal-ai-community/skills](https://github.com/fal-ai-community/skills): how to word a prompt for each model family, shots and camera moves, and which model suits a job. When a job would go better with one, copy it in with [find-skills](../find-skills/SKILL.md). Take their advice on models and prompts, but run every model through `run_fal.py` in the AI job, not the `genmedia` tool they name, so the key stays in the repo's secrets and the money rules hold.
 
 ## When something goes wrong
 | What you see | What it means |
