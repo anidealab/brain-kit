@@ -50,7 +50,7 @@ If they want neither, say they can ask for them any time, and go to step 5. If t
 - **At the name question, they type this repo's name exactly** (give it to them), so the command uses this brain. Enter alone would make a second one.
 - **At the Obsidian question,** Y if they want Obsidian, N if not: on N it isn't installed.
 - **At the runner question,** Y if they want the runner, N if they only want Obsidian.
-- **At "Keep this PC awake",** Y. Most people say no, and then the brain can't reach the PC whenever it has gone to sleep. The screen still turns off as usual.
+- **At "Keep this PC awake",** Y. Most people say no. A PC that sleeps can't run jobs, and after it wakes its runner can stay disconnected until the owner restarts the runner service by hand; staying awake is the simple way round that. The screen still turns off as usual.
 - **If the command stops,** ask them to paste what it showed, and work from that: the [my-pc skill](../my-pc/SKILL.md) has the setup check.
 - **If their antivirus blocks the command,** there's a fallback: they install the Claude desktop app, open a local session on a clone of this brain on their computer, and that session does the same steps the command does (the kit's `install/install-windows.ps1`, or `install/install-mac.sh` on a Mac, is the list), asking them the same questions.
 
