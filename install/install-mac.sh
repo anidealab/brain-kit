@@ -337,12 +337,14 @@ if mode == "new":
     edit(rules, "- **Give the owner a command:**",
          "- **Give the owner a command:** a task on the owner's computer runs through the runner if it can. If the owner has to do it, they get one command to paste into Terminal, not click-by-click steps, which are slower and easy to get wrong.")
     # The front door, in the owner's words.
-    edit("README.md", "- **Obsidian:** this repo is a vault on my PC",
-         "- **Obsidian:** this repo is a vault on my Mac, in `~/AI-Brain-Link`, and its graph draws every link between notes ([setup and how to read it](knowledge/systems/obsidian-setup.md)).")
-    edit("README.md", "- **My PC:**",
-         "- **My Mac:** agents run jobs on it through a GitHub Actions runner while it's on and I'm logged in ([the Mac](knowledge/systems/my-mac.md)). \"AI Brain Link - live jobs\", in my `~/AI-Brain-Link` folder, shows what's running.")
+    edit("README.md", "- **Obsidian,** if I've added it: this repo is a vault on my PC",
+         "- **Obsidian,** if I've added it: this repo is a vault on my Mac, in `~/AI-Brain-Link`, and its graph draws every link between notes ([setup and how to read it](knowledge/systems/obsidian-setup.md)).")
+    edit("README.md", "- **My PC,**",
+         "- **My Mac,** if I've added its runner: agents run jobs on it through a GitHub Actions runner while it's on and I'm logged in ([the Mac](knowledge/systems/my-mac.md)). \"AI Brain Link - live jobs\", in my `~/AI-Brain-Link` folder, shows what's running.")
     edit("README.md", "- **Giving it files:**",
-         "- **Giving it files:** I put files or folders in `~/AI-Brain-Link/_upload` and tell the agent what to do with them ([the Mac](knowledge/systems/my-mac.md)).")
+         "- **Giving it files:** in a chat, I attach them. With the brain on my Mac, I put files or folders in `~/AI-Brain-Link/_upload` and tell the agent what to do with them ([the Mac](knowledge/systems/my-mac.md)).")
+    edit("README.md", "- **Extras:**",
+         "- **Extras:** Obsidian and the Mac runner are extras, and the brain works without them. To add one, I ask an agent, which gives me one command to paste ([the first session's step 4](skills/getting-started/SKILL.md#4-the-owners-computer)).")
     skills = len([d for d in os.listdir(os.path.join(work, "skills")) if os.path.isfile(os.path.join(work, "skills", d, "SKILL.md"))])
     with open(os.path.join(work, "README.md"), encoding="utf-8") as f:
         count = re.search(r" \d+ to start,", f.read())
