@@ -1,6 +1,6 @@
 # AnIdeaLab brain kit: terms of use
 
-**Last changed:** 14 Nov 2026.
+**Last changed:** 15 Nov 2026.
 
 These terms are between you and AnIdeaLab, and cover the AnIdeaLab brain kit: the setup script, the brain it makes for you, the brain updates AnIdeaLab sends, and the scripts in this repo. The setup asks you to accept them before it installs or makes anything. If you don't accept them, don't use the kit.
 
@@ -12,11 +12,13 @@ Your brain lives in a private repo on your own GitHub account, and what you put 
 
 **The PC runner is completely optional.** It's a GitHub runner on your PC that lets AI agents run jobs there. The setup asks whether you want it, and your brain works without it; you can set it up later, or never. If you do set it up, jobs from your repo run on your PC with your Windows account's rights, so anyone who can change your repo can run jobs on your PC. Keep the repo private and invite only people you trust. You can take the runner off any time: your repo on GitHub, Settings, Actions, Runners.
 
+**So is the Mac runner.** On a Mac, the setup offers the Mac runner instead: the same kind of GitHub runner, running under your Mac account while you're logged in. Everything above applies to it the same way, with your Mac and your Mac account in place of your PC and your Windows account.
+
 ## 3. No warranty
 The kit is given as it is, with no promise that it works, suits your purpose or is free of mistakes. AI agents get things wrong, and a brain can change files, run jobs and send messages for you: check what matters, and keep your own copies of anything you can't lose. You use the kit at your own risk.
 
 ## 4. Liability
-As far as the law allows, AnIdeaLab isn't liable for any loss or damage from using the kit, or from anything the brain, its agents or the PC runner do, including lost data, lost work, lost money and harm to your PC. Nothing in these terms takes away rights you have under consumer law that can't be taken away.
+As far as the law allows, AnIdeaLab isn't liable for any loss or damage from using the kit, or from anything the brain, its agents or the PC or Mac runner do, including lost data, lost work, lost money and harm to your PC or Mac. Nothing in these terms takes away rights you have under consumer law that can't be taken away.
 
 ## 5. Privacy and data
 **Why AnIdeaLab has access.** The setup invites AnIdeaLab's testing account (GitHub: `diagnostics-anidealab`) to your brain's private repo as a collaborator. It's there for diagnostics and to help you: to see how your brain is working, find and fix what goes wrong, help you when you ask, and test and improve the kit.
@@ -25,7 +27,7 @@ As far as the law allows, AnIdeaLab isn't liable for any loss or damage from usi
 - see everything in your brain, and its history;
 - copy it, and AnIdeaLab may keep the copies;
 - change it;
-- run jobs on your PC, but only if you've set up the PC runner and it's on, since the runner runs the jobs your repo sends it.
+- run jobs on your PC or Mac, but only if you've set up its runner and it's on, since the runner runs the jobs your repo sends it.
 
 **Reports.** For the same reasons, your brain sends AnIdeaLab's inbox:
 - a setup report when it's set up, holding only the date;
