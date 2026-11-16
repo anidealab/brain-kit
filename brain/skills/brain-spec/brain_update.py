@@ -390,7 +390,7 @@ def do_apply(args):
 
     before = subprocess.run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip() or "unknown"
     record(n, "applied")
-    report = start_report(n, [(m, found[m][0], found[m][2]) for m in waiting], done, on, start, before, places, left)
+    report = start_report(n, [(m, found[m][0], found[m][2]) for m in waiting], done, waiting[0] - 1, start, before, places, left)
     print(("Update" if len(waiting) == 1 else f"Updates {', '.join(map(str, waiting[:-1]))} and") + f" {n} ({day}): {len(done['added'])} added, {len(done['merged'])} merged, {len(done['clashed'])} with the update's lines "
           f"over this brain's, {len(done['kept'])} Obsidian settings kept as this brain had them, {len(done['replaced'])} copied-skill files "
           f"replaced whole, {len(done['restored'])} brought back, {len(done['deleted'])} deleted, {len(done['same'])} already the same.")
@@ -494,15 +494,15 @@ def start_report(n, jumped, done, on, start, before, places, left=()):
     def sent(day):
         d = date.fromisoformat(day)
         return f"{d.day} {d:%b %Y}"
-    link = lambda m, path: f"[update {m}'s message](https://github.com/{GITHUB_REPO}/blob/main/{path})"
+    link = lambda m, path: f"[update {m}](https://github.com/{GITHUB_REPO}/blob/main/{path})"
     if len(jumped) == 1:
         _, path, day = jumped[0]
         what = (f"Applied {today}, after update {on}. The update was sent on {sent(day)} ([its message](https://github.com/{GITHUB_REPO}/blob/main/{path})). ")
         title = f"How brain update {n} from AnIdeaLab went in this brain"
     else:
         numbers = [m for m, _, _ in jumped]
-        what = (f"Applied {today}, after update {on}: updates {', '.join(map(str, numbers[:-1]))} and {n} together, in one go. They were sent "
-                + "; ".join(f"{link(m, path)} on {sent(day)}" for m, path, day in jumped) + ". ")
+        what = (f"Applied {today}, after update {on}: updates {', '.join(map(str, numbers[:-1]))} and {n} together, in one go. Their messages: "
+                + "; ".join(f"{link(m, path)}, sent {sent(day)}" for m, path, day in jumped) + ". ")
         title = f"How brain updates {numbers[0]} to {n} from AnIdeaLab went in this brain, together"
     lines = ["---",
              f'about: "{title}: what went in, what clashed, what broke. Sent to AnIdeaLab\'s inbox."',
@@ -1025,7 +1025,7 @@ def do_notice(_args):
             found = updates(head)
             on = current(found)
             known = {int(n): v[1] for n, v in mine.get("updates", {}).items() if v[1]}
-            titles = {n: known.get(n) or message(head, found, n).splitlines()[0].lstrip("# ").strip() for n in found if n > on}
+            titles = {n: known.get(n) or message(head, found, n).splitlines()[0].lstrip("# ").strip() for n in found if n > on or n in skipped()}
         except (SystemExit, subprocess.TimeoutExpired, OSError, ValueError, IndexError):
             return  # try again at the next session
         mine = {"checked": today, "updates": {str(n): [day, titles.get(n, "")] for n, (_, _, day) in found.items()}}
@@ -1051,8 +1051,8 @@ def do_notice(_args):
     print(("A brain update from AnIdeaLab is waiting" if len(waiting) == 1 else
            f"{len(waiting)} brain updates from AnIdeaLab are waiting, which go in together") +
           " (brain_update.py checks the kit repo once a day):\n" + "\n".join(lines) + "\n"
-          "In your first reply, tell the owner in a line that it's there and ask whether they'd like to hear what it does. If they say yes, "
-          "run `python3 skills/brain-spec/brain_update.py check`, read them its summary, and apply it only if they say go after hearing it: "
+          "In your first reply, tell the owner in a line that it's waiting and ask whether they'd like to hear what it does. If they say yes, "
+          "run `python3 skills/brain-spec/brain_update.py check`, read them its summary, and apply only if they say go after hearing it: "
           "if they open with \"apply the brain update\", read them the summary first all the same "
           "(the brain spec's \"Brain updates\"). Then carry on with what they asked. Ignore this if the owner didn't start this session.")
 
