@@ -8,20 +8,21 @@ This brain was started from the AnIdeaLab brain kit, and AnIdeaLab sends updates
 - updates/NNNN-<words>.md is each update's message: a summary for the owner, what changed and
   why, and anything to do beyond the files. The commit that added it holds brain/ as of that update.
 
-The owner decides each update: the agent reads them its summary, and applies it only if they say go
-after hearing it, even when they asked for the update by name.
+The owner decides: the agent reads them a summary of what's waiting, and applies it only if they say go
+after hearing it, even when they asked for the update by name. Updates go in together: one go brings
+this brain from the update it's on to the newest, the kit as it is now, in one merge with one report.
+A "no" is "not now": nothing is recorded, and the next go brings everything sent since.
 
-    python3 skills/brain-spec/brain_update.py check        # updates this brain hasn't had, with each one's summary
-    python3 skills/brain-spec/brain_update.py apply 3      # the owner said go: bring update 3's files in, start its report, print its message
-    python3 skills/brain-spec/brain_update.py skip 3       # the owner said no: note it, so it doesn't come up again
+    python3 skills/brain-spec/brain_update.py check        # the updates this brain hasn't had, with each one's summary, oldest first
+    python3 skills/brain-spec/brain_update.py apply        # the owner said go: bring them all in, start the report, print their messages
     python3 skills/brain-spec/brain_update.py compare      # this brain against the kit's brain at the update it's on
     python3 skills/brain-spec/brain_update.py compare --diff skills/brain-spec/library.py   # or --take, to put the kit's copy in
-    python3 skills/brain-spec/brain_update.py finish 3     # after doing the message: run the checks and compare, add them to the report
+    python3 skills/brain-spec/brain_update.py finish       # after doing the messages: run the checks and compare, add them to the report
     python3 skills/brain-spec/brain_update.py notice       # reminders.py runs this at session start: says if an update is waiting
     python3 skills/brain-spec/brain_update.py send         # the "Send brain update reports" workflow runs this
 
-`apply` takes each file the update changed in brain/ and puts the change into this brain with a
-three-way merge (git merge-file), so the brain's own changes elsewhere in a file stay. Where both
+`apply` takes each file the kit changed in brain/ between the update this brain is on and the newest,
+and puts the change into this brain with a three-way merge (git merge-file), so the brain's own changes elsewhere in a file stay. Where both
 changed the same lines, the update's lines go in, and it prints both sides of each such place: git
 takes the whole clashing stretch, so a paragraph the brain added next to a line the update changed
 goes too, and the agent puts back what's the owner's own (but not the brain's own old fixes to kit parts,
@@ -42,7 +43,9 @@ line of the brain-updates note is this script's own; the rest of that note is me
 says what it left. Then it records the
 update in knowledge/systems/brain-updates/README.md and starts knowledge/systems/brain-updates/NNNN-report.md
 with what it did and a section for each thing the agent must say. `finish` runs the brain's checks, adds
-them to the report, and won't finish while a section is still empty, so every report says enough. A skipped update can still be applied later, if the owner asks.
+them to the report, and won't finish while a section is still empty, so every report says enough. An update an
+older copy of this script marked as skipped is waiting again, and goes in with the rest at the next go: the merge
+starts from the update before it.
 
 `compare` checks this brain against the exemplar, the kit's brain/ at the update this brain is on
 (26 Oct 2026, from update 3). Files that should match the kit exactly (the scripts, workflows, the
@@ -166,8 +169,21 @@ def current(found):
     return max([n for n, (_, _, day) in found.items() if day < start], default=0)
 
 
+def standing(found, head):
+    """(the update this brain is on, the updates waiting for it, oldest first, the kit commit its files are at for sure).
+    Waiting: every update after the one it's on, and any an older copy of this script marked as skipped. The merge
+    starts from the update before the oldest of those, so a skipped one's changes come in too; changes the brain
+    already has merge with nothing to do."""
+    on = current(found)
+    waiting = sorted(n for n in found if n > on or n in skipped())
+    had = waiting[0] - 1 if waiting else on
+    before = [n for n in found if n <= had]
+    base = found[max(before)][1] if before else git("rev-list", "--max-parents=0", head).split()[0]
+    return on, waiting, base
+
+
 def skipped():
-    """The updates the owner said no to."""
+    """The updates an older copy of this script marked as skipped, which are waiting again."""
     readme = os.path.join(ROOT, FOLDER, "README.md")
     m = SKIPPED.search(open(readme, encoding="utf-8").read()) if os.path.isfile(readme) else None
     return {int(x) for x in re.findall(r"\d+", m.group(1))} if m else set()
@@ -245,33 +261,38 @@ def show(lines):
 def do_check(_args):
     head = fetch()
     found = updates(head)
-    on = current(found)
-    new = sorted(n for n in found if n > on)
-    if not new:
+    on, waiting, _ = standing(found, head)
+    if not waiting:
         print(f"Up to date: this brain has kit update {on}, the newest." if found else "The kit hasn't sent any updates yet.")
         return
-    print(f"This brain has kit update {on}. New, oldest first:\n")
-    for n in new:
+    newest = max(found)
+    again = [n for n in waiting if n <= on]
+    print(f"This brain has kit update {on}. Waiting, oldest first"
+          + (f" (with {', '.join(map(str, again))}, skipped before updates went in together)" if again else "") + ":\n")
+    for n in waiting:
         path, _, day = found[n]
         text = message(head, found, n)
         print(f"Update {n}, sent {day}: {text.splitlines()[0].lstrip('# ')}\n\nSummary for the owner:\n{summary(text)}\n")
-    print(f"Read the owner update {new[0]}'s summary before anything else, then ask whether to go ahead and wait for their answer. That holds "
-          f"even if they asked for the update by name (\"apply the brain update\"): asking for it isn't the go, since they haven't heard what "
-          f"it does. Go: brain_update.py apply {new[0]}. No: brain_update.py skip {new[0]}.")
+    many = len(waiting) > 1
+    print((f"These {len(waiting)} go in together, in one go, and bring this brain to update {newest}, the kit as it is now. Give the owner "
+           f"one summary of them all, in a few plain lines (the ones above, shortened and put together)" if many else
+           "Read the owner its summary") +
+          ", then ask whether to go ahead and wait for their answer. That holds even if they asked for the update by name "
+          "(\"apply the brain update\"): asking for it isn't the go, since they haven't heard what it does. Go: brain_update.py apply. "
+          "Not now: nothing to run; " + ("they come" if many else "it comes") + " up again at the next day's first session, with anything sent meanwhile.")
 
 
 def do_apply(args):
     head = fetch()
     found = updates(head)
-    n = args.number
-    if n not in found:
-        sys.exit(f"brain_update: the kit has no update {n}.")
-    on = current(found)
-    if n != on + 1 and n not in skipped():
-        sys.exit(f"brain_update: this brain has update {on}, so {on + 1} comes next." if n > on
-                 else f"brain_update: this brain already has update {n}.")
+    on, waiting, base = standing(found, head)
+    if not waiting:
+        sys.exit(f"brain_update: this brain already has update {on}, the newest.")
+    n = max(found)  # updates go in together: the newest, with every one before it
+    if args.number is not None and args.number != n:
+        sys.exit(f"brain_update: updates go in together now, so one go brings {', '.join(map(str, waiting))} in, up to {n}, the newest. "
+                 f"Give the owner the summary `check` prints for them all, and on their go run `brain_update.py apply` with no number.")
     path, target, day = found[n]
-    base = found[n - 1][1] if n - 1 in found else git("rev-list", "--max-parents=0", head).split()[0]
     start = kit_start()
     changes = git("diff", "--name-status", "--no-renames", base, target, "--", "brain/").splitlines()
     done = {"added": [], "merged": [], "clashed": [], "kept": [], "replaced": [], "restored": [], "deleted": [], "same": []}
@@ -369,9 +390,8 @@ def do_apply(args):
 
     before = subprocess.run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip() or "unknown"
     record(n, "applied")
-    report = start_report(n, path, day, done, on, start, before, places, left)
-    text = message(head, found, n)
-    print(f"Update {n} ({day}): {len(done['added'])} added, {len(done['merged'])} merged, {len(done['clashed'])} with the update's lines "
+    report = start_report(n, [(m, found[m][0], found[m][2]) for m in waiting], done, on, start, before, places, left)
+    print(("Update" if len(waiting) == 1 else f"Updates {', '.join(map(str, waiting[:-1]))} and") + f" {n} ({day}): {len(done['added'])} added, {len(done['merged'])} merged, {len(done['clashed'])} with the update's lines "
           f"over this brain's, {len(done['kept'])} Obsidian settings kept as this brain had them, {len(done['replaced'])} copied-skill files "
           f"replaced whole, {len(done['restored'])} brought back, {len(done['deleted'])} deleted, {len(done['same'])} already the same.")
     if done["replaced"]:
@@ -390,8 +410,19 @@ def do_apply(args):
                   "the weekly tidy-up's `skill_updates.py check` carries them on from there.")
     if places:
         print_places(places)
-    print(f"Report started: {report}\n\nThe update's message, to do now:\n\n{text}\n\n"
-          f"Then fill in the report's sections in italics, and run: python3 skills/brain-spec/brain_update.py finish {n}")
+    if len(waiting) == 1:
+        print(f"Report started: {report}\n\nThe update's message, to do now:\n\n{message(head, found, n)}\n\n"
+              f"Then fill in the report's sections in italics, and run: python3 skills/brain-spec/brain_update.py finish")
+        return
+    print(f"Report started: {report}\n\nThe {len(waiting)} updates' messages, oldest first, to do now. Their files are all in already; what's "
+          "left is each message's \"What to do beyond the files\", in turn, oldest first. Each was written for a brain that had the ones "
+          "before it, so where a later message changes the same thing again, end where the later one says, and skip an earlier step "
+          "that a later update undoes (say so in the report). Each message's \"The setup this brain should have afterwards\" is "
+          f"superseded by the next one's; update {n}'s is the one to end with.")
+    for m in waiting:
+        print(f"\n\n========== Update {m}'s message ==========\n\n{message(head, found, m)}")
+    print(f"\n\nThen fill in the report's sections in italics, one for each update's steps, and run: "
+          f"python3 skills/brain-spec/brain_update.py finish")
 
 
 def print_places(places):
@@ -414,41 +445,30 @@ def print_places(places):
             print(("  The update had:\n" if how == "ours" else "  The update put in:\n") + show(theirs))
 
 
-def do_skip(args):
-    head = fetch()
-    found = updates(head)
-    n = args.number
-    on = current(found)
-    if n not in found or n != on + 1:
-        sys.exit(f"brain_update: update {on + 1} is the next one to apply or skip." if n in found else f"brain_update: the kit has no update {n}.")
-    record(n, "skipped")
-    print(f"Update {n} skipped: noted in {FOLDER}/README.md. Commit that, and say so to the owner in a line. "
-          f"They can still have it later: brain_update.py apply {n}.")
+def do_skip(_args):
+    """Updates go in together, and a "no" is "not now", so there's nothing to record."""
+    print("Nothing to record: a \"no\" is \"not now\". The waiting updates come up again at the next day's first session, "
+          "and the owner's next go brings in everything sent by then (brain_update.py apply). Say so to the owner in a line.")
 
 
 def record(n, how):
-    """Say in this brain's brain-updates note which update it has, and which the owner skipped."""
+    """Say in this brain's brain-updates note which update it has."""
     readme = os.path.join(ROOT, FOLDER, "README.md")
     if not os.path.isfile(readme):
         os.makedirs(os.path.dirname(readme), exist_ok=True)
         open(readme, "w", encoding="utf-8").write(
             '---\nabout: "Brain updates from AnIdeaLab: which one this brain has, and a report of each."\n'
             f"tags: [the-brain]\nupdated: {date.today().day} {date.today():%b %Y}\n---\n# Brain updates\n")
-    skips = skipped()
     text = open(readme, encoding="utf-8").read()
     today = f"{date.today().day} {date.today():%b %Y}"
     m = ON.search(text)
     has = int(m.group(1).split()[0]) if m and m.group(1)[:1].isdigit() else None
-    if has is None or n >= has:  # an older skipped update applied later leaves this line as it is
+    if has is None or n >= has:
         line = f"**On kit update:** {n} ({how} {today})"
         text = ON.sub(lambda _: line, text, count=1) if m else text.rstrip() + f"\n\n{line}\n"
     text = re.sub(r"(?m)^updated: .*$", f"updated: {today}", text, count=1)  # the card's date: the note changed today
-    skips = skips | {n} if how == "skipped" else skips - {n}
-    line = "**Skipped:** " + (", ".join(str(x) for x in sorted(skips)) or "none")
-    if SKIPPED.search(text):
-        text = SKIPPED.sub(lambda _: line, text, count=1)
-    elif skips:
-        text = ON.sub(lambda m: m.group(0) + "\n\n" + line, text, count=1)
+    # Updates go in together, so an applied one brings every skipped one in with it: the line goes.
+    text = re.sub(r"\n*\*\*Skipped:\*\* [^\n]*", "", text, count=1)
     open(readme, "w", encoding="utf-8").write(text)
 
 
@@ -464,16 +484,31 @@ OLD_PLACEHOLDER = re.compile(r"^\*The agent that applied it fills this in[^\n]*\
 KIT_PATHS = ("skills/", ".github/", ".obsidian/", "CLAUDE.md", "README.md", f"{FOLDER}/")  # problems here aren't the owner's notes
 
 
-def start_report(n, path, day, done, on, start, before, places, left=()):
+STEPS = '*Each step in update {}\'s "What to do beyond the files", and what you did for it.*'  # one per update, when several go in together
+STEPS_LEFT = re.compile(r"^\*Each step in update (\d+)'s \"What to do beyond the files\", and what you did for it\.\*$", re.M)
+
+
+def start_report(n, jumped, done, on, start, before, places, left=()):
+    """The report of one go: n is the newest update, jumped is (number, message's path, day sent) for each update it brought in."""
     today = f"{date.today().day} {date.today():%b %Y}"
-    sent = date.fromisoformat(day)
-    sent = f"{sent.day} {sent:%b %Y}"
+    def sent(day):
+        d = date.fromisoformat(day)
+        return f"{d.day} {d:%b %Y}"
+    link = lambda m, path: f"[update {m}'s message](https://github.com/{GITHUB_REPO}/blob/main/{path})"
+    if len(jumped) == 1:
+        _, path, day = jumped[0]
+        what = (f"Applied {today}, after update {on}. The update was sent on {sent(day)} ([its message](https://github.com/{GITHUB_REPO}/blob/main/{path})). ")
+        title = f"How brain update {n} from AnIdeaLab went in this brain"
+    else:
+        numbers = [m for m, _, _ in jumped]
+        what = (f"Applied {today}, after update {on}: updates {', '.join(map(str, numbers[:-1]))} and {n} together, in one go. They were sent "
+                + "; ".join(f"{link(m, path)} on {sent(day)}" for m, path, day in jumped) + ". ")
+        title = f"How brain updates {numbers[0]} to {n} from AnIdeaLab went in this brain, together"
     lines = ["---",
-             f'about: "How brain update {n} from AnIdeaLab went in this brain: what went in, what clashed, what broke. Sent to AnIdeaLab\'s inbox."',
+             f'about: "{title}: what went in, what clashed, what broke. Sent to AnIdeaLab\'s inbox."',
              "tags: [the-brain]", f"updated: {today}", "---",
              f"# Brain update {n}: how it went", "",
-             f"Applied {today}, after update {on}. The update was sent on {sent} ([its message](https://github.com/{GITHUB_REPO}/blob/main/{path})). "
-             f"This brain was started from the kit of {start.day} {start:%b %Y}, and was at commit `{before}` before the update.", "",
+             what + f"This brain was started from the kit of {start.day} {start:%b %Y}, and was at commit `{before}` before the update.", "",
              "## What the script did",
              f"{sum(len(v) for k, v in done.items() if k != 'same')} files changed: " + ", ".join(
                  f"{len(done[k])} {label}" for k, label in (("added", "added"), ("merged", "merged"), ("clashed", "with the update's lines over this brain's"),
@@ -501,6 +536,11 @@ def start_report(n, path, day, done, on, start, before, places, left=()):
                 sizes = "; ".join(f"{len(ours)} of this brain's against {len(theirs)} of the update's" for ours, theirs in hunks)
                 lines.append(f"- `{rel}`: {len(hunks)} place{'s' if len(hunks) > 1 else ''} ({sizes}), " + ("this brain's lines kept" if how == "ours" else "the update's lines put in"))
     for title, placeholder in SECTIONS:
+        if title == "The message's steps" and len(jumped) > 1:
+            lines += ["", f"## {title}", "Each update's, oldest first."]
+            for m, _, _ in jumped:
+                lines += ["", f"### Update {m}", STEPS.format(m)]
+            continue
         lines += ["", f"## {title}", placeholder]
     lines.append("")
     report = os.path.join(FOLDER, f"{n:04d}-report.md")
@@ -509,12 +549,18 @@ def start_report(n, path, day, done, on, start, before, places, left=()):
 
 
 def do_finish(args):
-    """After the message is done: make sure every section is filled in, run the checks, and add them to the report."""
+    """After the messages are done: make sure every section is filled in, run the checks, and add them to the report."""
     n = args.number
+    if n is None:  # the update this brain is on, which apply recorded
+        readme = os.path.join(ROOT, FOLDER, "README.md")
+        m = ON.search(open(readme, encoding="utf-8").read()) if os.path.isfile(readme) else None
+        if not (m and m.group(1)[:1].isdigit()):
+            sys.exit("brain_update: this brain has no update applied yet, so there's no report to finish. Apply first: brain_update.py apply.")
+        n = int(m.group(1).split()[0])
     rel = os.path.join(FOLDER, f"{n:04d}-report.md")
     report = os.path.join(ROOT, rel)
     if not os.path.isfile(report):
-        sys.exit(f"brain_update: there's no {rel}. Apply the update first: brain_update.py apply {n}.")
+        sys.exit(f"brain_update: there's no {rel}. Apply the updates first: brain_update.py apply.")
     text = open(report, encoding="utf-8").read()
     # A report started by an older copy of this script: drop its single empty section, add the ones it lacks.
     text = re.sub(r"(?ms)^## How it went\n+" + OLD_PLACEHOLDER.pattern[1:-1] + r"\n*(?=^## |\Z)", "", text)
@@ -523,7 +569,8 @@ def do_finish(args):
         if not re.search(r"(?m)^## " + re.escape(title) + r"\s*$", text):
             text += f"\n## {title}\n{placeholder}\n"
     open(report, "w", encoding="utf-8").write(text)
-    empty = [title for title, placeholder in SECTIONS if placeholder in text] + (["How it went"] if OLD_PLACEHOLDER.search(text) else [])
+    empty = ([title for title, placeholder in SECTIONS if placeholder in text] + (["How it went"] if OLD_PLACEHOLDER.search(text) else [])
+             + [f"The message's steps for update {m}" for m in STEPS_LEFT.findall(text)])
     if empty:
         sys.exit(f"brain_update: {rel} still needs these sections filled in: " + "; ".join(empty) +
                  ". Replace each line in italics with what happened, then run this again.")
@@ -994,14 +1041,16 @@ def do_notice(_args):
         on = current(found)
     except SystemExit:
         return
-    waiting = sorted(n for n in found if n > on)
+    waiting = sorted(n for n in found if n > on or n in skipped())  # one an older copy of this script marked as skipped is waiting again
     if not waiting:
         return
     def sent(day):
         d = date.fromisoformat(day)
         return f"{d.day} {d:%b %Y}"
     lines = [f"- Update {n}, sent {sent(mine['updates'][str(n)][0])}" + (f": {mine['updates'][str(n)][1]}" if mine["updates"][str(n)][1] else "") for n in waiting]
-    print("A brain update from AnIdeaLab is waiting (brain_update.py checks the kit repo once a day):\n" + "\n".join(lines) + "\n"
+    print(("A brain update from AnIdeaLab is waiting" if len(waiting) == 1 else
+           f"{len(waiting)} brain updates from AnIdeaLab are waiting, which go in together") +
+          " (brain_update.py checks the kit repo once a day):\n" + "\n".join(lines) + "\n"
           "In your first reply, tell the owner in a line that it's there and ask whether they'd like to hear what it does. If they say yes, "
           "run `python3 skills/brain-spec/brain_update.py check`, read them its summary, and apply it only if they say go after hearing it: "
           "if they open with \"apply the brain update\", read them the summary first all the same "
@@ -1068,13 +1117,13 @@ def main():
     import argparse
     p = argparse.ArgumentParser(description="Apply brain updates from AnIdeaLab, and send their reports.")
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("check", help="which updates this brain hasn't had")
-    a = sub.add_parser("apply", help="the owner said go: bring an update's files in, start its report and print its message")
-    a.add_argument("number", type=int)
-    k = sub.add_parser("skip", help="the owner said no: note the update as skipped, so it doesn't come up again")
-    k.add_argument("number", type=int)
-    f = sub.add_parser("finish", help="after doing the message: check the report is filled in, run the checks, add them to it")
-    f.add_argument("number", type=int)
+    sub.add_parser("check", help="which updates this brain hasn't had, with each one's summary")
+    a = sub.add_parser("apply", help="the owner said go: bring every waiting update in together, start the report and print their messages")
+    a.add_argument("number", type=int, nargs="?", help="the newest update's number, if given; updates go in together")
+    k = sub.add_parser("skip", help="nothing to record: a no is not now, and the next go brings everything")
+    k.add_argument("number", type=int, nargs="?")
+    f = sub.add_parser("finish", help="after doing the messages: check the report is filled in, run the checks, add them to it")
+    f.add_argument("number", type=int, nargs="?", help="the update the report is for (by default, the one this brain is on)")
     c = sub.add_parser("compare", help="this brain against the kit's brain at the update it's on")
     c.add_argument("number", type=int, nargs="?", help="another update to compare with")
     c.add_argument("--diff", metavar="FILE", help="how this brain's copy of one file differs from the kit's")

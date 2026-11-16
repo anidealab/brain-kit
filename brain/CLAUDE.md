@@ -15,7 +15,7 @@ It's on: the owner is new to working with AI agents, and their plan's usage runs
 - Say how complex it is (quick, small, medium, big, or too big for one session) and why, then give a short plan with the points where you'll check in.
 - Wait for their go, then do it, and check in at those points.
 
-How: the [guide-mode skill](skills/guide-mode/SKILL.md), which covers tuning it down. For a brain update from AnIdeaLab, read the owner its summary and apply it only if they say go ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
+How: the [guide-mode skill](skills/guide-mode/SKILL.md), which covers tuning it down. AnIdeaLab's brain updates go in together, only on the owner's go after their summary ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
 
 ## The owner's defaults
 They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)), and the owner can change any of them.
