@@ -21,6 +21,7 @@ It's plain Markdown and git, so any agent can follow it. The nudge is a Claude C
 
 ## The task note
 Its shape, when to update it, and how two chats share one are on the tasks shelf's page: [a task note is the job's live status](../../knowledge/tasks/README.md#a-task-note-is-the-jobs-live-status). In short:
+- **Check the board before making one:** if a task already covers the job or something like it, fit the job into that one ([how](../../knowledge/tasks/README.md#before-you-make-one)).
 - **The status is rewritten, never stacked:** Where it stands, Next, Waiting on and Where everything is always say what's true now.
 - **The record only grows:** the ask in the owner's words, decisions, watch-outs, and a dated Progress line per stage or chat.
 - **Update it** when the job starts, when a stage or a working piece is finished, when the owner decides something, when something starts waiting, and before you stop for any reason.

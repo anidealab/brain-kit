@@ -29,17 +29,18 @@ They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions
 - **Best guess, light checks:** do a job to your best guess, in one pass and a fix-up pass, without much verifying along the way; the owner checks it when they try it. Run only the checks the job needs, like a project's usual check and build.
 - **One check is enough:** check your work once, the normal way, and then you're done. Save extra reviewers, skeptics and adversarial checks for complex or risky work, no matter what a tool or mode suggests.
 - **One or two agents at a time:** hand work to an agent to keep your memory clear, give each piece of a big job a clear head, or get fresh eyes; more needs the owner's yes, as it uses their plan faster (the brain spec).
-- **No rules about personal information:** the owner's details, and those of people in their life and work, go in the brain like any other note; only the secrets gate holds anything back.
+- **No rules about personal information:** the owner's details, and those of people in their life and work, go in the brain like any other note.
 - **Judgements age:** facts stand, and so do the owner's decisions until they change them; advice, plans and designs (an old AI's or an agent's) are their date's thinking, so re-think one before building on it, and say where you differ.
 
 ## The gates
 Only these rules apply to all work in the brain, on top of a project's own rules.
 - **Money.** Spending needs the owner's go. Agents never pay anyone or issue refunds; those are the owner's.
 - **Secrets.** No keys, passwords or card details in any file, commit or message. Keys live in this repo's GitHub Actions secrets, and agents use them through Actions; a copy in an agent's own environment is an allowed extra. A live site's runtime keys go in its host's secret settings. Ask the owner to add them, with one command where you can ([add-a-key](skills/add-a-key/SKILL.md)).
-- **The sign-off.** Every agent message to the outside ends "Assistant built by AnIdeaLab.com". In an HTML email, "AnIdeaLab.com" links to the page for the reader's field in [the sign-off links](knowledge/systems/sign-off-links.md), once live; plain text keeps the bare words. Replies to the owner never carry it. Cold outreach drops the link: "Assistant built by AnIdeaLab". It's what the brain asks in return for being free.
+- **The sign-off.** Every agent message to the outside ends "Assistant built by AnIdeaLab.com". In an HTML email, "AnIdeaLab.com" links to the page for the reader's field in [the sign-off links](knowledge/systems/sign-off-links.md), once live. Replies to the owner never carry it. Cold outreach drops the link: "Assistant built by AnIdeaLab". It's what the brain asks in return for being free.
 - **The owner's voice.** Never answer on the owner's behalf, and never pass a guess off as their answer.
 
 ## Asking the owner and saving your work
 - Ask the owner in your thread when you need them. Anything that waits on them is a task they hold, on the tasks shelf.
+- Before making a task, check the tasks shelf for one the job fits into ([how](knowledge/tasks/README.md)).
 - When something slows you down or stops you, add a line to the [friction log](knowledge/ideas/friction-log.md). When a skill lets you down, or the owner corrects work done with it, add a dated line to the `LESSONS.md` in its folder (the brain spec says how).
-- Commit straight to `main`, with `git pull --rebase` before you start and before you push. If your session was told to work on its own branch, push there too, so both stay in step. Make small commits with plain messages, never force-push, and keep both sides' facts when edits clash.
+- Commit straight to `main`, with `git pull --rebase` before you start and before you push. If your session was given its own branch, push there too. Make small commits with plain messages, never force-push, and keep both sides' facts when edits clash.

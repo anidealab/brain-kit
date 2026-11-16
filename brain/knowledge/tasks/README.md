@@ -51,8 +51,20 @@ updated: {KIT_DATE}
 
 Skip a part with nothing in it. The top four parts are the status, and they stay short: about a screen. They're rewritten, never stacked, so nobody has to read down a pile of old "next steps" to find the true one. When Progress passes about 20 lines, move the older ones word for word to the project's `history/` and say where they went. What's lasting (a decision, a fact, a lesson) still goes on its own shelf first, and the task links to it.
 
+### Before you make one
+Agents tend to make a new note for a job the shelf already holds, or one close to it, and the board fills with half-copies nobody keeps up to date. When they check first they mostly put the job in the right place. So before you make a task note, yours or one for a job you hand out:
+1. **Read the board, not the notes:** the index below has each task's summary line. `python3 skills/brain-spec/library.py find --shelf tasks --all --text <word>` finds finished ones too. Open only the few that look close.
+2. **If one covers your job, or something like it, fit the job into it:**
+   - **Open, or its holder gone quiet:** take it (set `holder`, push), and put the new ask under The ask, dated.
+   - **Another chat holds it:** add a Progress line, or take your part as a piece with a note of its own that the holder lists under Next (two chats, one note, below).
+   - **The owner holds it:** add what's new to it.
+   - **Finished in the last two weeks, and your job carries it on:** reopen it (`status: doing`, a Progress line) rather than start again.
+3. **If none fits,** make the new note, and link the close ones under Where everything is, with why it's separate.
+
+Tell the owner in a line which task the job went into, or that it's new.
+
 ### When to update it
-- **When the job starts,** if it will outlive the chat, wait on someone or be handed on: make the note, with the ask and the plan as Next. Set `holder` to your session link and push that first, so the board shows the job is taken.
+- **When the job starts,** if it will outlive the chat, wait on someone or be handed on: check the board (above), then make the note, with the ask and the plan as Next. Set `holder` to your session link and push that first, so the board shows the job is taken.
 - **When a stage or a piece that works is finished:** rewrite Where it stands and Next, and add one Progress line, in the same push as the work.
 - **When the owner decides something or changes the ask:** their words go in then, not at the end.
 - **When something starts waiting,** on the owner, an agent or a timer, or stops waiting.

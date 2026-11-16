@@ -39,6 +39,7 @@ The kit gives a new owner the shape of a working second brain: a core every agen
 
 ## Saving work
 - **Commit straight to main,** in small commits, never force-pushing, so the history stays whole and every change can be undone.
+- **Check the tasks before making one:** before an agent makes a task note, it reads the tasks shelf's list, and if a task there covers the job or something like it, the job goes into that one. Agents left to themselves make a new note for work the shelf already holds, so the board fills with half-copies and nobody knows which one is current; a quick look first mostly puts the job in the right place.
 - **Hand-offs, and a nudge when a chat gets long:** each job's task note is kept up to date as the work goes, so a fresh chat can carry on from it; a brief to an agent and its report back are saved on a shelf of their own. A long chat uses more of the owner's plan with every reply, gets slower, and in the end gets summarised, which loses detail. So the owner gets a nudge at 300,000 tokens and at each extra 100,000, an urgent one from 500,000, and a reminder with every message after that; an agent gets one nudge of its own, at 350,000 tokens, since its work is a single task. Nothing moves the owner to a new chat by itself: they copy the task note's path into a new chat and say continue. How: the [handoff skill](../../../skills/handoff/SKILL.md).
 
 ## What the brain starts with
