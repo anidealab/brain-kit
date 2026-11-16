@@ -15,6 +15,8 @@ Three steps, about ten minutes, and a phone will do.
 
 It asks you a few questions and sets everything up from there. Every chat after that starts the same way: a new session with `my-brain` selected.
 
+The same steps, with tutorials for your first days, are at [anidealab.com/second-brain](https://anidealab.com/second-brain), where you can also have AnIdeaLab set your brain up for you.
+
 ## What you get
 - **A core page** every agent reads first: what the brain is, and how you like agents to work.
 - **Skills:** how-tos your agents follow for common jobs, from building a website to writing a proposal.

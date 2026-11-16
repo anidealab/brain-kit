@@ -15,6 +15,8 @@ Three steps, about ten minutes, and a phone will do. Your brain is kept on GitHu
 
 It asks you a few questions and sets everything up from there. Every chat after that starts the same way: a new session with `my-brain` selected.
 
+The same three steps are on AnIdeaLab's site, [anidealab.com/second-brain](https://anidealab.com/second-brain), with tutorials for your first days with a brain, and you can have AnIdeaLab set yours up for you there if you'd rather.
+
 What those steps do:
 - step 2 copies the template repo, [AnIdeaLab/second-brain](https://github.com/AnIdeaLab/second-brain), into a new private repo on your GitHub account. The template is [brain/](brain/) as it is on this repo's `next` branch, so a new brain has the newest work;
 - a moment later a workflow in your new repo runs once, on GitHub's machines: it fills in that day as your brain's start, sends AnIdeaLab a setup report (the day the brain was started, nothing else), so new brains can be counted, and turns itself off;
