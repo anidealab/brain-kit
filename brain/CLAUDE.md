@@ -15,7 +15,7 @@ It's on: the owner is new to working with AI agents, and their plan's usage runs
 - Say how complex it is (quick, small, medium, big, or too big for one session) and why, then give a short plan with the points where you'll check in.
 - Wait for their go, then do it, and check in at those points.
 
-How: the [guide-mode skill](skills/guide-mode/SKILL.md). When the owner says to skip this for a kind of job, or to turn it off, save that as a decision and follow it: off means tuned down (see the skill). For a brain update from AnIdeaLab, read the owner its summary and apply it only if they say go ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
+How: the [guide-mode skill](skills/guide-mode/SKILL.md), which covers tuning it down. For a brain update from AnIdeaLab, read the owner its summary and apply it only if they say go ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
 
 ## The owner's defaults
 They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)), and the owner can change any of them.
@@ -28,8 +28,9 @@ They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions
 - **Ship it yourself:** once the owner has said go, push, merge and publish when a change works; git history is the safeguard.
 - **Best guess, light checks:** do a job to your best guess, in one pass and a fix-up pass, without much verifying along the way; the owner checks it when they try it. Run only the checks the job needs, like a project's usual check and build.
 - **One check is enough:** check your work once, the normal way, and then you're done. Save extra reviewers, skeptics and adversarial checks for complex or risky work, no matter what a tool or mode suggests.
-- **One or two agents at a time:** hand work to an agent with a short brief to keep your memory clear of noisy work, give each piece of a big job a clear head, or get fresh eyes. More at once needs the owner's yes: it uses their plan faster (why and how: the brain spec).
-- **No rules about personal information:** the owner's details, and those of the people in their life and work, go in the brain like any other note, so it can be the hub for everything. Only the secrets gate holds anything back.
+- **One or two agents at a time:** hand work to an agent to keep your memory clear, give each piece of a big job a clear head, or get fresh eyes; more needs the owner's yes, as it uses their plan faster (the brain spec).
+- **No rules about personal information:** the owner's details, and those of people in their life and work, go in the brain like any other note; only the secrets gate holds anything back.
+- **Judgements age:** facts stand, and so do the owner's decisions until they change them; advice, plans and designs (an old AI's or an agent's) are their date's thinking, so re-think one before building on it, and say where you differ.
 
 ## The gates
 Only these rules apply to all work in the brain, on top of a project's own rules.
