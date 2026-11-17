@@ -25,7 +25,7 @@ A website's own keys go in its host's settings (Vercel, Cloudflare and so on), w
 Every key this brain has, by name only. **Read this before asking the owner for a key:** they may have given it already. The long history of a key (how it was made, each test, what changed) goes in [keys-history.md](keys-history.md), so each row here stays short.
 
 **What the two test columns mean:**
-- **Last check** is only "does it answer": one free, read-only call per key (a "who am I", a verify or a list), made by the "Check keys" workflow (`.github/workflows/check-keys.yml`) once a month and whenever someone runs it. "Answers" means the key is alive; it says nothing about what the key is allowed to do. The workflow writes this column itself; how each key is checked is in `skills/add-a-key/key-checks.json`.
+- **Last check** is only "does it answer": one free, read-only call per key (a "who am I", a verify or a list), made by the "Check keys" workflow (`.github/workflows/check-keys.yml`) every week and whenever someone runs it; what it printed goes in [the check log](keys-check-log.md), which the weekly tidy-up reads. "Answers" means the key is alive; it says nothing about what the key is allowed to do. The workflow writes this column itself; how each key is checked is in `skills/add-a-key/key-checks.json`.
 - **Can do (as tested)** is what a real job did with the key, with that job's date. A job that finds out more, a call that works or one that's refused, adds it here. Anything not listed is untested, not refused.
 
 <!-- keys:start -->

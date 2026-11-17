@@ -28,7 +28,8 @@ How each key is checked: key-checks.json, beside this script, one entry per secr
   python3 check-keys.py [--note knowledge/systems/keys-and-accounts.md] [--checks key-checks.json]
 
 It edits the note's keys table (between <!-- keys:start --> and <!-- keys:end -->): the "Last check" cell of each
-row, by the secret names in its "Secret" cell. Secrets with no row are listed between <!-- keys-new:start --> and
+row, by the secret names in its "Secret" cell. It also adds what it printed to the top of the check log
+(--log, knowledge/systems/keys-check-log.md, the newest 12 runs kept), which the weekly tidy-up reads. Secrets with no row are listed between <!-- keys-new:start --> and
 <!-- keys-new:end -->, for an agent to give rows. Plain Python, no packages; openssl for the two signed kinds.
 """
 
@@ -224,10 +225,26 @@ def update_note(path, results, date):
         f.write(text)
 
 
+def write_log(path, out):
+    """Adds this run's printout to the top of the log, between <!-- log:start --> and <!-- log:end -->, keeping 12."""
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    m = re.search(r"<!-- log:start -->\n(.*?)<!-- log:end -->", text, re.S)
+    if not m:
+        print(f"{path} has no <!-- log:start --> mark; not written.")
+        return
+    runs = [r for r in re.split(r"(?m)^(?=### Keys checked )", m.group(1)) if r.strip()]
+    runs = [out.replace("### Keys checked", "### Keys checked", 1).rstrip() + "\n\n"] + runs[:11]
+    text = text[:m.start(1)] + "".join(runs) + text[m.end(1):]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--note", default="knowledge/systems/keys-and-accounts.md")
     ap.add_argument("--checks", default=os.path.join(HERE, "key-checks.json"))
+    ap.add_argument("--log", default="knowledge/systems/keys-check-log.md")
     a = ap.parse_args()
     secrets = {k: v for k, v in json.loads(os.environ.get("ALL_SECRETS") or "{}").items() if k.lower() != "github_token"}
     with open(a.checks, encoding="utf-8") as f:
@@ -250,6 +267,8 @@ def main():
             f.write(out)
     if os.path.exists(a.note):
         update_note(a.note, results, date)
+    if os.path.exists(a.log):
+        write_log(a.log, out)
     return 0
 
 

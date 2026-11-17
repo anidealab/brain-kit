@@ -1,5 +1,5 @@
 # Checks that every key in this brain's Actions secrets still answers, and writes the date into the keys table
-# (knowledge/systems/keys-and-accounts.md). Monthly and by hand. Only "does it answer": one free, read-only call per key, never
+# (knowledge/systems/keys-and-accounts.md). Weekly and by hand; the weekly tidy-up reads its log (knowledge/systems/keys-check-log.md). Only "does it answer": one free, read-only call per key, never
 # anything that spends credit, and never a key's value or an answer's body in the log or the note. How each key is
 # checked: skills/add-a-key/key-checks.json; the script: skills/add-a-key/check-keys.py. So agents know which keys
 # the brain already has, and that they still work, before asking the owner for one.
@@ -7,7 +7,7 @@ name: Check keys
 
 on:
   schedule:
-    - cron: "41 20 1 * *"   # the 1st of each month, 20:41 UTC
+    - cron: "41 12 * * 5"   # Fridays 12:41 UTC, so the log is fresh for the weekly tidy-up
   workflow_dispatch:
 
 permissions:
@@ -32,8 +32,9 @@ jobs:
           git config user.name "brain key check"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for try in 1 2 3; do
-            if git diff --quiet; then echo "Nothing changed."; exit 0; fi
-            git commit -qam "Keys table: monthly check"
+            if git diff --quiet && git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+            git add knowledge/systems/keys-check-log.md 2>/dev/null || true
+            git commit -qam "Keys table: weekly check"
             git push origin HEAD:main && exit 0
             git stash -q
             git fetch -q origin main

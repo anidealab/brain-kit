@@ -11,6 +11,7 @@ What each system is and how it's set up. How to use one, when that's the same fr
 
 - [brain-graph](brain-graph.md): The brain graph, the Obsidian view that replays the brain's growth from git history: opening it, reading it, its settings, and the rules for changing it. Read before touching its plugin or explaining it. [the-brain]
 - [keys-and-accounts](keys-and-accounts.md): The outside accounts and keys the brain uses, by name only, and how the owner adds a key. Read before using, connecting or closing an account, or when a job needs a key. [the-brain]
+- [keys-check-log](keys-check-log.md): What the weekly Check keys workflow printed, newest first, the last 12 runs: which keys answered, which were refused, which secrets have no check. The weekly tidy-up reads it. [the-brain]
 - [keys-history](keys-history.md): Each key's long history: how it was made, each test and what changed, dated. Read when a row in the keys table isn't enough. [the-brain]
 - [my-pc](my-pc.md): The owner's Windows PC: how agents reach it (the my-pc runner), the folder layout in C:/AI-Brain-Link, and what's on it. Read for facts about the PC; how to run a job is the my-pc skill. [the-brain]
 - [obsidian-setup](obsidian-setup.md): How the owner sees and edits the brain in Obsidian on their PC: the setup, syncing with GitHub, what the map's colours and lines mean, and the shared settings agents may change. Read before touching .obsidian/ or explaining the map. [the-brain]
