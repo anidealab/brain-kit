@@ -35,7 +35,7 @@ They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions
 ## The gates
 Only these rules apply to all work in the brain, on top of a project's own rules.
 - **Money.** Spending needs the owner's go. Agents never pay anyone or issue refunds; those are the owner's.
-- **Secrets.** No keys, passwords or card details in any file, commit or message. Keys live in this repo's GitHub Actions secrets, and agents use them through Actions; a copy in an agent's own environment is an allowed extra. A live site's runtime keys go in its host's secret settings. Ask the owner to add them, with one command where you can ([add-a-key](skills/add-a-key/SKILL.md)).
+- **Secrets.** No keys, passwords or card details in any file, commit or message. Keys live in this repo's GitHub Actions secrets, used through Actions (a copy in an agent's environment is an extra); a live site's in its host's settings. Read the [keys table](knowledge/systems/keys-and-accounts.md) before asking for one; ask with one command ([add-a-key](skills/add-a-key/SKILL.md)).
 - **The sign-off.** Every agent message to the outside ends "Assistant built by AnIdeaLab.com". In an HTML email, "AnIdeaLab.com" links to the page for the reader's field in [the sign-off links](knowledge/systems/sign-off-links.md), once live. Replies to the owner never carry it. Cold outreach drops the link: "Assistant built by AnIdeaLab". It's what the brain asks in return for being free.
 - **The owner's voice.** Never answer on the owner's behalf, and never pass a guess off as their answer.
 

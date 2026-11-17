@@ -1,0 +1,14 @@
+{
+  "ANTHROPIC_API_KEY": {"url": "https://api.anthropic.com/v1/models", "auth": "header:x-api-key", "headers": {"anthropic-version": "2023-06-01"}},
+  "CLOUDFLARE_API_TOKEN": {"url": "https://api.cloudflare.com/client/v4/user/tokens/verify"},
+  "DEEPGRAM_API_KEY": {"url": "https://api.deepgram.com/v1/projects", "auth": "token"},
+  "ELEVENLABS_API_KEY": {"url": "https://api.elevenlabs.io/v1/user", "auth": "header:xi-api-key", "alive_if": "missing_permissions|permission"},
+  "FAL_KEY": {"url": "https://api.fal.ai/v1/models/pricing?endpoint_id=fal-ai/flux/dev", "auth": "key"},
+  "GEMINI_API_KEY": {"url": "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1", "auth": "header:x-goog-api-key"},
+  "HF_TOKEN": {"url": "https://huggingface.co/api/whoami-v2"},
+  "OPENAI_API_KEY": {"url": "https://api.openai.com/v1/models"},
+  "REPLICATE_API_TOKEN": {"url": "https://api.replicate.com/v1/account"},
+  "RESEND_API_KEY": {"url": "https://api.resend.com/domains", "alive_if": "restricted_api_key"},
+  "STRIPE_SECRET_KEY": {"url": "https://api.stripe.com/v1/products?limit=1"},
+  "VERCEL_TOKEN": {"url": "https://api.vercel.com/v2/user"}
+}

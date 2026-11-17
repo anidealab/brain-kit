@@ -1,0 +1,43 @@
+# Checks that every key in this brain's Actions secrets still answers, and writes the date into the keys table
+# (knowledge/systems/keys-and-accounts.md). Monthly and by hand. Only "does it answer": one free, read-only call per key, never
+# anything that spends credit, and never a key's value or an answer's body in the log or the note. How each key is
+# checked: skills/add-a-key/key-checks.json; the script: skills/add-a-key/check-keys.py. So agents know which keys
+# the brain already has, and that they still work, before asking the owner for one.
+name: Check keys
+
+on:
+  schedule:
+    - cron: "41 20 1 * *"   # the 1st of each month, 20:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check-keys
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check each key
+        env:
+          ALL_SECRETS: ${{ toJSON(secrets) }}
+        run: python3 skills/add-a-key/check-keys.py
+      - name: Commit the dates
+        run: |
+          git config user.name "brain key check"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for try in 1 2 3; do
+            if git diff --quiet; then echo "Nothing changed."; exit 0; fi
+            git commit -qam "Keys table: monthly check"
+            git push origin HEAD:main && exit 0
+            git stash -q
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            git stash pop -q || { echo "The keys table changed meanwhile; run again."; exit 1; }
+          done
+          exit 1

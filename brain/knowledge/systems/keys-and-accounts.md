@@ -8,7 +8,7 @@ updated: {KIT_DATE}
 The accounts the brain uses and the keys agents reach them with, by name only. Keys and passwords never go here, in any file, or in a chat (the secrets gate in the [core](../../CLAUDE.md)). When an account or key is added or closed, change its row.
 
 ## Adding a key
-When a job needs a key (an API key for a service), the agent gives the owner one command to paste into PowerShell, which opens the page that makes the key, reads it in hidden, checks it and saves it in this repo's GitHub Actions secrets ([add-a-key](../../skills/add-a-key/SKILL.md)). Then the agent adds its row below. By hand instead, the agent says which service, where to get the key, and the name to save it under, in capitals with underscores, like `OPENAI_API_KEY`, and the owner:
+When a job needs a key (an API key for a service), the agent gives the owner one command to paste into PowerShell, which opens the page that makes the key, reads it in hidden, checks it and saves it in this repo's GitHub Actions secrets ([add-a-key](../../skills/add-a-key/SKILL.md)). Then the agent adds its row below, and a check for it in `skills/add-a-key/key-checks.json`. By hand instead, the agent says which service, where to get the key, and the name to save it under, in capitals with underscores, like `OPENAI_API_KEY`, and the owner:
 1. **On GitHub:** opens this brain's repo, then Settings, then Secrets and variables, then Actions, then New repository secret; types the name, pastes the key, and saves. Jobs that run through GitHub Actions, the PC runner's included, can use it from then on. This is the key's home.
 2. **In Claude, if a session needs it directly** (optional): the environment menu in the session's title bar, then Edit, then the secrets or environment variables section, with the same name. A new session picks it up.
 
@@ -22,5 +22,18 @@ A website's own keys go in its host's settings (Vercel, Cloudflare and so on), w
 | Claude | the owner's | {KIT_DATE} | The agents |
 
 ## Keys
-| Name (GitHub secret) | Service | Since | Used for |
-|---|---|---|---|
+Every key this brain has, by name only. **Read this before asking the owner for a key:** they may have given it already. The long history of a key (how it was made, each test, what changed) goes in [keys-history.md](keys-history.md), so each row here stays short.
+
+**What the two test columns mean:**
+- **Last check** is only "does it answer": one free, read-only call per key (a "who am I", a verify or a list), made by the "Check keys" workflow (`.github/workflows/check-keys.yml`) once a month and whenever someone runs it. "Answers" means the key is alive; it says nothing about what the key is allowed to do. The workflow writes this column itself; how each key is checked is in `skills/add-a-key/key-checks.json`.
+- **Can do (as tested)** is what a real job did with the key, with that job's date. A job that finds out more, a call that works or one that's refused, adds it here. Anything not listed is untested, not refused.
+
+<!-- keys:start -->
+| Service | Secret | Account | Last check | Can do (as tested) | Used for |
+|---|---|---|---|---|---|
+<!-- keys:end -->
+
+**Secrets with no row yet.** The workflow lists any secret that's in this brain's GitHub secrets but has no row above. Give each one a row:
+<!-- keys-new:start -->
+- Not checked yet.
+<!-- keys-new:end -->

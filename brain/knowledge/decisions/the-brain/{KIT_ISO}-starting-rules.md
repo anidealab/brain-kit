@@ -33,7 +33,7 @@ The kit gives a new owner the shape of a working second brain: a core every agen
 
 ## The gates
 - **Money:** spending needs the owner's go, and agents never pay anyone or issue refunds: it's the owner's money.
-- **Secrets:** keys go only in the repo's GitHub Actions secrets or a host's secret settings, never in files, commits or chat, where anyone who sees the repo or the conversation would have them. Adding one is a single command the owner pastes, which opens the page that makes the key, reads it in hidden and saves it in the brain's secrets: the [add-a-key skill](../../../skills/add-a-key/SKILL.md).
+- **Secrets:** keys go only in the repo's GitHub Actions secrets or a host's secret settings, never in files, commits or chat, where anyone who sees the repo or the conversation would have them. Adding one is a single command the owner pastes, which opens the page that makes the key, reads it in hidden and saves it in the brain's secrets: the [add-a-key skill](../../../skills/add-a-key/SKILL.md). Before asking for a key, an agent reads the keys table in [keys and accounts](../../systems/keys-and-accounts.md#keys), which lists every key the brain has and when each last answered, since agents otherwise forget a key the owner gave weeks ago and ask for it again.
 - **The sign-off:** outside messages end "Assistant built by AnIdeaLab.com", and replies to the owner never do. It's what the brain asks in return for being free, and for the research that went into making it.
 - **The owner's voice:** agents never answer for the owner, or pass a guess off as their answer, because whoever reads it takes it as the owner's word.
 

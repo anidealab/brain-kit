@@ -9,6 +9,8 @@ One paste puts any key where it lives, for any service: a GitHub token, a site h
 The secrets gate in the core still holds: a key never goes in a file, a commit or a message, and never in a chat, and the owner is the one who adds it. This keeps to that and costs them one paste. It's the "give the owner a command" default for keys: no clicking through GitHub's settings.
 
 ## Any key for the brain's jobs
+**First, check it isn't there already:** the keys table in [keys and accounts](../../knowledge/systems/keys-and-accounts.md#keys) lists every key the brain has. Agents often forget a key the owner gave weeks ago and ask for it again.
+
 [add-api-keys.ps1](add-api-keys.ps1), beside this skill, puts a key into this brain's GitHub Actions secrets from a PowerShell window, for any service: it knows none of them, so the command you give the owner says which key. Fill in the parts for the job, and give them this to paste:
 ```
 powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\<repo name>\skills\add-a-key\add-api-keys.ps1" -Secret OPENAI_API_KEY -Page "https://platform.openai.com/api-keys" -Tell "Sign in, press Create new secret key, and copy it." -Prefix "sk-" -Check "https://api.openai.com/v1/models"
@@ -17,7 +19,7 @@ powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\<repo name>\skills\ad
 - **What to fill in:** only `-Secret` is needed: the name jobs will use, in capitals, usually the service's own (`OPENAI_API_KEY`). The rest help: `-Page`, the exact page that makes the key; `-Tell`, what to press there, plainly; `-Prefix`, how its keys start (comma-separated for more than one), so a wrong paste stops; `-Check`, a URL that answers 401 to a bad key, sent the key as `Authorization: Bearer <key>` (or in the header `-Header` names). Look the page, the start and the check up in the service's docs; leave out any you aren't sure of. One key a command: for two, give two commands.
 - **If PowerShell says the file isn't there,** the owner's copy hasn't caught up with GitHub (Obsidian Git syncs it while Obsidian is open; without Obsidian, any job on the PC runner catches it up): have them open Obsidian for a minute, start any `pc-run.yml` job, or give them `git -C "C:\AI-Brain-Link\<repo name>" pull`.
 - **Not through the PC runner:** the sign-ins and the key's page need the owner's browser, and a job can't read what they type.
-- Then add the key's row to [keys and accounts](../../knowledge/systems/keys-and-accounts.md): its name, the service, the date and what it's for, never the value. Jobs that run through GitHub Actions, the PC runner's included, can use it from then on.
+- Then add the key's row to the keys table in [keys and accounts](../../knowledge/systems/keys-and-accounts.md#keys): the service, its secret name, whose account, what it's been tested to do with the date, and what it's for, never the value; and a check for it in [key-checks.json](key-checks.json) (below). Jobs that run through GitHub Actions, the PC runner's included, can use it from then on.
 
 ## Any other key, the same way
 When a key doesn't go in this brain's GitHub secrets, or needs more than one page (a GitHub token with a pre-filled page, a site host's key), write a short script that does everything except what only a person can do, in this order:
@@ -38,6 +40,11 @@ Save it in the brain beside the job it's for, push it, and give the owner the sa
   - any permission, by its name, set to `read`, `write` or `admin`, joined with `&`: `contents=write&pull_requests=read`. `write` includes `read`.
   - **Which repositories it reaches can't be pre-filled,** so the script says which one to pick. Give a token the fewest repos and permissions it needs.
 - **Another service:** look for a documented pre-fill link before relying on one. Without one, open the exact page for making the key and say which buttons to press.
+
+## Checking the keys
+The "Check keys" workflow (`.github/workflows/check-keys.yml`, [check-keys.py](check-keys.py)) runs once a month and by hand. It reads the name of every secret in this brain's GitHub secrets (`toJSON(secrets)`, so it needs no extra token), makes one free, read-only call per key from [key-checks.json](key-checks.json), and writes "answers", "refused" or "not in the secrets" with the date into the keys table's Last check column, and any secret without a row into the table's list of new ones. It never prints a key or what a service answered (some services repeat part of a key in an error). It only shows that a key is alive, not what it may do: that goes in Can do, from a real job. Run it before telling the owner a key is dead, and after they add one.
+
+**A new key's check** is one line in key-checks.json, under its secret name. Pick a call that costs nothing: a "who am I", a token verify, or a list. The shapes, all in the script's opening comment: `{"url": "...", "auth": "bearer"}` (the default; or `"token"`, `"key"`, `"basic"`, or `"header:X-Api-Key"` for the key alone in that header), a list of URLs to try in turn, `"dead_if"` for a service that answers 200 to a bad key, `"alive_if"` for one that answers 401 to a real key without the right permission, `{"kind": "imap", "host": "...", "user": "..."}` for a mailbox password, `{"kind": "google-service-account"}`, `{"kind": "github-app", "id_secret": "NAME"}`, or `{"skip": "why"}` for a secret with nothing to call (an email list, a webhook signing secret).
 
 ## Where it goes
 - **A key for the brain's own jobs** goes in this repo's GitHub Actions secrets: `gh secret set NAME --repo <owner>/<repo> --body $key`. `gh` is a real program, so the key reaches GitHub exactly.
