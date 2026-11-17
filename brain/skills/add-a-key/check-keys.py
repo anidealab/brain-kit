@@ -17,7 +17,7 @@ How each key is checked: key-checks.json, beside this script, one entry per secr
   "url": [..., ...]                                  tried in order; the first that answers wins
   "headers": {...}                                   more headers to send
   "dead_if": "regex"                                 a 2xx whose body matches is a dead key (some say 200 "login fail")
-  "alive_if": "regex"                                a 401 or 403 whose body matches means the key is real
+  "alive_if": "regex"                                a 4xx whose body matches means the key is real
                                                      but not allowed that call
   {"kind": "imap", "host": "...", "user": "..."}    a mailbox password: logs in and out
   {"kind": "google-service-account"}                 a service account's JSON key: swaps it for a token at Google
@@ -84,7 +84,7 @@ def verdict(code, body, spec):
         if spec.get("dead_if") and re.search(spec["dead_if"], body, re.I):
             return "dead", f"refused ({code}, says the key is bad)"
         return "ok", "answers"
-    if code in (401, 403) and spec.get("alive_if") and re.search(spec["alive_if"], body, re.I):
+    if 400 <= code < 500 and spec.get("alive_if") and re.search(spec["alive_if"], body, re.I):
         return "ok", f"answers, but not allowed this call ({code})"
     if code == 403:
         return "ok?", "answers, but not allowed this call (403)"
