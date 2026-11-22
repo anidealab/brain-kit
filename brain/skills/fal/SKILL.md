@@ -24,7 +24,7 @@ The core's money gate: spending needs the owner's go. fal bills the owner's own 
    ```
    powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\<repo name>\skills\add-a-key\add-api-keys.ps1" -Secret FAL_KEY -Page "https://fal.ai/dashboard/keys" -Tell "Sign in to fal, make a new key (any name), and copy it."
    ```
-   Leave `-Prefix` and `-Check` out: fal's keys have no fixed start, and fal reads a key as `Authorization: Key <key>`, which the script's check doesn't send. Where there's no PowerShell (a Mac, or a brain with no computer set up yet), the owner adds it by hand: this repo on GitHub, then Settings, Secrets and variables, Actions, New repository secret, with the name `FAL_KEY`. Never ask for the key in the chat. If they paste it there, have them delete that key on fal's keys page and make a new one.
+   Leave `-Prefix` and `-Check` out: fal's keys have no fixed start, and fal reads a key as `Authorization: Key <key>`, which the script's check doesn't send. On a Mac, give the Mac's line for the same key, `add-api-keys.sh` with `--secret FAL_KEY` and the same page and words (the my-mac skill's "Keys on a Mac"). With no computer set up yet, the owner adds it by hand: this repo on GitHub, then Settings, Secrets and variables, Actions, New repository secret, with the name `FAL_KEY`. Never ask for the key in the chat. If they paste it there, have them delete that key on fal's keys page and make a new one.
 3. **Check it,** spending nothing: start the AI job (step 4 below) with this code. A 200 and the account's credit means the key works.
    ```python
    import subprocess, sys

@@ -36,7 +36,7 @@ TRELLIS.2's own background remover calls another free Space that is often out of
 ```
 powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\<repo name>\skills\add-a-key\add-api-keys.ps1" -Secret HF_TOKEN -Page "https://huggingface.co/settings/tokens" -Tell "Sign in, press Create new token, choose Read, give it any name, and copy it." -Prefix "hf_" -Check "https://huggingface.co/api/whoami-v2"
 ```
-With no PowerShell, the owner adds it by hand, as add-a-key says. Then its row in the keys and accounts note (name, Hugging Face, the date, what it's for; never the value).
+On a Mac, give the Mac's line for the same key (the my-mac skill's "Keys on a Mac"). With no computer set up, the owner adds it by hand, as add-a-key says. Then its row in the keys and accounts note (name, Hugging Face, the date, what it's for; never the value).
 
 **The run.** Push the cut picture alone to a `transfer/<name>` branch ([my-pc](../my-pc/SKILL.md) has how), then start the workflow "AI job" on `main` with:
 - `label`: what it's for;

@@ -4,7 +4,7 @@ description: "The upload point: My brain in File Explorer's Send to menu on the 
 ---
 
 # The upload point
-A way for the owner to hand the brain files or folders of any kind, straight from File Explorer. An agent then works with them, or sorts them into the repo, the PC's `C:\AI-Brain-Link\` folder or the skills, so nothing that was sent needs keeping twice. **Windows only: a Mac has no Send to.**
+A way for the owner to hand the brain files or folders of any kind, straight from File Explorer. An agent then works with them, or sorts them into the repo, the PC's `C:\AI-Brain-Link\` folder or the skills, so nothing that was sent needs keeping twice. On a Mac it's My brain in Finder's right-click menu, under Quick Actions, with `.sh` and `.py` scripts in this folder beside the Windows ones; the my-mac skill (`skills/my-mac/SKILL.md`, in a brain set up on a Mac)'s "Giving the brain files" says how they differ, and everything else here holds, with `~/AI-Brain-Link` for `C:\AI-Brain-Link`.
 
 ## What the owner does
 1. **Sends things:** selects files or folders in File Explorer, right-clicks, and picks Send to, then My brain (on Windows 11, Send to is under "Show more options"). A small box says "Sent to your brain: 2. Tell Claude what to do with them."

@@ -199,7 +199,7 @@ def upload_point():
     since = f", the oldest since {sent[0]}" if sent else ""
     n = len(lines)
     return (f"Upload point: {n} thing{'s' if n != 1 else ''} waiting{since}, in {UPLOAD_LIST} (the owner sent "
-            "them with Send to, My brain). In your first reply, tell the owner in one line and ask what they'd "
+            "them with My brain: Send to on Windows, Quick Actions on a Mac). In your first reply, tell the owner in one line and ask what they'd "
             "like done with them, unless they've already said; then sort them with the upload-point skill. "
             "Ignore this if the owner didn't start this session.")
 

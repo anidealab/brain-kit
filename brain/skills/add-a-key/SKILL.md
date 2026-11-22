@@ -11,7 +11,7 @@ The secrets gate in the core still holds: a key never goes in a file, a commit o
 ## Any key for the brain's jobs
 **First, check it isn't there already:** the keys table in [keys and accounts](../../knowledge/systems/keys-and-accounts.md#keys) lists every key the brain has. Agents often forget a key the owner gave weeks ago and ask for it again.
 
-[add-api-keys.ps1](add-api-keys.ps1), beside this skill, puts a key into this brain's GitHub Actions secrets from a PowerShell window, for any service: it knows none of them, so the command you give the owner says which key. Fill in the parts for the job, and give them this to paste:
+[add-api-keys.ps1](add-api-keys.ps1), beside this skill, puts a key into this brain's GitHub Actions secrets from a PowerShell window, for any service (on a Mac, `add-api-keys.sh` does the same from Terminal, with the same options: the my-mac skill's "Keys on a Mac"): it knows none of them, so the command you give the owner says which key. Fill in the parts for the job, and give them this to paste:
 ```
 powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\<repo name>\skills\add-a-key\add-api-keys.ps1" -Secret OPENAI_API_KEY -Page "https://platform.openai.com/api-keys" -Tell "Sign in, press Create new secret key, and copy it." -Prefix "sk-" -Check "https://api.openai.com/v1/models"
 ```
