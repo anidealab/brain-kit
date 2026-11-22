@@ -32,6 +32,7 @@ update costs the session nothing. In a session on the owner's PC, in the brain's
 says how many things are waiting at the upload point and since when (_upload/waiting.txt beside the
 brain's copy, which Send to, My brain writes), so the agent asks the owner what to do with them. It's
 silent when nothing's waiting, and anywhere that file isn't, a cloud session included.
+It starts with one line saying which computer the session is on, from devices.py.
 Try it: python3 skills/brain-spec/reminders.py --now 2026-10-24T03:00Z
 """
 import os
@@ -208,6 +209,14 @@ def main(argv):
     now = datetime.now(UTC)
     if len(argv) == 3 and argv[1] == "--now":
         now = datetime.fromisoformat(argv[2].replace("Z", "+00:00")).astimezone(UTC)
+    here = os.path.join(HERE, "devices.py")
+    if os.path.isfile(here) and len(argv) == 1:  # which computer this session is on
+        try:
+            r = subprocess.run([sys.executable, here, "here"], capture_output=True, text=True, timeout=8)
+            if r.returncode == 0 and r.stdout.strip():
+                print(r.stdout.strip())
+        except (OSError, subprocess.SubprocessError):
+            pass
     rows, problems = read_reminders()
     due_lines = []
     zone = f"{ZONE_NAME} time" if ZONE is not None else "this computer's time"

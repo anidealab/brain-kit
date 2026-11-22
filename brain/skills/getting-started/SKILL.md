@@ -40,13 +40,14 @@ In a few lines, in plain words:
 - Run `python3 skills/brain-spec/library.py build`, then the checks in the brain spec's "Before you push", and commit and push.
 
 ## 4. The owner's computer
-**A brain from the template** has nothing on their computer yet. Ask, in one message, whether they'd like either extra, and take no for an answer:
+**A brain from the template** has nothing on their computer yet. Ask, in one message, whether they'd like either extra, and which computer it would go on: a Windows PC, a Mac, or Linux. Take no for an answer. You can't see their computer from a cloud session (its start line says it's a cloud session), so ask rather than guess; if they aren't sure, a Mac has the Apple menu at the top left of the screen, and Windows has the Windows logo on its Start button.
 - **The PC runner:** agents can then run jobs on their computer from any chat, on their phone too, whenever it's on. It suits a Windows PC or Mac that's usually on.
 - **Obsidian:** a free app that shows the brain as a map on their computer, where they can read and edit their notes.
 
 If they want neither, say they can ask for them any time, and go to step 5. If they want one or both, give them the one command for their computer, and what to answer:
 - **Windows:** open PowerShell (press the Windows key, type powershell, press Enter), paste this and press Enter: `irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex`
 - **Mac:** open Terminal (press Command and Space, type terminal, press Enter), paste this and press Enter: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.sh)"`
+- **Linux:** there's no command for Linux yet. Say so: Obsidian has a Linux version at obsidian.md they can install themselves, and the brain works without a runner. Save "Add the runner on Linux, once the kit has one" as a task they hold, and go on.
 - **At the name question, they type this repo's name exactly** (give it to them), so the command uses this brain. Enter alone would make a second one.
 - **At the Obsidian question,** Y if they want Obsidian, N if not: on N it isn't installed.
 - **At the runner question,** Y if they want the runner, N if they only want Obsidian.
@@ -72,6 +73,8 @@ Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object { "Disk
 foreach ($t in 'git','gh','python','py','node','winget','ffmpeg','nvidia-smi') { $c = Get-Command $t -ErrorAction SilentlyContinue; "{0}: {1}" -f $t, $(if ($c) { $c.Source } else { 'not found' }) }
 ```
 Wait until the run shows as completed, then read its job log. Put what it found in [the PC's note](../../knowledge/systems/my-pc.md) under "What's on the PC", dated, and tell the owner in two lines, with a note that the live jobs window on their desktop showed it running.
+
+Then add the computer to [devices](../../knowledge/systems/devices.md), so later sessions know which computer they're on and whether it's reachable: a row with its name ("<Name>'s PC", linked to its note), the ways in (the `my-pc` runner), when it's on (whenever it's powered on and awake), what it's good for (from what the test found: its GPU, its disks), `my-pc` under Runner, and under Spot it the computer's name from the test's first line, in backticks. On a Mac, the same with `my-mac`, the Mac's note, "while the owner is logged in and it's awake", and its short host name (`hostname -s`). Then run `python3 skills/brain-spec/devices.py status`, or start "Which devices are on" with the label left empty: it should say the computer is on.
 
 - **It sat in "queued" for more than a few minutes:** the runner isn't up. Go through "If the runner stops picking up jobs" in the [my-pc skill](../my-pc/SKILL.md).
 - **They skipped the runner** when installing: say they can set it up any time with one command, and give them the one in the my-pc skill's "Setting it up again".

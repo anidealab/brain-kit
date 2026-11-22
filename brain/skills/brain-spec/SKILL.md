@@ -70,6 +70,7 @@ All in this folder, plain Python 3 with nothing to install:
 - **`check_links.py`**: broken links, notes nothing links to, big or binary files, and the core's and indexes' sizes.
 - **`move.py MAP`** moves files and folders and fixes every link to them (`--dry-run` first). Paths in plain text aren't links: backticked paths, workflows, script defaults and comments are listed in its report, for fixing by hand.
 - **`reminders.py`** prints the reminders that are due, and, in a session on the owner's PC, what's waiting at the [upload point](../upload-point/SKILL.md); the session-start hook runs it. A Claude Code hook only runs in a new session started in a clone of this repo, never for other agents, so whatever a hook does is also written in the notes (here, the core says to run it) to be done by hand.
+- **`devices.py`**: `here` says which computer this is, from the [devices](../../knowledge/systems/devices.md) table's "Spot it" column (the session-start script prints it); `status` says which of the brain's computers are on now, through the "Which devices are on" workflow, in about a minute; `list` shows the table as it reads it. Below, "Devices".
 - **`skill_updates.py`** checks copied skills against their sources ([find-skills](../find-skills/SKILL.md)).
 - **`brain_update.py`** applies brain updates from AnIdeaLab and sends their reports ([below](#brain-updates)).
 - `test_library.py` tests `library.py`.
@@ -143,6 +144,13 @@ Two kinds of hand-off:
   Lessons from using this skill in the brain: [LESSONS.md](LESSONS.md).
   ```
 - **The weekly tidy-up** ([brain-audit](../brain-audit/SKILL.md)) folds every skill's lessons into its steps, the kit's own and copied ones too.
+
+## Devices
+Every computer a session can run on or send work to has a row in the [devices](../../knowledge/systems/devices.md) table, so any agent can tell where it is, what it can reach, and which computers are on. A computer is added when it's first used: its runner set up, a local session started on it, or the Claude app attached to it. When `devices.py here` says a computer isn't in the table, add it then.
+- **Its row:** the device's name (linked to its note), the ways in (runner, local session and its folder, anything else), when it's on (always, while powered on, only while logged in and awake), what it's good for (GPU, apps, files, what's plugged in), its runner's label in backticks (a dash if none), and in "Spot it" its host name in backticks: the first line of the runner test, or what `python3 -c "import socket; print(socket.gethostname())"` prints on it. `devices.py` reads only the Runner and Spot it columns; the rest is for agents.
+- **Its note,** on the systems shelf, for the detail: the model, system, folders, what's installed, its quirks. How to run a job on it is a skill, if it has a runner (my-pc, or my-mac on a Mac).
+- **The facts come from the computer,** not from memory: run `devices.py status` once its runner is up, and copy what it reported into its note, dated. A computer with no runner: ask the owner, or run `devices.py here` in a session on it.
+- **Keep it true:** a computer retired, renamed or given a new way in changes its row in the same commit. Things plugged into a computer (a phone, a camera, a drive) go in its row's "Good for" and in its note, not in rows of their own.
 
 ## A routine
 Anything that runs or falls due on a beat gets a row in [routines](../../knowledge/systems/routines.md): the owner's in its table "The owner's own", so a brain update's new rows never meet theirs. The job is a script or skill in the repo; the trigger only says when and where. A reminder costs nothing until the owner says yes to it in a session; a scheduled AI job uses their plan by itself, so it needs their yes first.
