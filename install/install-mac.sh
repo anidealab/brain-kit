@@ -791,7 +791,7 @@ printf '\033[32m%s\033[0m\n' '       This is my new second brain. Read CLAUDE.md
 # It's on anidealab.com once the site's moved there, and on the site's preview address until then.
 tutorials='https://anidealab.com/second-brain/tutorials'
 if [ -z "$check" ] && ! curl -fsSL --max-time 8 "$tutorials" 2>/dev/null | grep -q 'second-brain/tutorials'; then
-  tutorials='https://anidealab-website.vercel.app/second-brain/tutorials'
+  tutorials='https://anidealab.com/second-brain/tutorials'
 fi
 echo ''
 printf '\033[36m%s\033[0m\n' "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials"

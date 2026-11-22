@@ -3,7 +3,9 @@
 // (OIDC) that came with it, which says which repo sent it, and saves the report as a Markdown file
 // in the private reports repo: reports/<owner>/<repo>/<NNNN>-report.md. Sending one again replaces it.
 //
-// Settings (Vercel's environment variables):
+// Runs on AnIdeaLab's site at https://anidealab.com/api/report since 22 Nov 2026 (the site's copy, in the
+// Request/Response form, is the live one; this is the same check and save, kept so anyone can read it).
+// Settings:
 //   REPORTS_TOKEN  a fine-grained GitHub token with Contents read and write on the reports repo only
 //   REPORTS_REPO   the private reports repo, as owner/name
 import { createRemoteJWKSet, jwtVerify } from "jose";

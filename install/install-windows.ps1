@@ -546,7 +546,7 @@ if (-not $check) {
   try {
     $r = Invoke-WebRequest -Uri $tutorials -UseBasicParsing -TimeoutSec 8
     if ($r.StatusCode -ne 200 -or $r.Content -notmatch 'second-brain/tutorials') { throw 'not there yet' }
-  } catch { $tutorials = 'https://anidealab-website.vercel.app/second-brain/tutorials' }
+  } catch { $tutorials = 'https://anidealab.com/second-brain/tutorials' }
 }
 Write-Host ''
 Write-Host "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials" -ForegroundColor Cyan
