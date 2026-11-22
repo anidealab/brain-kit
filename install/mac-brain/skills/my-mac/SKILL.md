@@ -45,11 +45,11 @@ The upload point works on a Mac as on a PC (the [upload-point skill](../upload-p
 - **Sorting** is as the upload-point skill says, with `mv` in place of its PowerShell and the brain's copy at `~/AI-Brain-Link/<repo name>`. A job reading `~/Desktop`, `~/Documents` or `~/Downloads` can be refused by macOS's privacy settings ("Things to know"): if it is, ask the owner to move what they sent into `~/AI-Brain-Link`, or give them a command to paste that does.
 
 ## Keys on a Mac
-The [add-a-key skill](../add-a-key/SKILL.md)'s script is for Windows. On a Mac, give the owner one line to paste into Terminal: it opens the page that makes the key, then `gh` asks for the key without showing it as they paste, and saves it in this repo's Actions secrets. Fill in the page, the name and the repo:
+The [add-a-key skill](../add-a-key/SKILL.md) works on a Mac as on a PC, with [`add-api-keys.sh`](../add-a-key/add-api-keys.sh) in place of its PowerShell script: the same options, written `--secret`, `--page`, `--tell`, `--prefix`, `--check`, `--header` and `--repo`, and the same steps (it opens the page, says what to press, reads the key hidden, checks how it starts and tries it on the service, then saves it in this repo's Actions secrets). Give the owner one line to paste into Terminal, with the parts filled in:
 ```
-open "https://platform.openai.com/api-keys"; gh secret set OPENAI_API_KEY --repo <owner>/<repo>
+bash ~/AI-Brain-Link/<repo name>/skills/add-a-key/add-api-keys.sh --secret OPENAI_API_KEY --page "https://platform.openai.com/api-keys" --tell "Sign in, press Create new secret key, and copy it." --prefix "sk-" --check "https://api.openai.com/v1/models"
 ```
-Say in your message what to press on the page, since the line can't. Then add the key's row to keys and accounts (`knowledge/systems/keys-and-accounts.md`), never its value. If Terminal says `gh` isn't found, they open a new Terminal window and paste it again: the installer put `gh` on the path for new windows.
+Wherever a skill gives the PowerShell line for a key, give this one with the same values. Then add the key's row to keys and accounts (`knowledge/systems/keys-and-accounts.md`), never its value. If Terminal says the file isn't there, the owner's copy hasn't caught up: give them `git -C ~/AI-Brain-Link/<repo name> pull` first. If it says `gh` isn't found, they open a new Terminal window and paste it again: the installer put `gh` on the path for new windows.
 
 ## Setting it up again
 [`setup-runner.sh`](setup-runner.sh) sets the runner up, or again from scratch: it downloads GitHub's runner and checks it against its checksum, registers it with this repo under the label `my-mac` (it removes an old registration first), installs it as a LaunchAgent under the owner's account, adds the live jobs file, and offers to keep the Mac awake on the charger. It says it's done only once GitHub sees the runner online. It needs no password. Give the owner this to paste into Terminal:
