@@ -40,6 +40,13 @@ day=$(LC_ALL=C date -u '+%d %b %Y'); day="${day#0}"
 iso=$(date -u '+%Y-%m-%d')
 gh=""
 obsidian_app=""
+# The oldest versions the setup takes as it finds them. macOS: GitHub's runner needs 11, and gh's newest
+# builds need 12. gh: an older one on the PATH (an old Homebrew one, or the kit's own from an earlier run) is
+# replaced by the newest, in ~/AI-Brain-Link/Tools. Obsidian: the Obsidian Git plugin's minAppVersion (its
+# manifest.json); an older Obsidian is replaced by the newest where it is, and its vaults and settings stay.
+macos_min=12
+gh_min=2.40.0
+obsidian_min=1.13.0
 
 trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"; printf '%s' "$s"; }
 say() { printf '\n\033[36m%s\033[0m\n' "$1"; }
@@ -121,6 +128,26 @@ except ValueError:
     pass' "$3" 2>/dev/null
 }
 
+# Version $1 is older than version $2: the first three numbers, each part's leading digits (bash 3.2 has no sort -V).
+older_than() {
+  local IFS=. i x y a b
+  read -r -a a <<< "$1"; read -r -a b <<< "$2"
+  for i in 0 1 2; do
+    x="${a[$i]%%[!0-9]*}"; y="${b[$i]%%[!0-9]*}"; x=$((10#${x:-0})); y=$((10#${y:-0}))
+    if [ "$x" -lt "$y" ]; then return 0; fi
+    if [ "$x" -gt "$y" ]; then return 1; fi
+  done
+  return 1
+}
+gh_version() { "$1" --version 2>/dev/null | awk 'NR == 1 {print $3}'; }
+app_version() { defaults read "$1/Contents/Info" CFBundleShortVersionString 2>/dev/null; }
+quit_obsidian() {
+  local i=0
+  if [ -n "$check" ] || ! pgrep -x Obsidian >/dev/null 2>&1; then return; fi
+  osascript -e 'quit app "Obsidian"' >/dev/null 2>&1
+  while pgrep -x Obsidian >/dev/null 2>&1 && [ "$i" -lt 10 ]; do sleep 1; i=$((i + 1)); done
+}
+
 find_gh() {
   if [ -x "$tools/bin/gh" ]; then printf '%s\n' "$tools/bin/gh"; return; fi
   if [ -n "$check" ]; then return; fi # the test installs its own
@@ -192,6 +219,7 @@ install_gh() {
 # Obsidian, from its own disk image on GitHub, checked against the checksum GitHub lists for it (or, if
 # there's none, Apple's signature on it), into Applications. Downloaded by curl, it carries none of the
 # quarantine flag a browser's download would, so it opens without asking; the flag is cleared anyway.
+# With a folder, an older Obsidian there is replaced (or, if it can't be, the new one goes in ~/Applications).
 install_obsidian() {
   local tag v dmg tmp want got dest ok
   say 'Installing Obsidian, from its own release on GitHub...'
@@ -209,7 +237,11 @@ install_obsidian() {
     hdiutil detach "$tmp/disk" -quiet; rm -rf "$tmp"
     die "Obsidian's disk image isn't as it should be, so it wasn't installed. Paste the same command again."
   fi
-  if [ -n "$check" ]; then dest="$root/Applications"; elif [ -w /Applications ]; then dest=/Applications; else dest="$HOME/Applications"; fi
+  if [ -n "$check" ]; then dest="$root/Applications"; elif [ -n "${1:-}" ]; then dest="$1"; elif [ -w /Applications ]; then dest=/Applications; else dest="$HOME/Applications"; fi
+  if [ -d "$dest/Obsidian.app" ]; then
+    quit_obsidian
+    rm -rf "$dest/Obsidian.app" 2>/dev/null || { warn "Couldn't replace the old Obsidian in $dest, so the new one goes in $HOME/Applications."; dest="$HOME/Applications"; }
+  fi
   mkdir -p "$dest"
   ditto "$tmp/disk/Obsidian.app" "$dest/Obsidian.app"; ok=$?
   hdiutil detach "$tmp/disk" -quiet || hdiutil detach "$tmp/disk" -force -quiet
@@ -414,6 +446,9 @@ brain=$(cd "$brain" && pwd)
 if [ -z "$check" ] && [ "$(uname -s)" != Darwin ]; then die "This installer is for a Mac. On a Windows PC, paste the PowerShell line from the kit's README instead."; fi
 macos=$(sw_vers -productVersion 2>/dev/null)
 log "== The installer started, from $brain (${macos:+macOS $macos}${macos:-$(uname -sr)}, bash $BASH_VERSION)"
+if [ -z "$check" ] && [ -n "$macos" ] && older_than "$macos" "$macos_min"; then
+  die "This Mac has macOS $macos, and the setup needs macOS $macos_min (Monterey) or newer: GitHub's command line doesn't run on older ones. Update macOS (Apple menu, System Preferences, Software Update), then paste the same command again. Your brain still works in the browser without this Mac."
+fi
 say 'Setting up your second brain. It takes about 10 minutes, mostly installing. Questions show in yellow.'
 
 # AnIdeaLab's terms of use, before anything is installed or made. No default: Enter alone asks again, V opens
@@ -461,15 +496,38 @@ step "$tools_step" started
 if [ -z "$check" ]; then ensure_git; fi
 if [ -z "$check" ] || [ -n "$tools_check" ]; then
   gh=$(find_gh)
+  if [ -n "$gh" ]; then
+    v=$(gh_version "$gh")
+    if [ -z "$v" ] || older_than "$v" "$gh_min"; then
+      log "gh ${v:-of no known version} at $gh is older than $gh_min, so the newest goes in $tools"
+      say "GitHub's command line on this Mac is old (${v:-its version is unknown}), so the newest goes in beside it, for your brain."
+      install_gh; gh=$(find_gh)
+    fi
+  fi
   if [ -z "$gh" ]; then install_gh; gh=$(find_gh); fi
   if [ -n "$want_obsidian" ]; then
     obsidian_app=$(find_obsidian)
-    if [ -z "$obsidian_app" ]; then install_obsidian; fi
+    if [ -z "$obsidian_app" ]; then install_obsidian
+    else
+      v=$(app_version "$obsidian_app")
+      if [ -n "$v" ] && older_than "$v" "$obsidian_min"; then
+        log "Obsidian $v at $obsidian_app is older than $obsidian_min, so it's replaced by the newest"
+        say "Obsidian on this Mac is old ($v), so it's updated to the newest. Your vaults and settings stay."
+        install_obsidian "$(dirname "$obsidian_app")"
+      fi
+    fi
   fi
 fi
 command -v git >/dev/null 2>&1 || die "Git is installed, but this window can't see it yet. Close Terminal, open it again and paste the same command."
 python3 -c 'import json' >/dev/null 2>&1 || die "Python 3, which comes with Apple's command line tools, doesn't run. Close Terminal, open it again and paste the same command."
 if [ -z "$check" ] && [ -z "$gh" ]; then die "GitHub's command line is installed, but this window can't see it yet. Close Terminal, open it again and paste the same command."; fi
+# What the setup goes on with, on screen and in the log, so the brain's agent sees an old version even when
+# nothing breaks.
+found="macOS ${macos:-unknown}, git $(git --version 2>/dev/null | awk '{print $3}'), python3 $(python3 --version 2>&1 | awk '{print $2}')"
+if [ -n "$gh" ]; then found="$found, gh $(gh_version "$gh") at $gh"; fi
+if [ -n "$obsidian_app" ]; then found="$found, Obsidian $(app_version "$obsidian_app") at $obsidian_app"; fi
+log "this Mac has: $found"
+echo "  This Mac has: $found"
 step "$tools_step" 'done'
 
 # 2. GitHub
@@ -595,9 +653,7 @@ if [ -z "$want_obsidian" ]; then step 'Obsidian, with syncing on' skipped; else
   # Add the brain to Obsidian's list of vaults, so it opens straight into it. Obsidian writes the list when it
   # quits, so it's closed first.
   if [ -z "$check" ] && pgrep -x Obsidian >/dev/null 2>&1; then
-    osascript -e 'quit app "Obsidian"' >/dev/null 2>&1
-    i=0
-    while pgrep -x Obsidian >/dev/null 2>&1 && [ "$i" -lt 10 ]; do sleep 1; i=$((i + 1)); done
+    quit_obsidian
   fi
   if [ -n "$check" ]; then cfg_dir="$root/obsidian"; else cfg_dir="$HOME/Library/Application Support/obsidian"; fi
   mkdir -p "$cfg_dir"
