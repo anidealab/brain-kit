@@ -51,11 +51,11 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS = os.path.join(HERE, "nudge.json")
 DEFAULTS = {
-    "first_at": 300000,
+    "first_at": 250000,
     "repeat_every": 0,
     "urgent_at": 0,
     "every_prompt_after": 0,
-    "agent_at": 350000,
+    "agent_at": 250000,
     "tell_person": False,
     "state_dir": "",
     "message": ("Hand-off nudge: this conversation is about {size} tokens, past the {mark} mark. It's a nudge, "

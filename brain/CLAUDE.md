@@ -28,7 +28,7 @@ They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions
 - **Ship it yourself:** once the owner has said go, push, merge and publish when a change works; git history is the safeguard.
 - **Best guess, light checks:** do a job to your best guess, in one pass and a fix-up pass, without much verifying along the way; the owner checks it when they try it. Run only the checks the job needs, like a project's usual check and build.
 - **One check is enough:** check your work once, the normal way, and then you're done. Save extra reviewers, skeptics and adversarial checks for complex or risky work, no matter what a tool or mode suggests.
-- **One or two agents at a time:** hand work to an agent to keep your memory clear, give each piece of a big job a clear head, or get fresh eyes; more needs the owner's yes, as it uses their plan faster (the brain spec).
+- **One or two agents at a time:** hand work to an agent to keep your memory clear, give each piece of a big job a clear head, or get fresh eyes; more needs the owner's yes; save each one's work as it comes in (the brain spec).
 - **No rules about personal information:** the owner's details, and those of people in their life and work, go in the brain like any other note.
 - **Judgements age:** facts stand, and so do the owner's decisions until they change them; advice, plans and designs (an old AI's or an agent's) are their date's thinking, so re-think one before building on it, and say where you differ.
 
