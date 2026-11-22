@@ -123,7 +123,7 @@ main() {
 
   # 5. No sleep on the charger, through a LaunchAgent that holds caffeinate -s, which needs no password.
   printf '\n\033[33m%s\033[0m\n' "Answer Y to the next question, unless you have a reason not to: when this Mac sleeps, your brain can't reach it."
-  if yes_to "Keep this Mac awake while it's on the charger, so jobs can run? The screen still turns off as usual, and closing the lid still puts it to sleep."; then
+  if yes_to "Keep this Mac awake while it's on the charger, so Claude can do what you ask when you're away from it? The screen still turns off as usual, and closing the lid still puts it to sleep."; then
     local plist="$HOME/Library/LaunchAgents/com.anidealab.brain-keep-awake.plist"
     mkdir -p "$HOME/Library/LaunchAgents"
     cat > "$plist" <<'PLIST'

@@ -73,7 +73,7 @@
   & $gh repo edit $template --template
   if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't mark $template as a template. Tick Template repository in its Settings." -ForegroundColor Yellow; return }
 
-  $link = "https://github.com/new?template_owner=AnIdeaLab&template_name=second-brain&name=my-brain&visibility=private"
+  $link = "https://github.com/new?template_owner=AnIdeaLab&template_name=second-brain&name=my-brain-ail&visibility=private"
   Write-Host "`nSuccess. The link that makes a brain:" -ForegroundColor Green
   Write-Host $link
   try { Set-Clipboard -Value $link; Write-Host '(copied)' } catch { }

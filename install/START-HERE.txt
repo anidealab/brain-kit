@@ -3,15 +3,17 @@ Your own second brain, started from the AnIdeaLab brain kit.
 THE QUICKEST WAY NEEDS NOTHING INSTALLED: three steps in your browser, about ten minutes, and a
 phone will do. They're here: https://github.com/AnIdeaLab/brain-kit#start-a-brain
 This page is the other way: starting from your Windows PC. It's also how you add Obsidian and
-the PC runner to a brain you've already made: when it asks your brain's name, type that
-brain's name, and it uses that one.
+the PC runner to a brain you've already made: every brain is called my-brain-ail, and the
+setup finds yours. A brain made before 22 Nov 2026 has another name: ask its chat for its
+command, which has its name in it.
 
 What you'll have at the end:
 - Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 68 skills
   (how to do things) and a knowledge library that fills up as you use it.
 - Obsidian on your PC, if you'd like it, showing your brain as a map, and the brain graph
   replaying how it grew.
-- The PC runner, if you'd like it: it lets Claude run jobs on your PC whenever it's on.
+- The PC runner, if you'd like it: then you can ask Claude to do things on your PC from any
+  chat, even your phone. It only does what you ask.
 
 You need: a Windows PC, a Claude plan, and about 30 minutes, mostly waiting for installs.
 
@@ -31,11 +33,11 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
    - say whether you'd like Obsidian (press Enter for yes). Your brain works without it;
    - sign in to GitHub in your browser, copying a code from the window (no account yet? make
      one on that page, it's free);
-   - name your brain (press Enter for my-brain). Your brain's repo is private;
    - say yes to the PC runner. A second window asks for admin rights, then your Windows
      password: the one you type at the sign-in screen, NOT your PIN. With a Microsoft account,
      it's that account's password;
-   - say yes to keeping the PC awake while it's plugged in. Most people say no here. A PC that
+   - say yes to keeping the PC awake while it's plugged in, so Claude can do what you ask when
+     you're away from it. Most people say no here. A PC that
      sleeps can leave its runner disconnected after it wakes, until you restart the runner by
      hand; staying awake is the simple way round that. The screen still turns off;
    - last, if you chose it, Obsidian opens your brain: choose "Trust author and enable plugins", then come
@@ -61,6 +63,6 @@ Later:
 - To check your setup any time, paste this into PowerShell. It changes nothing, and copies a
   report you can paste into Claude with "Fix what this setup check found":
 
-powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\my-brain\skills\my-pc\check-setup.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\my-brain-ail\skills\my-pc\check-setup.ps1"
 
-  (Put your brain's name in place of my-brain if you named it something else.)
+  (A brain made before 22 Nov 2026 has its own name: put it in place of my-brain-ail.)

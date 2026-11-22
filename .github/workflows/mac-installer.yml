@@ -55,12 +55,12 @@ jobs:
           codesign --verify "$c/Applications/Obsidian.app" && echo "Obsidian's signature is intact"
           defaults read "$c/Applications/Obsidian.app/Contents/Info" CFBundleShortVersionString
           "$c/_runner/bin/Runner.Listener" --version
-          ls "$c/my-brain/.obsidian/plugins/obsidian-git"
-          python3 -c 'import json,sys; v=json.load(open(sys.argv[1]))["vaults"]; assert any(x["path"] == sys.argv[2] for x in v.values()); print("Obsidian lists the vault")' "$c/obsidian/obsidian.json" "$c/my-brain"
-          for f in .github/workflows/mac-run.yml skills/my-mac/SKILL.md skills/my-mac/setup-runner.sh skills/my-mac/check-setup.sh skills/my-mac/watch-jobs.sh knowledge/systems/my-mac.md; do test -f "$c/my-brain/$f"; done
-          grep -q 'my-mac skill' "$c/my-brain/CLAUDE.md"
-          for f in upload-point.sh setup-upload-point.sh look.py; do test -f "$c/my-brain/skills/upload-point/$f"; done
-          grep -q "On a Mac it's My brain" "$c/my-brain/skills/upload-point/SKILL.md"
+          ls "$c/my-brain-ail/.obsidian/plugins/obsidian-git"
+          python3 -c 'import json,sys; v=json.load(open(sys.argv[1]))["vaults"]; assert any(x["path"] == sys.argv[2] for x in v.values()); print("Obsidian lists the vault")' "$c/obsidian/obsidian.json" "$c/my-brain-ail"
+          for f in .github/workflows/mac-run.yml skills/my-mac/SKILL.md skills/my-mac/setup-runner.sh skills/my-mac/check-setup.sh skills/my-mac/watch-jobs.sh knowledge/systems/my-mac.md; do test -f "$c/my-brain-ail/$f"; done
+          grep -q 'my-mac skill' "$c/my-brain-ail/CLAUDE.md"
+          for f in upload-point.sh setup-upload-point.sh look.py; do test -f "$c/my-brain-ail/skills/upload-point/$f"; done
+          grep -q "On a Mac it's My brain" "$c/my-brain-ail/skills/upload-point/SKILL.md"
           python3 -c 'import re,sys; last = {}
           for line in open(sys.argv[1]):
               m = re.match(r"\S+ \S+  (started|done|skipped|not done)  (.+)$", line.rstrip("\n"))
@@ -74,7 +74,7 @@ jobs:
       - name: The upload point, through Finder's Quick Action
         run: |
           set -e
-          b="$BRAIN_KIT_CHECK/my-brain"
+          b="$BRAIN_KIT_CHECK/my-brain-ail"
           bash "$b/skills/upload-point/setup-upload-point.sh"
           plutil -lint "$HOME/Library/Services/My brain.workflow/Contents/Info.plist" "$HOME/Library/Services/My brain.workflow/Contents/document.wflow"
           f="$RUNNER_TEMP/a quote.txt"; echo "a quote" > "$f"
@@ -89,7 +89,7 @@ jobs:
           test ! -s "$BRAIN_KIT_CHECK/_upload/waiting.txt"
 
       - name: The new brain's own checks
-        working-directory: ${{ env.BRAIN_KIT_CHECK }}/my-brain
+        working-directory: ${{ env.BRAIN_KIT_CHECK }}/my-brain-ail
         run: |
           python3 skills/brain-spec/library.py check --strict
           python3 skills/brain-spec/check_links.py

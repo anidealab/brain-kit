@@ -317,20 +317,24 @@ Log "signed in as $owner"
 
 # 3. Your brain's repo on GitHub
 Step "Your brain's private repo on GitHub" 'started'
-$name = Ask 'A name for your brain on GitHub?' 'my-brain'
-while ($name -notmatch '^[A-Za-z0-9._-]+$') { $name = Ask 'Letters, numbers, dashes, dots and underscores only, please' 'my-brain' }
+# Every brain has the same name, so there's no question: a new brain from AnIdeaLab's template link gets it
+# too, and this finds that one. A brain made before the name was set (or renamed) passes its own name in
+# BRAIN_KIT_NAME, in the command its first chat gives: $env:BRAIN_KIT_NAME='<name>'; irm ... | iex
+$name = if ($env:BRAIN_KIT_NAME) { $env:BRAIN_KIT_NAME.Trim() } else { 'my-brain-ail' }
+if ($name -notmatch '^[A-Za-z0-9._-]+$') { throw "BRAIN_KIT_NAME has to be your brain's name on GitHub: letters, numbers, dashes, dots and underscores only." }
 $repo = "$owner/$name"
 $vault = Join-Path $root $name
 $fresh = $true
 if (-not $check) {
   $info = Native { & $gh repo view $repo --json isEmpty,visibility 2>$null } | Out-String
   if ($LASTEXITCODE -ne 0) {
-    Say "Making the private repo $repo on GitHub..."
+    Say "Making your brain, the private repo $repo on GitHub..."
+    Write-Host "(Already have a brain with another name? Close this window and ask that brain's chat for its command.)"
     Native { & $gh repo create $repo --private --description "My second brain, started from the AnIdeaLab brain kit" } | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Couldn't make $repo on GitHub." }
   } else {
     $j = $info | ConvertFrom-Json
-    if ($j.visibility -ne 'PRIVATE') { throw "$repo is public. A brain has to be private, because the PC runner lets the repo run commands on this PC. Paste the command again and pick another name." }
+    if ($j.visibility -ne 'PRIVATE') { throw "$repo is public. A brain has to be private, because the PC runner lets the repo run commands on this PC. Make it private on GitHub (its Settings, at the bottom), then paste the command again." }
     $fresh = [bool]$j.isEmpty
   }
 }
@@ -473,7 +477,7 @@ $runnerSetup = Join-Path (Join-Path (Join-Path $vault 'skills') 'my-pc') 'setup-
 $runnerOk = $true
 Step 'The PC runner' 'started'
 if (-not $check) {
-  if (Yes 'Set up the PC runner now, so AI agents can run jobs on this PC? It asks for admin rights, then your Windows password, in a second window.') {
+  if (Yes 'Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. It asks for admin rights, then your Windows password, in a second window.') {
     # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
     # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
     $runnerDir = Join-Path $root '_runner'

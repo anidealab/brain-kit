@@ -176,6 +176,7 @@ ensure_git() {
     if [ "$waited" -ge 3600 ]; then die "Apple's command line tools aren't in yet. If their window was closed, paste the same command again to bring it back; otherwise wait until they're installed, then paste it."; fi
   done
   git --version >/dev/null 2>&1 || die "Apple's command line tools are in, but Git doesn't run yet ($(git --version 2>&1 | head -n 1)). Close Terminal, open it again and paste the same command."
+  say "Apple's tools are in. If their window is still finishing, leave it, it doesn't matter."
   log "installed Apple's command line tools"
 }
 
@@ -587,19 +588,23 @@ log "signed in as $owner"
 
 # 3. Your brain's repo on GitHub
 step "Your brain's private repo on GitHub" started
-ask 'A name for your brain on GitHub?' my-brain
-name="$answer"
-until [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]]; do ask 'Letters, numbers, dashes, dots and underscores only, please' my-brain; name="$answer"; done
+# Every brain has the same name, so there's no question: a new brain from AnIdeaLab's template link gets it
+# too, and this finds that one. A brain made before the name was set (or renamed) passes its own name in
+# BRAIN_KIT_NAME, in the command its first chat gives: BRAIN_KIT_NAME=<name> /bin/bash -c "$(curl ...)"
+name="${BRAIN_KIT_NAME:-my-brain-ail}"
+name="${name//[[:space:]]/}"
+[[ "$name" =~ ^[A-Za-z0-9._-]+$ ]] || die "BRAIN_KIT_NAME has to be your brain's name on GitHub: letters, numbers, dashes, dots and underscores only."
 repo="$owner/$name"
 vault="$root/$name"
 fresh=yes
 if [ -z "$check" ]; then
   info=$("$gh" repo view "$repo" --json isEmpty,visibility --jq '.visibility + " " + (.isEmpty | tostring)' 2>/dev/null)
   if [ -z "$info" ]; then
-    say "Making the private repo $repo on GitHub..."
+    say "Making your brain, the private repo $repo on GitHub..."
+    echo "(Already have a brain with another name? Close this window and ask that brain's chat for its command.)"
     "$gh" repo create "$repo" --private --description "My second brain, started from the AnIdeaLab brain kit" || die "Couldn't make $repo on GitHub."
   else
-    case "$info" in PRIVATE*) ;; *) die "$repo is public. A brain has to be private, because the Mac runner lets the repo run commands on this Mac. Paste the command again and pick another name." ;; esac
+    case "$info" in PRIVATE*) ;; *) die "$repo is public. A brain has to be private, because the Mac runner lets the repo run commands on this Mac. Make it private on GitHub (its Settings, at the bottom), then paste the command again." ;; esac
     case "$info" in *true) fresh=yes ;; *) fresh='' ;; esac
   fi
 fi
@@ -734,7 +739,7 @@ runner_setup="$vault/skills/my-mac/setup-runner.sh"
 runner_ok=yes
 step 'The Mac runner' started
 if [ -z "$check" ]; then
-  if yes_to "Set up the Mac runner now, so AI agents can run jobs on this Mac? It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
+  if yes_to "Set up the Mac runner now, so you can ask Claude to do things on this Mac from any chat, even your phone? It only does what you ask. It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
     /bin/bash "$runner_setup" --repo "$repo" --root "$root" || runner_ok=''
     # "All done" only once GitHub sees the runner online.
     online=$("$gh" api "repos/$repo/actions/runners" --jq '[.runners[] | select(.status == "online")] | length' 2>/dev/null)

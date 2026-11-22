@@ -221,7 +221,7 @@ def mac_check(notes):
             out = re.sub(r"\x1b\[[0-9;]*m", "", r.stdout + r.stderr).strip()
             return problems + ["the Mac installer couldn't make a brain (install/install-mac.sh, in its check mode); "
                                "if it says a line isn't there, change that line's Mac version in mac_brain there to match:\n" + out[-2000:]]
-        problems += [f"in a brain made by the Mac installer, {p}" for p in check(os.path.join(work, "my-brain"))]
+        problems += [f"in a brain made by the Mac installer, {p}" for p in check(os.path.join(work, "my-brain-ail"))]
     finally:
         shutil.rmtree(work, ignore_errors=True)
     return problems

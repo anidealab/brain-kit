@@ -3,16 +3,17 @@ Your own second brain, started from the AnIdeaLab brain kit, on a Mac.
 THE QUICKEST WAY NEEDS NOTHING INSTALLED: three steps in your browser, about ten minutes, and a
 phone will do. They're here: https://github.com/AnIdeaLab/brain-kit#start-a-brain
 This page is the other way: starting from your Mac. It's also how you add Obsidian and the Mac
-runner to a brain you've already made: when it asks your brain's name, type that brain's name,
-and it uses that one.
+runner to a brain you've already made: every brain is called my-brain-ail, and the setup finds
+yours. A brain made before 22 Nov 2026 has another name: ask its chat for its command, which
+has its name in it.
 
 What you'll have at the end:
 - Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 69 skills
   (how to do things) and a knowledge library that fills up as you use it.
 - Obsidian on your Mac, if you'd like it, showing your brain as a map, and the brain graph
   replaying how it grew.
-- The Mac runner, if you'd like it: it lets Claude run jobs on your Mac while it's on and
-  you're logged in.
+- The Mac runner, if you'd like it: then you can ask Claude to do things on your Mac from any
+  chat, even your phone, while it's on and you're logged in. It only does what you ask.
 
 You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for installs.
 
@@ -36,7 +37,6 @@ You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for install
      It takes 5 to 20 minutes, and the setup carries on by itself once they're in;
    - sign in to GitHub in your browser, copying a code from the window (no account yet? make
      one on that page, it's free);
-   - name your brain (press Enter for my-brain). Your brain's repo is private;
    - say yes to the Mac runner. macOS then says background items were added: that's the runner;
    - say yes to keeping the Mac awake while it's on the charger. Most people say no here, and
      then your brain can't reach the Mac whenever it has gone to sleep. The screen still turns off;
@@ -67,6 +67,6 @@ Later:
 - To check your setup any time, paste this into Terminal. It changes nothing, and copies a
   report you can paste into Claude with "Fix what this setup check found":
 
-bash ~/AI-Brain-Link/my-brain/skills/my-mac/check-setup.sh
+bash ~/AI-Brain-Link/my-brain-ail/skills/my-mac/check-setup.sh
 
-  (Put your brain's name in place of my-brain if you named it something else.)
+  (A brain made before 22 Nov 2026 has its own name: put it in place of my-brain-ail.)
