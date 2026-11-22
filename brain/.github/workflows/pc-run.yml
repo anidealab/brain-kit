@@ -36,6 +36,7 @@ on:
 
 permissions:
   contents: read
+  issues: write        # the live log: the "PC job live log" issue's text, overwritten every 30 s while a job runs
 
 jobs:
   run:
@@ -75,6 +76,9 @@ jobs:
           PC_COMMAND: ${{ inputs.command }}
           PC_SHELL: ${{ inputs.shell }}
           PC_RUN_ID: ${{ github.run_id }}
+          # The live log: GitHub gives a job's log only at its end, so its tail goes on an issue as it runs.
+          LIVE_TOKEN: ${{ github.token }}
+          LIVE_PRIVATE: ${{ github.event.repository.private }}
           # A job that needs a key gets it here, from the repo's Actions secrets, never in the command:
           # SOME_API_KEY: ${{ secrets.SOME_API_KEY }}
         shell: powershell
@@ -93,9 +97,41 @@ jobs:
           "== $(Get-Date -Format u) | $env:PC_SHELL | $PWD" | Tee-Object $log
           # The command goes in the log too, so the live window on the PC (skills/my-pc/watch-jobs.ps1) shows what's running.
           "-- command:`n$env:PC_COMMAND`n-- output:" | Out-File $log -Append
+          # The live log: the log's last 80 lines on the issue "PC job live log" every 30 s (and once at the end),
+          # for an agent to follow a long job. Made on the first job; skipped on a public repo; never stops the job.
+          $live = {
+            param($log, $tok, $repo, $id, $once)
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $h = @{ Authorization = "Bearer $tok"; Accept = 'application/vnd.github+json' }
+            $api = "https://api.github.com/repos/$repo/issues"
+            try {
+              $issue = (Invoke-RestMethod -Uri "${api}?state=all&per_page=100&sort=created&direction=asc" -Headers $h |
+                Where-Object { $_.title -eq 'PC job live log' -and -not $_.pull_request } | Select-Object -First 1).number
+              if (-not $issue) {
+                $new = @{ title = 'PC job live log'; body = 'The last 80 lines of a running PC job, written here every 30 seconds by pc-run.yml so an agent can follow it. Each job overwrites it; leave it open.' }
+                $issue = (Invoke-RestMethod -Method Post -Uri $api -Headers $h -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes(($new | ConvertTo-Json)))).number
+              }
+            } catch { return }
+            do {
+              if (-not $once) { Start-Sleep 30 }
+              try {
+                $tail = ((Get-Content $log -Tail 80 -ErrorAction Stop) -join "`n") -replace "\x1b\[[0-9;]*m", ''
+                $fence = '`' * 3
+                $text = "PC run $id (https://github.com/$repo/actions/runs/$id), as of $(Get-Date -Format u):`n`n$fence`n$tail`n$fence"
+                Invoke-RestMethod -Method Patch -Uri "$api/$issue" -Headers $h -ContentType 'application/json; charset=utf-8' `
+                  -Body ([Text.Encoding]::UTF8.GetBytes((@{ body = $text } | ConvertTo-Json))) | Out-Null
+              } catch {}
+            } while (-not $once)
+          }
+          $liveJob = $null
+          if ($env:LIVE_PRIVATE -eq 'true') { $liveJob = Start-Job -ScriptBlock $live -ArgumentList $log, $env:LIVE_TOKEN, $env:GITHUB_REPOSITORY, $env:PC_RUN_ID, $false }
           & $exe @argv 2>&1 | ForEach-Object { "$_" } | Tee-Object $log -Append
           $code = $LASTEXITCODE
           "== exit $code | log kept at $log" | Tee-Object $log -Append
+          if ($liveJob) {
+            Stop-Job $liveJob -ErrorAction SilentlyContinue; Remove-Job $liveJob -Force -ErrorAction SilentlyContinue
+            & $live $log $env:LIVE_TOKEN $env:GITHUB_REPOSITORY $env:PC_RUN_ID $true
+          }
           exit $code
 
       # Lets an agent see a file from the PC (stills, small logs) without pasting it into the log.

@@ -21,7 +21,7 @@ From a cloud session, the `gh` command line usually works through the session's 
 
 **How the queue and logs behave:**
 - Jobs run one at a time, in order. Don't add a concurrency group to the workflow: GitHub keeps only one waiting run per group and cancels the others.
-- A job's log can only be read once it has finished (asking earlier gets a 404). For a long job, check the run list for "completed", and have the job write progress to a file on the PC.
+- A job's log can only be read once it has finished (asking earlier gets a 404). **To follow a long job as it runs,** read the issue "PC job live log" in this repo (the GitHub tool's issue read): the workflow writes the log's last 80 lines there every 30 seconds, and once more at the end, with the run's link at the top. It's made on the first job, and skipped if the repo is public. Check the run list for "completed" to know it's done.
 - If the run-workflow call times out, the run may still have been queued. Check the run list before trying again.
 - Jobs check out `main` when they start, so push a script before starting the job that runs it.
 
