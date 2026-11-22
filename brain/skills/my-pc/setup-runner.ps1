@@ -160,7 +160,7 @@ try {
 
   Write-Host ''
   Write-Host "Answer Y to the next question, unless you have a reason not to: a PC that sleeps can leave its runner disconnected after it wakes, until you restart the runner by hand. Staying awake is the simple way round that." -ForegroundColor Yellow
-  if (Yes "Keep this PC awake while it's plugged in, so jobs can run? The screen still turns off as usual.") {
+  if (Yes "Keep this PC awake while it's plugged in, so Claude can do what you ask when you're away from it? The screen still turns off as usual.") {
     Native { powercfg /change standby-timeout-ac 0; powercfg /change hibernate-timeout-ac 0 } | Out-Null
     Write-Host 'Done: it no longer sleeps while plugged in.'
   }
