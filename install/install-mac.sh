@@ -508,16 +508,8 @@ if [ -z "$check" ]; then
   esac
 fi
 
-# Claude, before the installs: making an account and choosing a plan can be done while they run.
-if [ -z "$check" ]; then
-  say "Your brain works with Claude, in Claude Code. That needs a Claude account on a paid plan (Pro or above): the free plan doesn't include Claude Code. Already signed in on a paid plan? Type S to skip. Otherwise press Enter to open Claude in your browser: sign in, or make an account and choose a plan there. The setup carries on here while you do."
-  answer=''
-  read -r -p 'Press Enter to open Claude, or type S to skip: ' answer || answer=S
-  case "$(trim "$answer")" in
-    [Ss]*) log 'Claude: skipped, already set up' ;;
-    *) open 'https://claude.ai/code' >/dev/null 2>&1 || echo 'Open https://claude.ai/code in your browser.'; log 'Claude: opened claude.ai/code to sign in or sign up' ;;
-  esac
-fi
+# Claude isn't asked about here: nearly everyone runs this from their brain's first chat, so they're in Claude
+# already, and a brain made here gets the plan's line in the last step below (22 Nov 2026).
 
 # Obsidian is an extra, so it's asked about, here, before anything is installed: the answer covers the app, its
 # Git plugin, the brain in its list of vaults and opening it at the end, and a no leaves an Obsidian that's
@@ -770,11 +762,11 @@ if [ -z "$want_obsidian" ]; then step 'Obsidian opened on your brain' skipped; e
 fi
 
 show_steps
-if [ -z "$want_obsidian" ]; then say 'No Obsidian, as you chose. To add it later, paste the same command again, give the same brain name, and answer Y to the Obsidian question.'
+if [ -z "$want_obsidian" ]; then say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.'
 elif [ -n "$has_obsidian" ]; then say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
 else
   echo ''
-  warn "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again, and give the same brain name."
+  warn "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again."
 fi
 if [ -n "$runner_ok" ]; then say 'All done on this Mac.'; else
   echo ''
@@ -786,19 +778,20 @@ echo "Your brain on GitHub: https://github.com/$repo"
 if [ -n "$want_obsidian" ]; then echo "Your copy on this Mac: $vault (open in Obsidian)"; else echo "Your copy on this Mac: $vault"; fi
 echo "Files for your brain: select them in Finder, right-click, then Quick Actions, My brain, and tell Claude."
 echo ''
-printf '\033[36m%s\033[0m\n' 'Last step, in Claude:'
-echo '  1. Go to https://claude.ai/code. If it asks, connect GitHub and let Claude see your brain repo.'
-echo "  2. Start a new session with $repo selected."
-echo '  3. Send this message:'
-printf '\033[32m%s\033[0m\n' '       This is my new second brain. Read CLAUDE.md and get me set up.'
-
-# Last, AnIdeaLab's tutorials page opens in the browser: these steps, and the rest, with a video each.
-# It's on anidealab.com once the site's moved there, and on the site's preview address until then.
-tutorials='https://anidealab.com/second-brain/tutorials'
-if [ -z "$check" ] && ! curl -fsSL --max-time 8 "$tutorials" 2>/dev/null | grep -q 'second-brain/tutorials'; then
+if [ -z "$fresh" ]; then
+  # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
+  # chat since), or a run again. So the chat is open, and that's where they go back to.
+  printf '\033[36m%s\033[0m\n' "Last step: go back to your chat with your brain and say it's finished."
+else
+  printf '\033[36m%s\033[0m\n' 'Last step, in Claude:'
+  echo '  1. Go to https://claude.ai/code. It needs a paid plan (Pro or above). If it asks, connect GitHub and let Claude see your brain repo.'
+  echo "  2. Start a new session with $repo selected."
+  echo '  3. Send this message:'
+  printf '\033[32m%s\033[0m\n' '       This is my new second brain. Read CLAUDE.md and get me set up.'
+  # Last, AnIdeaLab's tutorials page opens in the browser: these steps, and the rest, with a video each.
   tutorials='https://anidealab.com/second-brain/tutorials'
+  echo ''
+  printf '\033[36m%s\033[0m\n' "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials"
+  if [ -z "$check" ]; then open "$tutorials" >/dev/null 2>&1; fi
 fi
-echo ''
-printf '\033[36m%s\033[0m\n' "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials"
-if [ -z "$check" ]; then open "$tutorials" >/dev/null 2>&1; fi
 exit 0

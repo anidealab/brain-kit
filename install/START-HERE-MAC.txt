@@ -29,9 +29,6 @@ You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for install
    It asks you to:
    - accept AnIdeaLab's terms of use: type Y and press Enter. Read them first, here or by typing
      V in the setup: https://github.com/AnIdeaLab/brain-kit/blob/main/TERMS.md
-   - sign in to Claude: press Enter and it opens Claude in your browser. Sign in, or make an
-     account and choose a paid plan (Pro or above), since your brain works in Claude Code.
-     Already set up? Type S to skip;
    - say whether you'd like Obsidian (press Enter for yes). Your brain works without it;
    - if a window asks to install the command line developer tools: click Install, then Agree.
      It takes 5 to 20 minutes, and the setup carries on by itself once they're in;
@@ -47,7 +44,7 @@ You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for install
    did is kept in ~/AI-Brain-Link/_logs/install.log.
 
 3. CONNECT CLAUDE:
-   - Go to https://claude.ai/code. If it asks, connect GitHub and let Claude see your brain repo.
+   - Go to https://claude.ai/code. It needs a paid plan (Pro or above). If it asks, connect GitHub and let Claude see your brain repo.
    - Start a new session with your brain repo selected, and send:
 
        This is my new second brain. Read CLAUDE.md and get me set up.
