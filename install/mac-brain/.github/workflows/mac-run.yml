@@ -35,6 +35,7 @@ on:
 
 permissions:
   contents: read
+  issues: write        # the live log: the "Mac job live log" issue's text, overwritten every 30 s while a job runs
 
 jobs:
   run:
@@ -72,6 +73,9 @@ jobs:
           MAC_SHELL: ${{ inputs.shell }}
           MAC_WORKDIR: ${{ inputs.workdir }}
           MAC_RUN_ID: ${{ github.run_id }}
+          # The live log: GitHub gives a job's log only at its end, so its tail goes on an issue as it runs.
+          LIVE_TOKEN: ${{ github.token }}
+          LIVE_PRIVATE: ${{ github.event.repository.private }}
           # A job that needs a key gets it here, from the repo's Actions secrets, never in the command:
           # SOME_API_KEY: ${{ secrets.SOME_API_KEY }}
         shell: bash
@@ -87,9 +91,49 @@ jobs:
           mkdir -p "$dir" && cd "$dir" || exit 1
           # The command goes in the log too, so the live jobs window on the Mac (skills/my-mac/watch-jobs.sh) shows what's running.
           { echo "== $(date -u '+%Y-%m-%d %H:%M:%SZ') | $MAC_SHELL | $PWD"; printf -- '-- command:\n%s\n-- output:\n' "$MAC_COMMAND"; } | tee "$log"
+          # The live log: the log's last 80 lines on the issue "Mac job live log" every 30 s (and once at the end),
+          # for an agent to follow a long job. Made on the first job; skipped on a public repo; never stops the job.
+          live="$RUNNER_TEMP/mac-run-live-$MAC_RUN_ID.py"
+          cat > "$live" <<'PY'
+          import json, os, re, sys, time, urllib.request
+          log, once = sys.argv[1], sys.argv[2] == "once"
+          repo, tok, rid, title = os.environ["GITHUB_REPOSITORY"], os.environ["LIVE_TOKEN"], os.environ["MAC_RUN_ID"], "Mac job live log"
+          def call(method, path, body=None):
+              req = urllib.request.Request("https://api.github.com/repos/%s/%s" % (repo, path), method=method,
+                                           data=json.dumps(body).encode() if body is not None else None,
+                                           headers={"Authorization": "Bearer " + tok, "Accept": "application/vnd.github+json", "User-Agent": "brain-live-log"})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.loads(r.read() or b"null")
+          try:
+              issue = next((i["number"] for i in call("GET", "issues?state=all&per_page=100&sort=created&direction=asc")
+                            if i.get("title") == title and "pull_request" not in i), None)
+              if issue is None:
+                  issue = call("POST", "issues", {"title": title, "body": "The last 80 lines of a running Mac job, written here every 30 seconds by mac-run.yml so an agent can follow it. Each job overwrites it; leave it open."})["number"]
+          except Exception:
+              sys.exit(0)
+          while True:
+              if not once:
+                  time.sleep(30)
+              try:
+                  with open(log, encoding="utf-8", errors="replace") as f:
+                      tail = re.sub(r"\x1b\[[0-9;]*m", "", "".join(f.readlines()[-80:])).rstrip("\n")
+                  fence = "`" * 3
+                  when = time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime())
+                  call("PATCH", "issues/%d" % issue, {"body": "Mac run %s (https://github.com/%s/actions/runs/%s), as of %s:\n\n%s\n%s\n%s" % (rid, repo, rid, when, fence, tail, fence)})
+              except Exception:
+                  pass
+              if once:
+                  break
+          PY
+          livepid=""
+          if [ "$LIVE_PRIVATE" = true ] && xcode-select -p >/dev/null 2>&1; then
+            python3 "$live" "$log" loop >/dev/null 2>&1 &
+            livepid=$!
+          fi
           "$MAC_SHELL" "$script" 2>&1 | tee -a "$log"
           code=${PIPESTATUS[0]}
           echo "== exit $code | log kept at $log" | tee -a "$log"
+          if [ -n "$livepid" ]; then kill "$livepid" 2>/dev/null; python3 "$live" "$log" once >/dev/null 2>&1; fi
           exit $code
 
       # Lets an agent see a file from the Mac (stills, small logs) without pasting it into the log.
