@@ -220,22 +220,32 @@ install_gh() {
 # there's none, Apple's signature on it), into Applications. Downloaded by curl, it carries none of the
 # quarantine flag a browser's download would, so it opens without asking; the flag is cleared anyway.
 # With a folder, an older Obsidian there is replaced (or, if it can't be, the new one goes in ~/Applications).
+# Obsidian is an extra, so if it doesn't come in, the setup carries on without it, as on Windows: it's tried
+# again through gh once gh is signed in (GitHub's plain release links can answer 504 for hours while gh's route
+# works, 8 Nov 2026), and the end says what to do.
+obsidian_failed() { log "carried on without Obsidian: $1"; warn "$1 Your brain is fine without it: the setup carries on, and tries Obsidian again later."; }
 install_obsidian() {
   local tag v dmg tmp want got dest ok
   say 'Installing Obsidian, from its own release on GitHub...'
-  tag=$(latest_tag obsidianmd/obsidian-releases) || die "Couldn't find the newest version of Obsidian. Check the Mac is online, then paste the same command again."
+  tag=$(latest_tag obsidianmd/obsidian-releases)
+  if [ -z "$tag" ] && [ -n "$gh" ]; then tag=$("$gh" api repos/obsidianmd/obsidian-releases/releases/latest --jq .tag_name 2>/dev/null); fi
+  [ -n "$tag" ] || { obsidian_failed "Couldn't find the newest version of Obsidian."; return 1; }
   v="${tag#v}"
   dmg="Obsidian-$v.dmg"
   tmp=$(mktemp -d)
-  curl -fsSL --retry 3 -o "$tmp/$dmg" "https://github.com/obsidianmd/obsidian-releases/releases/download/$tag/$dmg" || { rm -rf "$tmp"; die "Couldn't download Obsidian ($dmg). Check the Mac is online, then paste the same command again."; }
+  if ! { [ -n "$gh" ] && "$gh" auth status --hostname github.com >/dev/null 2>&1 &&
+         "$gh" release download "$tag" --repo obsidianmd/obsidian-releases --pattern "$dmg" --clobber --dir "$tmp" 2>/dev/null; } &&
+     ! curl -fsSL --retry 3 -o "$tmp/$dmg" "https://github.com/obsidianmd/obsidian-releases/releases/download/$tag/$dmg"; then
+    rm -rf "$tmp"; obsidian_failed "Obsidian's download ($dmg) didn't come through. That's usually GitHub, and it usually passes."; return 1
+  fi
   want=$(asset_digest obsidianmd/obsidian-releases "$tag" "$dmg")
   got=$(sha256 "$tmp/$dmg")
-  if [ -n "$want" ] && [ "$want" != "$got" ]; then rm -rf "$tmp"; die "Obsidian didn't match its checksum, so it wasn't installed. Paste the same command again."; fi
+  if [ -n "$want" ] && [ "$want" != "$got" ]; then rm -rf "$tmp"; obsidian_failed "Obsidian didn't match its checksum, so it wasn't installed."; return 1; fi
   mkdir -p "$tmp/disk"
-  hdiutil attach -nobrowse -noautoopen -readonly -quiet -mountpoint "$tmp/disk" "$tmp/$dmg" </dev/null || { rm -rf "$tmp"; die "Couldn't open Obsidian's disk image."; }
+  hdiutil attach -nobrowse -noautoopen -readonly -quiet -mountpoint "$tmp/disk" "$tmp/$dmg" </dev/null || { rm -rf "$tmp"; obsidian_failed "Couldn't open Obsidian's disk image."; return 1; }
   if [ ! -d "$tmp/disk/Obsidian.app" ] || { [ -z "$want" ] && ! codesign --verify "$tmp/disk/Obsidian.app" 2>/dev/null; }; then
     hdiutil detach "$tmp/disk" -quiet; rm -rf "$tmp"
-    die "Obsidian's disk image isn't as it should be, so it wasn't installed. Paste the same command again."
+    obsidian_failed "Obsidian's disk image isn't as it should be, so it wasn't installed."; return 1
   fi
   if [ -n "$check" ]; then dest="$root/Applications"; elif [ -n "${1:-}" ]; then dest="$1"; elif [ -w /Applications ]; then dest=/Applications; else dest="$HOME/Applications"; fi
   if [ -d "$dest/Obsidian.app" ]; then
@@ -246,7 +256,7 @@ install_obsidian() {
   ditto "$tmp/disk/Obsidian.app" "$dest/Obsidian.app"; ok=$?
   hdiutil detach "$tmp/disk" -quiet || hdiutil detach "$tmp/disk" -force -quiet
   rm -rf "$tmp"
-  [ "$ok" -eq 0 ] || die "Couldn't copy Obsidian into $dest."
+  [ "$ok" -eq 0 ] || { obsidian_failed "Couldn't copy Obsidian into $dest."; return 1; }
   xattr -dr com.apple.quarantine "$dest/Obsidian.app" 2>/dev/null
   if [ -z "$check" ] && [ -x "$LSREGISTER" ]; then "$LSREGISTER" -f "$dest/Obsidian.app" >/dev/null 2>&1; fi # so obsidian:// links open it
   obsidian_app="$dest/Obsidian.app"
@@ -374,7 +384,21 @@ if mode == "new":
     edit("README.md", "- **My PC,**",
          "- **My Mac,** if I've added its runner: agents run jobs on it through a GitHub Actions runner while it's on and I'm logged in ([the Mac](knowledge/systems/my-mac.md)). \"AI Brain Link - live jobs\", in my `~/AI-Brain-Link` folder, shows what's running.")
     edit("README.md", "- **Giving it files:**",
-         "- **Giving it files:** in a chat, I attach them. With the brain on my Mac, I put files or folders in `~/AI-Brain-Link/_upload` and tell the agent what to do with them ([the Mac](knowledge/systems/my-mac.md)).")
+         "- **Giving it files:** in a chat, I attach them. With the brain on my Mac, I right-click files or folders in Finder and pick Quick Actions, then My brain, and tell the agent what to do with them ([the upload point](knowledge/systems/upload-point.md)).")
+    # The upload point's note: My brain in Finder's Quick Actions, in place of Send to.
+    up = "knowledge/systems/upload-point.md"
+    edit(up, "about: ",
+         "about: \"The upload point: the owner right-clicks files or folders in Finder and picks Quick Actions, My brain, and each path goes on a list on the Mac for an agent to sort into the brain. Read when the owner mentions sending or dropping something.\"")
+    edit(up, "The owner selects files or folders in File Explorer",
+         "The owner selects files or folders in Finder, right-clicks, and picks Quick Actions, then My brain. Each one's path is added to a list on the Mac, and an agent sorts them into the brain when the owner says what to do: the [upload-point skill](../../skills/upload-point/SKILL.md), with the Mac's parts in the [my-mac skill](../../skills/my-mac/SKILL.md).")
+    edit(up, "- **The list** is ",
+         "- **The list** is `~/AI-Brain-Link/_upload/waiting.txt`, a plain text file on the Mac, outside this repo: one line per thing, the time it was sent, a tab, and its path. It isn't in the brain, so nothing here says what's waiting.")
+    edit(up, "- **Reading it:** ",
+         "- **Reading it:** a session on the Mac opens the file; a cloud session runs one job on the Mac, `skills/upload-point/look.py`, which also takes a line off once its thing is sorted (`--done`).")
+    edit(up, "- **A USB stick's files** ",
+         "- **A USB stick's or memory card's files** are copied to `~/AI-Brain-Link/_upload/<date>/` first, and the copy is what's listed.")
+    edit(up, "- **Send to's entry** ",
+         "- **The Quick Action** is `~/Library/Services/My brain.workflow`; `skills/upload-point/setup-upload-point.sh` makes it again.")
     edit("README.md", "- **Extras:**",
          "- **Extras:** Obsidian and the Mac runner are extras, and the brain works without them. To add one, I ask an agent, which gives me one command to paste ([the first session's step 4](skills/getting-started/SKILL.md#4-the-owners-computer)).")
     skills = len([d for d in os.listdir(os.path.join(work, "skills")) if os.path.isfile(os.path.join(work, "skills", d, "SKILL.md"))])
@@ -390,6 +414,14 @@ if mode == "new":
     edit("knowledge/systems/my-pc.md", "# ",
          "\n*This brain was set up on the owner's Mac, so it has no PC runner yet: the Mac is in [my-mac](my-mac.md). The rest of this note is for a Windows PC, if they add one with the kit's Windows installer or `skills/my-pc/setup-runner.ps1`.*",
          how="after")
+
+# The upload point's skill, in any brain whose skill still says it's for Windows only: a Mac has My brain in
+# Finder's Quick Actions.
+up_skill = os.path.join(work, "skills", "upload-point", "SKILL.md")
+if os.path.isfile(up_skill) and "**Windows only: a Mac has no Send to.**" in open(up_skill, encoding="utf-8").read():
+  edit("skills/upload-point/SKILL.md", "A way for the owner to hand the brain files",
+       "On a Mac it's My brain in Finder's right-click menu, under Quick Actions, with `.sh` and `.py` scripts in this folder beside the Windows ones; the [my-mac skill](../my-mac/SKILL.md)'s \"Giving the brain files\" says how they differ, and everything else here holds, with `~/AI-Brain-Link` for `C:\\AI-Brain-Link`.",
+       how="swap", old="**Windows only: a Mac has no Send to.**")
 
 # The skill lists, in any brain.
 edit("skills/lists/the-brain.md", "- [my-pc](../my-pc/SKILL.md)",
@@ -430,11 +462,14 @@ new_brain_repo() {
 
 # A brain made on another computer gets the Mac's parts here, in a commit of their own, so the Mac runner has
 # its workflow and agents its skill.
+# Run again on a brain that has them, it adds only the Mac parts the kit has gained since, and commits only then.
 add_mac_parts() {
-  if [ -f "$1/skills/my-mac/SKILL.md" ]; then return; fi
-  say 'Adding the Mac parts to your brain (the Mac runner workflow, its skill and a note for this Mac)...'
+  if [ -f "$1/skills/my-mac/SKILL.md" ]; then say 'Bringing the Mac parts in your brain up to the kit...'
+  else say 'Adding the Mac parts to your brain (the Mac runner workflow, its skill, the upload point and a note for this Mac)...'; fi
   mac_brain add "$1" || { warn "Couldn't add the Mac parts. Your brain works without them, but agents can't run jobs on this Mac until it has them: ask Claude to add them from the AnIdeaLab brain kit (install/mac-brain)."; return; }
-  git -C "$1" add -A && git -C "$1" commit -q -m 'Added the Mac parts from the AnIdeaLab brain kit' >/dev/null
+  git -C "$1" add -A
+  if git -C "$1" diff --cached --quiet; then return; fi
+  git -C "$1" commit -q -m 'Added the Mac parts from the AnIdeaLab brain kit' >/dev/null
   if [ -z "$check" ]; then git -C "$1" push -q origin HEAD >/dev/null 2>&1 || warn "Couldn't send the Mac parts to GitHub yet. Pasting the same command again sends them, and so does Obsidian Git's next sync, if you have Obsidian."; fi
 }
 
@@ -507,13 +542,13 @@ if [ -z "$check" ] || [ -n "$tools_check" ]; then
   if [ -z "$gh" ]; then install_gh; gh=$(find_gh); fi
   if [ -n "$want_obsidian" ]; then
     obsidian_app=$(find_obsidian)
-    if [ -z "$obsidian_app" ]; then install_obsidian
+    if [ -z "$obsidian_app" ]; then install_obsidian || true
     else
       v=$(app_version "$obsidian_app")
       if [ -n "$v" ] && older_than "$v" "$obsidian_min"; then
         log "Obsidian $v at $obsidian_app is older than $obsidian_min, so it's replaced by the newest"
         say "Obsidian on this Mac is old ($v), so it's updated to the newest. Your vaults and settings stay."
-        install_obsidian "$(dirname "$obsidian_app")"
+        install_obsidian "$(dirname "$obsidian_app")" || obsidian_app=$(find_obsidian)
       fi
     fi
   fi
@@ -631,6 +666,11 @@ step "Your brain on GitHub, and your copy in $vault" 'done'
 # Obsidian, the Mac runner brings this copy up to date at the start of each job (mac-run.yml, in the Mac parts).
 if [ -z "$want_obsidian" ]; then step 'Obsidian, with syncing on' skipped; else
   step 'Obsidian, with syncing on' started
+  # The second try, through gh, if Obsidian didn't come in at the tools step.
+  if { [ -z "$check" ] || [ -n "$tools_check" ]; } && [ -z "$obsidian_app" ]; then
+    obsidian_app=$(find_obsidian)
+    if [ -z "$obsidian_app" ]; then install_obsidian || true; fi
+  fi
   plugin="$vault/.obsidian/plugins/obsidian-git"
   if { [ -z "$check" ] || [ -n "$tools_check" ]; } && [ ! -f "$plugin/main.js" ]; then
     say 'Adding the Obsidian Git plugin, which syncs your edits with GitHub...'
@@ -674,11 +714,20 @@ PY
   step 'Obsidian, with syncing on' 'done'
 fi
 
-# 5b. The upload point's window and Send to are on Windows only for now. On a Mac, files for the brain go in
-# ~/AI-Brain-Link/_upload, and the owner tells an agent (the my-mac skill).
-mkdir -p "$root/_upload"
-step 'The upload point' skipped
-echo "The upload point's window is on Windows only for now. On this Mac, put files for your brain in $root/_upload and tell Claude."
+# 5b. The upload point: My brain in Finder's Quick Actions, as Send to, My brain is on Windows. Your brain is
+# fine without it.
+upload_setup="$vault/skills/upload-point/setup-upload-point.sh"
+if [ -f "$upload_setup" ]; then
+  step 'The upload point' started
+  say "Adding the upload point: My brain in Finder's right-click menu (Quick Actions), for giving your brain files..."
+  if [ -z "$check" ]; then
+    if /bin/bash "$upload_setup"; then step 'The upload point' 'done'
+    else
+      warn "The upload point didn't set up; your brain works without it. To try again later, paste: bash \"$upload_setup\""
+      step 'The upload point' 'not done'
+    fi
+  else step 'The upload point' 'done'; fi
+fi
 
 # 6. The Mac runner
 runner_setup="$vault/skills/my-mac/setup-runner.sh"
@@ -703,19 +752,25 @@ else
 fi
 
 # 7. Obsidian opens last, so it can't hide a question in this window.
+has_obsidian=''
 if [ -z "$want_obsidian" ]; then step 'Obsidian opened on your brain' skipped; else
   step 'Obsidian opened on your brain' started
-  if [ -z "$check" ]; then
+  if [ -n "$check" ] || [ -n "$obsidian_app" ] || [ -n "$(find_obsidian)" ]; then has_obsidian=yes; fi
+  if [ -z "$check" ] && [ -n "$has_obsidian" ]; then
     link=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$vault")
     open "obsidian://open?path=$link" >/dev/null 2>&1 || open -a "${obsidian_app:-Obsidian}" >/dev/null 2>&1
     sleep 3
   fi
-  step 'Obsidian opened on your brain' 'done'
+  if [ -n "$has_obsidian" ]; then step 'Obsidian opened on your brain' 'done'; else step 'Obsidian opened on your brain' 'not done'; fi
 fi
 
 show_steps
-if [ -n "$want_obsidian" ]; then say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
-else say 'No Obsidian, as you chose. To add it later, paste the same command again, give the same brain name, and answer Y to the Obsidian question.'; fi
+if [ -z "$want_obsidian" ]; then say 'No Obsidian, as you chose. To add it later, paste the same command again, give the same brain name, and answer Y to the Obsidian question.'
+elif [ -n "$has_obsidian" ]; then say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
+else
+  echo ''
+  warn "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again, and give the same brain name."
+fi
 if [ -n "$runner_ok" ]; then say 'All done on this Mac.'; else
   echo ''
   warn "Your brain is set up, but the Mac runner isn't working yet, so agents can't run jobs on this Mac."
@@ -724,7 +779,7 @@ if [ -n "$runner_ok" ]; then say 'All done on this Mac.'; else
 fi
 echo "Your brain on GitHub: https://github.com/$repo"
 if [ -n "$want_obsidian" ]; then echo "Your copy on this Mac: $vault (open in Obsidian)"; else echo "Your copy on this Mac: $vault"; fi
-echo "Files for your brain: put them in $root/_upload, and tell Claude."
+echo "Files for your brain: select them in Finder, right-click, then Quick Actions, My brain, and tell Claude."
 echo ''
 printf '\033[36m%s\033[0m\n' 'Last step, in Claude:'
 echo '  1. Go to https://claude.ai/code. If it asks, connect GitHub and let Claude see your brain repo.'

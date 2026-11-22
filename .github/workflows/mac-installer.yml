@@ -59,15 +59,34 @@ jobs:
           python3 -c 'import json,sys; v=json.load(open(sys.argv[1]))["vaults"]; assert any(x["path"] == sys.argv[2] for x in v.values()); print("Obsidian lists the vault")' "$c/obsidian/obsidian.json" "$c/my-brain"
           for f in .github/workflows/mac-run.yml skills/my-mac/SKILL.md skills/my-mac/setup-runner.sh skills/my-mac/check-setup.sh skills/my-mac/watch-jobs.sh knowledge/systems/my-mac.md; do test -f "$c/my-brain/$f"; done
           grep -q 'my-mac skill' "$c/my-brain/CLAUDE.md"
-          test -d "$c/_upload"
+          for f in upload-point.sh setup-upload-point.sh look.py; do test -f "$c/my-brain/skills/upload-point/$f"; done
+          grep -q "On a Mac it's My brain" "$c/my-brain/skills/upload-point/SKILL.md"
           python3 -c 'import re,sys; last = {}
           for line in open(sys.argv[1]):
               m = re.match(r"\S+ \S+  (started|done|skipped|not done)  (.+)$", line.rstrip("\n"))
               if m: last[m.group(2)] = m.group(1)
           left = [k for k, v in last.items() if v in ("started", "not done")]
           assert len(last) == 8 and not left, (last, left); print("Every step finished:", len(last))' "$c/_logs/install.log"
-          for f in install.sh install/install-mac.sh install/mac-brain/skills/my-mac/*.sh; do /bin/bash -n "$f"; done
+          for f in install.sh install/install-mac.sh install/mac-brain/skills/*/*.sh; do /bin/bash -n "$f"; done
           echo "The scripts parse in macOS's own bash"
+          /usr/bin/python3 -m py_compile install/mac-brain/skills/upload-point/look.py && echo "look.py compiles in Apple's Python"
+
+      - name: The upload point, through Finder's Quick Action
+        run: |
+          set -e
+          b="$BRAIN_KIT_CHECK/my-brain"
+          bash "$b/skills/upload-point/setup-upload-point.sh"
+          plutil -lint "$HOME/Library/Services/My brain.workflow/Contents/Info.plist" "$HOME/Library/Services/My brain.workflow/Contents/document.wflow"
+          f="$RUNNER_TEMP/a quote.txt"; echo "a quote" > "$f"
+          # The Quick Action as Finder runs it, with the file as its input (its box gives up by itself).
+          automator -i "$f" "$HOME/Library/Services/My brain.workflow"
+          cat "$BRAIN_KIT_CHECK/_upload/waiting.txt"
+          grep -qF "$f" "$BRAIN_KIT_CHECK/_upload/waiting.txt"
+          bash "$b/skills/upload-point/upload-point.sh" --quiet "$f" "$RUNNER_TEMP"
+          test "$(grep -c . "$BRAIN_KIT_CHECK/_upload/waiting.txt")" = 2
+          /usr/bin/python3 -I "$b/skills/upload-point/look.py"
+          /usr/bin/python3 -I "$b/skills/upload-point/look.py" --done "$f" "$RUNNER_TEMP"
+          test ! -s "$BRAIN_KIT_CHECK/_upload/waiting.txt"
 
       - name: The new brain's own checks
         working-directory: ${{ env.BRAIN_KIT_CHECK }}/my-brain

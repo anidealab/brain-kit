@@ -12,7 +12,7 @@ The Mac is a GitHub Actions self-hosted runner for this brain's repo, labelled `
 ~/AI-Brain-Link/
   _runner/        the Actions runner (its checkouts go in _runner/_work/)
   _logs/          the installer's install.log, and mac-run output, one log per run
-  _upload/        files and folders the owner puts here for the brain, until they're sorted
+  _upload/        waiting.txt, the upload point's list of what the owner sent with My brain (Finder's Quick Actions), and copies from USB sticks
   Tools/          GitHub's command line (Tools/bin), watch-jobs.sh and other shared tools
   <repo name>/    the owner's copy of this brain, opened in Obsidian if they have it
   <Project>/<Stage>/<job>/   a job's data, made when a job first needs it
