@@ -1105,7 +1105,9 @@ def do_send(_args):
         text = open(os.path.join(folder, name), encoding="utf-8").read()
         body = json.dumps({"name": name, "text": text}).encode()
         req = urllib.request.Request(address, data=body, method="POST",
-                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json",
+                                              # Python's own client name is turned away by some sites' bot checks (Cloudflare's error 1010)
+                                              "User-Agent": "anidealab-brain-kit"})
         try:
             answer = urllib.request.urlopen(req, timeout=60).read().decode()
             print(f"Sent {name}: {answer}")
