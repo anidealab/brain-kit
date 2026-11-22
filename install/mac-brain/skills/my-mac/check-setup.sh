@@ -1,7 +1,7 @@
 #!/bin/bash
 # Checks a second brain's setup on this Mac against the AnIdeaLab brain kit: the tools, the GitHub sign-in,
-# the brain's repo and its settings, the Mac runner, your copy of the brain and Obsidian, the installer's last
-# run and the Mac's settings. It changes nothing, apart from saving its report. Each line says OK, FIX (with
+# the brain's repo, its settings and its shape against the kit, the Mac runner, your copy of the brain and
+# Obsidian, the installer's last run and the Mac's settings. It changes nothing, apart from saving its report. Each line says OK, FIX (with
 # what to do, as a command where there is one), NOTE or INFO. The report is saved in ~/AI-Brain-Link and
 # copied, so you can paste it into a Claude session on your brain with: Fix what this setup check found.
 # With --send it also saves the report in the brain's repo, as knowledge/systems/setup-check.md, so an agent
@@ -157,6 +157,57 @@ EOF
     if printf '%s\n' "$workflows" | grep -qx 'library.yml'; then ok 'library.yml rebuilds the knowledge indexes on each push'; else note 'No library.yml, so the knowledge indexes update only when an agent runs library.py build'; fi
     secrets=$(ghq api "repos/$repo/actions/secrets" --jq '[.secrets[].name] | join(", ")')
     if [ -n "$secrets" ]; then info "Actions secrets, names only: $secrets"; else info 'No Actions secrets yet; keys get added when a job needs one'; fi
+  fi
+fi
+
+# The brain's shape, against the kit ---------------------------------------------------------------
+paths=''
+if [ -n "$repo" ] && [ -n "$gh" ]; then paths=$(ghq api "repos/$repo/git/trees/$branch?recursive=1" --jq '.tree[].path'); fi
+if [ -n "$paths" ]; then
+  section "The brain's shape, compared with the AnIdeaLab brain kit"
+  has() { printf '%s\n' "$paths" | grep -qxF -- "$1"; }
+  if has CLAUDE.md; then ok 'The core (CLAUDE.md) is there'; else fix 'There is no core (CLAUDE.md), the page every agent reads first' "Copy the kit's CLAUDE.md in, and make it yours"; fi
+  parts=(
+    'README.md|the front door'
+    'skills/README.md|the skills list'
+    "knowledge/README.md|the knowledge library's index"
+    'skills/brain-spec/SKILL.md|the brain spec'
+    'skills/brain-spec/library.py|the script that builds the indexes from the cards'
+    'skills/brain-spec/check_links.py|the link checker'
+    'skills/brain-spec/reminders.py|the reminders script'
+    'skills/guide-mode/SKILL.md|guide mode'
+    'skills/find-skills/SKILL.md|the way to find more skills'
+    ".claude/settings.json|Claude Code's settings (it runs the reminders at the start of a session, and the hand-off nudge)"
+    ".obsidian/graph.json|the map's colours by shelf"
+    ".obsidian/plugins/obsidian-git/data.json|Obsidian Git's sync settings"
+    '.obsidian/plugins/brain-graph/main.js|the brain graph'
+    'skills/upload-point/setup-upload-point.sh|the upload point on a Mac'
+    'skills/add-a-key/add-api-keys.sh|the way to add a key on a Mac'
+  )
+  for shelf in tasks handoffs ventures areas decisions people systems ideas subjects; do parts+=("knowledge/$shelf/README.md|the $shelf shelf"); done
+  missing=''; n=0
+  for part in "${parts[@]}"; do
+    if ! has "${part%%|*}"; then missing="${missing:+$missing; }${part#*|} (${part%%|*})"; n=$((n + 1)); fi
+  done
+  if [ -n "$missing" ]; then note "It has $((${#parts[@]} - n)) of the kit's ${#parts[@]} parts. Missing: $missing" "Fine if it was set up differently on purpose; an agent can copy them in from the kit (the Mac's ones: paste the kit's Mac command again)"
+  else ok "It has all ${#parts[@]} of the kit's parts"; fi
+  # AnIdeaLab's sign-off links, which a kit brain refreshes by itself from the kit repo once it has them.
+  if has skills/brain-spec/brain_update.py; then
+    if has knowledge/systems/sign-off-links.md; then ok "It has AnIdeaLab's sign-off links (knowledge/systems/sign-off-links.md), which refresh by themselves"
+    else note "It doesn't have AnIdeaLab's sign-off links yet (knowledge/systems/sign-off-links.md)" 'They come with the next brain update from AnIdeaLab'; fi
+  fi
+  if has skills/my-mac/SKILL.md; then ok 'Agents have a skill for using the Mac (skills/my-mac/SKILL.md)'
+  else note 'No skill tells agents how to use the Mac runner' "Paste the kit's Mac command again: it adds the brain's Mac parts"; fi
+  info "$(printf '%s\n' "$paths" | grep -cE '^skills/[^/]+/SKILL\.md$') skills"
+  core=$(ghq api "repos/$repo/contents/CLAUDE.md?ref=$branch" --jq .content | tr -d '\n' | base64 -D 2>/dev/null || ghq api "repos/$repo/contents/CLAUDE.md?ref=$branch" --jq .content | tr -d '\n' | base64 -d 2>/dev/null)
+  if [ -n "$core" ]; then
+    gone=''
+    for rule in "gate|the gates (money, secrets, the sign-off, the owner's voice)" 'Best guess|"best guess, light checks"' 'One check is enough|"one check is enough"' 'No Claude artifacts|"no Claude artifacts"' 'agents at a time|"one or two agents at a time"' 'Guide mode|guide mode' 'by AnIdeaLab.com|the AnIdeaLab sign-off' 'command|"give the owner a command"' 'pull --rebase|committing straight to main'; do
+      if ! printf '%s' "$core" | grep -qF -- "${rule%%|*}"; then gone="${gone:+$gone, }${rule#*|}"; fi
+    done
+    if [ -n "$gone" ]; then note "The core doesn't have: $gone" "Fine if on purpose; the kit's core has them"; else ok "The core has the kit's rules"; fi
+    size=$(printf '%s' "$core" | wc -c | tr -d ' ')
+    if [ "$size" -gt 8192 ]; then note "The core is $((size / 1024)) KB; a core stays under 8 KB, because every agent reads it first"; fi
   fi
 fi
 
