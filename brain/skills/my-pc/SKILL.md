@@ -57,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File "C:\AI-Brain-Link\<repo name>\skills\my
 It needs GitHub's `gh` tool signed in, which the installer did. `C:\AI-Brain-Link\<repo name>` is where the installer puts the brain's copy; a brain cloned somewhere else has its folder in [the PC's note](../../knowledge/systems/my-pc.md), so use that in this command and the ones below.
 
 ## If the runner stops picking up jobs
-1. **Runs sit in "queued":** the PC is off or asleep, or the service has stopped. Ask the owner to check the PC is on, then give them this to paste into PowerShell: `Get-Service actions.runner.* | Restart-Service` (it asks for admin rights; run PowerShell as administrator if it says access is denied).
+1. **Runs sit in "queued":** the PC is off or asleep, busy with another job, or the service has stopped. `python3 skills/brain-spec/devices.py status` tells which in about a minute. If it's off, ask the owner to check the PC is on, then give them this to paste into PowerShell: `Get-Service actions.runner.* | Restart-Service` (it asks for admin rights; run PowerShell as administrator if it says access is denied).
 2. **The runner's own logs** are in `C:\AI-Brain-Link\_runner\_diag\`.
 3. **Still nothing:** have the owner run `setup-runner.ps1` again (above). A wrong Windows password is the usual cause of a service that won't start: it needs the password they'd type at the sign-in screen (for a Microsoft account, that account's password), never the PIN.
 4. **After the service ran under another account,** delete the runner's checkout folder in `C:\AI-Brain-Link\_runner\_work\` once, or git refuses it ("dubious ownership").
