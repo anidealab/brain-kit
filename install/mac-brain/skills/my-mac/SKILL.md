@@ -86,3 +86,5 @@ A new brain's [getting-started skill](../getting-started/SKILL.md) was written f
   ```
   Put what it found in the Mac's note, `knowledge/systems/my-mac.md`, under "What's on the Mac", dated, and tell the owner in two lines. If it sits in "queued" for more than a few minutes, go through "If the runner stops picking up jobs" above; if they skipped the runner, give them the command in "Setting it up again".
 - **Step 5, the tour:** Obsidian's shortcuts use Cmd where the skill says Ctrl (Cmd+G opens the map, Cmd+P the commands). Files go in with Finder's right-click, Quick Actions, My brain ("Giving the brain files" above). Keys go in with one line in Terminal ("Keys on a Mac" above).
+- **Step 4, if the command stopped:** what it showed, and `~/AI-Brain-Link/_logs/install.log`, which has each step and the versions of the tools it found; then `bash ~/AI-Brain-Link/<repo name>/skills/my-mac/check-setup.sh` once the Mac parts are in.
+- **Step 7, their files:** wherever it says Send to, My brain, it's My brain under Quick Actions in Finder's right-click menu ("Giving the brain files" above), and "on their PC" is on their Mac.
