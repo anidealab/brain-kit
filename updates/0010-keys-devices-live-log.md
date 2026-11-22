@@ -60,4 +60,4 @@ When it runs, the devices check sends each computer with a runner a tiny job tha
 9. **Check the report went:** the "Send brain update reports" run for your push should say "Sent 0010-report.md" in its log. If it says anything else, run that workflow by hand.
 
 
-The exemplar, the kit's brain at this update: https://github.com/AnIdeaLab/brain-kit/tree/1604df85d206f26ff0f67b28d2ab1e2b399d1d75/brain. `compare` prints it too.
+The exemplar, the kit's brain at this update: https://github.com/AnIdeaLab/brain-kit/tree/0dd3bf0f4854d8adeac88b3cc50c5db08130b00d/brain. `compare` prints it too.
