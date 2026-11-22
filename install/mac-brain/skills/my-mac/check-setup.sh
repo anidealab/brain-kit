@@ -248,7 +248,9 @@ elif pmset -g custom 2>/dev/null | awk '/^AC Power/ {ac = 1} /^Battery Power/ {a
 else note "It sleeps while on the charger, and jobs wait while it's asleep" "bash \"$here/setup-runner.sh\"   (it asks to keep the Mac awake on the charger)"; fi
 if [ -f "$root/AI Brain Link - live jobs.command" ]; then ok "\"AI Brain Link - live jobs\" is in $root"; else note "No \"AI Brain Link - live jobs\" in $root" 'setup-runner.sh adds it; it shows what agents run, live'; fi
 if [ -d "$root/_logs" ]; then ok "The jobs' log folder is there ($root/_logs)"; else fix "There's no $root/_logs, where the Mac workflow writes its logs" "mkdir -p \"$root/_logs\""; fi
-if [ -d "$root/_upload" ]; then ok "The folder for giving the brain files is there ($root/_upload)"; else note "No $root/_upload, the folder for giving the brain files" "mkdir -p \"$root/_upload\""; fi
+if [ -f "$HOME/Library/Services/My brain.workflow/Contents/document.wflow" ]; then ok "The upload point is on: Finder's right-click, Quick Actions, My brain"
+else note "No My brain in Finder's Quick Actions (the upload point), for giving the brain files" "bash \"$here/../upload-point/setup-upload-point.sh\""; fi
+if [ -s "$root/_upload/waiting.txt" ]; then info "Waiting at the upload point: $(grep -c . "$root/_upload/waiting.txt") thing(s) (_upload/waiting.txt)"; fi
 info "Disk: $(df -H / | awk 'NR == 2 {print $4 " free of " $2}')"
 
 # The report ---------------------------------------------------------------------------------------
