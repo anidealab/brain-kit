@@ -6,6 +6,9 @@ description: "How to run commands and jobs on the owner's Windows PC through the
 # Running jobs on the owner's PC
 The owner's PC is a GitHub Actions self-hosted runner for this brain's repo, with the label `my-pc` (and `gpu` if it has an NVIDIA card). It runs as a Windows service under the owner's own account, so a job can reach the whole PC and their apps. It starts with Windows, so the owner doesn't need to be logged in, but the PC has to be on and awake. What this PC has is in [the PC's note](../../knowledge/systems/my-pc.md).
 
+## Not set up yet
+If [devices](../../knowledge/systems/devices.md) has no computer of the owner's (a brain made from the template starts with only cloud sessions), the runner isn't set up. When they ask for something that needs their computer (their files, an app on it, a GPU, anything a cloud session can't do), don't send them to a local session or give click-by-click steps. Say it needs their computer added to the brain first, and make it sound as easy as it is: one command to paste and a few yes or no questions, then it sets itself up while they get on with something else, and it's only ever done once. Don't give a time. If they'd like it, do [getting-started's step 4](../getting-started/SKILL.md#4-the-owners-computer), which has the command for each computer, then the job. If not, do what you can from the cloud and save the rest as a task they hold.
+
 ## Running a command
 Start the workflow [`pc-run.yml`](../../.github/workflows/pc-run.yml) ("Run on my PC") on `main` with the GitHub tool's run-workflow method. Inputs:
 - `command`: the command or a whole script. Start it with a `# comment` saying what it's for: the run's name in the Actions list starts with it.

@@ -8,7 +8,7 @@ This brain was started from the AnIdeaLab brain kit, one of two ways. Find out w
 - **From the template, with nothing installed:** `.github/workflows/first-run.yml` is in the repo. The brain is this GitHub repo and nothing else: the owner pressed a button on GitHub and opened Claude. There's no copy on their computer, no Obsidian and no runner, and they don't need any of them to start. Do step 0 first.
 - **By the installer:** that file isn't there. On the owner's Windows PC, the installer has already made this private GitHub repo and put the brain in it; put a copy in `C:\AI-Brain-Link\<repo name>`; opened it in Obsidian, with the Obsidian Git plugin syncing it, if they said yes to Obsidian; and set up the PC runner (a GitHub Actions self-hosted runner with the label `my-pc`, running as a Windows service under the owner's account), unless they skipped it. Skip step 0.
 
-This skill is the first session: about 15 minutes of the owner's time. Guide mode applies, so keep each message short, and ask everything you need in as few messages as you can.
+This skill is the first session: about 10 minutes of the owner's time. Guide mode applies, so keep each message short, and ask everything you need in as few messages as you can. Don't tell them how long it takes: just do it. The computer extras come after the setup, not in the middle of it (step 4).
 
 ## 0. A brain from the template
 - **Its start date.** If `.github/first_run.py` is still there, the brain's "Start this brain" workflow didn't run, and the brain's start date is still a placeholder in curly brackets. Run `python3 .github/first_run.py` from the top of the brain, then commit ("Started this brain from the AnIdeaLab brain kit") and push to `main`, before anything else.
@@ -17,22 +17,23 @@ This skill is the first session: about 15 minutes of the owner's time. Guide mod
 - **Its workflow's job is done.** Delete `.github/workflows/first-run.yml` in step 8's commit. If the push is refused because the session can't change workflow files, put it back and leave it: it has turned itself off.
 
 ## 1. Say hello, and what this is
-In a few lines, in plain words:
-- This repo is their second brain: plain notes that any AI agent can read. The core (`CLAUDE.md`) is the page every agent reads first. The skills library is how to do things (68 to start, and more whenever a job needs one). The knowledge library is what the brain knows about them and their projects, and it fills up as they use it.
-- Obsidian on their PC shows the brain as a map, and the brain graph replays how it grew. Their edits there sync here, and agents' work syncs there.
-- Their computer, if they'd like: then they can ask you to do things on their PC or Mac from any chat, even from their phone, and you only do what they ask.
-- For a brain from the template, say those two are extras they can add to their computer in a few minutes, and that you'll ask about them shortly. The brain works without either.
-- Guide mode: agents check a plan with them before bigger jobs, because their plan's usage runs out. Once they've found their feet they can tune it down: agents still size each job and hand off between stages, without the explaining ([guide-mode](../guide-mode/SKILL.md#tuned-down)).
+Three lines, in plain words, no more:
+- This is their second brain: plain notes their AI agents read, so it remembers their projects, what they've decided and how they like things done, and they never explain twice.
+- It fills up as they use it, and it already knows how to do a lot of jobs (its skills).
+- You'll check a plan with them before any bigger job, since their plan's usage runs out.
+
+The rest (the core, the libraries, Obsidian, the brain graph, their computer, tuning guide mode down) comes up when it's useful, not now.
 
 ## 2. Ask, in one message
 - Their first name, and where they live (a town and country is enough), so reminders fall due in their own time.
 - What they'd like the brain to help with: projects, a business, study, life admin, learning to build things. A few words is fine.
 - Any business or project names.
 - Whether they have files they'd like the brain to know: documents for a project, a folder from an old computer, years of paperwork. A rough idea of how much is enough ("a dozen PDFs", "my whole Documents folder").
-- Their Claude plan (Pro, Max or another), and whether agents should check a plan with them before every job or only bigger ones (guide mode's default is bigger ones).
+
+Don't ask their Claude plan (Claude Code needs Pro or above, so it's at least that) or how often to check plans with them (they can't know yet: use guide mode's default, bigger jobs, and they can change it any time).
 
 ## 3. Write it down
-- `knowledge/people/<first-name>.md`: the owner's note, with a card ([brain spec](../brain-spec/SKILL.md#cards)), what they said in their words, their plan, and the date.
+- `knowledge/people/<first-name>.md`: the owner's note, with a card ([brain spec](../brain-spec/SKILL.md#cards)), what they said in their words, their Claude plan as "Pro or above" unless they said, and the date.
 - In the core, change "A second brain" at the top to "<Name>'s second brain".
 - In [routines](../../knowledge/systems/routines.md), put their time zone's name on the Time zone line under "The owner's own", in place of "not set yet": the name from the time zone database, like Pacific/Auckland, Europe/London or America/New_York.
 - One short note per project or business they named, `knowledge/ventures/<name>.md`: what it is and their goal, in their words. They grow into folders when work starts.
@@ -40,9 +41,12 @@ In a few lines, in plain words:
 - Run `python3 skills/brain-spec/library.py build`, then the checks in the brain spec's "Before you push", and commit and push.
 
 ## 4. The owner's computer
-**A brain from the template** has nothing on their computer yet. Ask, in one message, whether they'd like either extra, and which computer it would go on: a Windows PC, a Mac, or Linux. Take no for an answer. You can't see their computer from a cloud session (its start line says it's a cloud session), so ask rather than guess; if they aren't sure, a Mac has the Apple menu at the top left of the screen, and Windows has the Windows logo on its Start button.
+**A brain from the template** has nothing on their computer yet. **Don't offer the extras here:** go on to step 5, and offer them once the brain is set up (step 8), as the first small job. Come back to this step then, or whenever they ask, or whenever a job needs their computer and [devices](../../knowledge/systems/devices.md) has no computer of theirs (the [my-pc skill](../my-pc/SKILL.md#not-set-up-yet)).
+
+When it's time, ask, in one message, whether they'd like either extra, and which computer it would go on: a Windows PC, a Mac, or Linux. Take no for an answer. You can't see their computer from a cloud session (its start line says it's a cloud session), so ask rather than guess; if they aren't sure, a Mac has the Apple menu at the top left of the screen, and Windows has the Windows logo on its Start button.
 - **Their computer** (the runner): offer it in these words, or close to them: "Your computer, if you'd like. Then you can ask me to do things on your PC or Mac from any chat, even from your phone: make a video, sort out a folder, set up a program. I only do what you ask, and you can watch each one as it happens. It suits a computer that's usually on."
 - **Obsidian:** a free app that shows the brain as a map on their computer, where they can read and edit their notes.
+- **How it goes,** in a line, so it feels easy: one command to paste and a few yes or no questions, then it sets itself up while they get on with something else, and it's only ever done once. Don't give a time.
 
 If they want neither, say they can ask for them any time, and go to step 5. If they want one or both, give them the one command for their computer, and what to answer. The command finds the brain by its name, `my-brain-ail`, which the template link gives every brain, and asks no name. So first check this repo's name (`git remote get-url origin`, the last part): if it's `my-brain-ail`, give the command as it is; if it isn't (a brain made before the name was set, or renamed), give the version with its name in, below, or the command would make a second brain called `my-brain-ail`.
 - **Windows:** open PowerShell (press the Windows key, type powershell, press Enter), paste this and press Enter: `irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex`. With another name: `$env:BRAIN_KIT_NAME='<this repo's name>'; irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex`
@@ -58,7 +62,9 @@ The command does one more thing, and so does a local session in its place: as th
 
 **On a Mac,** when they say it's finished, pull first: the command adds the Mac's parts to this repo (the my-mac skill, `mac-run.yml`, and the Mac scripts for the upload point and for keys). The my-mac skill (`skills/my-mac/SKILL.md`)'s "The first session" has the Mac's version of this skill's PC parts, its runner test with `mac-run.yml` included: follow it wherever this skill says PC.
 
-When they say it's finished, and they chose the runner, test it as below. Then carry on: nothing else in this skill waits on it, so if they'd rather do it another day, save it as a task they hold and go on.
+When they say it's finished, and they chose the runner, test it as below. If they'd rather do it another day, save it as a task they hold.
+
+**Once it's in,** show them what's new, briefly: Obsidian, if they have it (Ctrl+G, Cmd+G on a Mac, opens the map; the bookmarks panel has "Start here"; the brain icon on the left opens the brain graph, the first time after Ctrl+P, then "Reload app without saving"; [Obsidian setup](../../knowledge/systems/obsidian-setup.md) has the rest), and the upload point: to give the brain files, they right-click files or folders and pick My brain (on a PC, Send to, then My brain, under "Show more options" on Windows 11; on a Mac, Quick Actions, then My brain), then tell you what to do with them ([upload-point](../upload-point/SKILL.md)). If My brain isn't there, give them the setup command in that skill.
 
 **A brain from the installer,** or one whose owner has just added the runner: test it. Find the repo's owner and name from `git remote get-url origin` (the part after `github.com/` or `/git/`). Start the workflow `pc-run.yml` ("Run on my PC") on `main` with the GitHub tool's run-workflow method, with `workdir` left as it is and this `command`:
 ```
@@ -80,27 +86,27 @@ Then add the computer to [devices](../../knowledge/systems/devices.md), so later
 - **No GitHub tool in this session** to start a workflow: say so, and that the owner can connect GitHub to Claude (claude.ai/code shows how) and start a new session; carry on with the rest.
 
 ## 5. Show them around, briefly
-- **Obsidian,** if they have it: Ctrl+G opens the map; the bookmarks panel has "Start here"; the brain icon on the left opens the brain graph (the first time, Ctrl+P, then "Reload app without saving"). [Obsidian setup](../../knowledge/systems/obsidian-setup.md) has the rest.
+Only what applies to them now, in four short lines. Obsidian and the upload point wait until they're on their computer (step 4); a brain from the installer has them already, so add those two lines from step 4's "Once it's in".
 - **What waits on them:** the [tasks index](../../knowledge/tasks/README.md), "Waiting on the owner" at the top.
-- **More skills:** they can ask "find me a skill for X" ([find-skills](../find-skills/SKILL.md)).
 - **Long chats:** every reply rereads the whole chat, so a long one uses more of their plan. When a chat gets long, the agent saves where things stand in the job's task note and gives them a line to paste into a new chat, ending in "continue" ([handoff](../handoff/SKILL.md)).
-- **The upload point,** on a PC the installer has set up: to give the brain files, they right-click files or folders in File Explorer and pick Send to, then My brain (on Windows 11, under "Show more options"), then tell you what to do with them ([upload-point](../upload-point/SKILL.md)). If My brain isn't in Send to, give them the setup command in that skill.
-- **Keys** (API keys for services, later): never pasted into a chat. When a job needs one, the agent gives them one command to paste into PowerShell, which opens the page that makes the key, reads it in hidden and saves it in the brain's GitHub secrets ([add-a-key](../add-a-key/SKILL.md)). Adding one by hand on GitHub is in [keys and accounts](../../knowledge/systems/keys-and-accounts.md).
-- **When a site is blocked** in a Claude session, the agent will say which; the owner can allow it in the session's environment settings (the environment menu in the session's title bar, then Edit, then Network access).
+- **Keys** (API keys for services, later): never pasted into a chat. When a job needs one, the agent gives them one command to paste, which opens the page that makes the key, reads it in hidden and saves it in the brain's GitHub secrets ([add-a-key](../add-a-key/SKILL.md)).
+- **When a site is blocked** in a Claude session, the agent asks to allow it: usually a card comes up in the chat to approve. If not, they allow it in the session's environment settings (the environment menu in the session's title bar, then Edit, then Network access).
 
-## 6. Offer the weekly tidy-up and the monthly deep audit
-The [brain-audit skill](../brain-audit/SKILL.md) tidies the brain once a week. It's a reminder, not a scheduled job: nothing runs, and none of their plan is used, until they say yes to it in a session. Ask if they'd like it, in a friendly line rather than as a chore ("audit" can sound daunting): it keeps the brain's answers sharp, it only tidies their notes, and they can say "not now" whenever it comes up. If yes, add its row to the owner's own table in [routines](../../knowledge/systems/routines.md), as the comment there shows, starting from the next Saturday, and commit.
+More skills, when they want them: "find me a skill for X" ([find-skills](../find-skills/SKILL.md)). Adding a key by hand on GitHub is in [keys and accounts](../../knowledge/systems/keys-and-accounts.md); say either only if asked.
 
-Then offer [the monthly deep audit](../brain-audit/deep-audit.md), in a line: once a month it reads every decision in full for rules that clash, hunts down removed rules that survive elsewhere, and checks a sample of cards. It uses more of their plan than the tidy-up, and also runs only when they say yes. If they'd like it, add its row the same way, from the first Saturday of next month.
+## 6. Offer the tidy-ups, in one question
+The [brain-audit skill](../brain-audit/SKILL.md) tidies the brain once a week, and [the monthly deep audit](../brain-audit/deep-audit.md) checks it more deeply once a month (rules that clash, removed rules that survive elsewhere, a sample of cards). Both are reminders, not scheduled jobs: nothing runs, and none of their plan is used, until they say yes on the day. Offer both in one friendly line rather than as a chore ("audit" can sound daunting), like: "Would you like a quick tidy each week, and a deeper check once a month? They keep my answers sharp, they only tidy your notes, and neither runs until you say yes on the day." If yes, add both rows to the owner's own table in [routines](../../knowledge/systems/routines.md), as the comment there shows: the tidy-up from the next Saturday, the deep audit from the first Saturday of next month, and commit. If they only want one, add that one.
 
 ## 7. Their files, if they have some
 If they said they have files to bring in, it's a job of its own, after this one: don't start reading files in the first session, which is for setting up.
 - **A few files** (up to a few dozen): ask them to send them with Send to, My brain and say "sort what I sent" ([upload-point](../upload-point/SKILL.md)).
 - **A lot** (a whole folder, an old drive, years of documents): ask them to send the folder with Send to, My brain, or tell you where it is on their PC, and say it will be brought in with the [file-intake skill](../file-intake/SKILL.md): a look at what's there first, which costs almost none of their plan, then a plan for them to say go to. Suggest a fresh chat for it.
-- **No upload point** (a brain from the template with nothing on their computer): a few files can be attached to a chat; for a lot, the PC side from step 4 comes first.
+- **No upload point** (a brain from the template with nothing on their computer): a few files can be attached to a chat; for a lot, their computer comes first (step 4, offered in step 8).
 - Either way, save it as a task they hold on the tasks shelf ("Send the files for <what> with Send to, My brain"), so it isn't lost if they do it another day.
 
 ## 8. Finish
 - Take the "A new brain" paragraph out of the core, so this skill doesn't run again. In a brain from the template, delete `.github/workflows/first-run.yml` too (step 0).
 - Run the checks, commit ("Set up <Name>'s brain") and push.
-- Tell the owner in three lines what's set up, and suggest one small first job that fits what they said they want, sized the guide-mode way: bringing their files in, if they have some.
+- Tell the owner in three lines what's set up.
+- **A brain from the template, with nothing on their computer:** offer the extras as the first small job, in step 4's words, and do step 4 if they say yes. If they say no or not now, say they can ask any time, and that you'll remind them when a job needs their computer.
+- Then suggest one small first job that fits what they said they want, sized the guide-mode way: bringing their files in, if they have some.
