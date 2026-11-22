@@ -59,7 +59,7 @@ bash ~/AI-Brain-Link/<repo name>/skills/my-mac/setup-runner.sh
 It needs GitHub's `gh` signed in, which the installer did. `~/AI-Brain-Link/<repo name>` is where the installer puts the brain's copy; a brain cloned somewhere else has its folder in the Mac's note, so use that in this command and the ones below. macOS then says background items were added: that's the runner (and the keep-awake helper).
 
 ## If the runner stops picking up jobs
-1. **Runs sit in "queued":** the Mac is off, asleep or logged out. Ask the owner to check, then give them this to paste into Terminal, which says whether the runner's LaunchAgent is running and starts it if not: `cd ~/AI-Brain-Link/_runner && ./svc.sh status; ./svc.sh start`.
+1. **Runs sit in "queued":** the Mac is off, asleep or logged out, or busy with another job. `python3 skills/brain-spec/devices.py status` tells which in about a minute. If it's off, ask the owner to check, then give them this to paste into Terminal, which says whether the runner's LaunchAgent is running and starts it if not: `cd ~/AI-Brain-Link/_runner && ./svc.sh status; ./svc.sh start`.
 2. **The runner's own logs** are in `~/AI-Brain-Link/_runner/_diag/`.
 3. **Still nothing:** have the owner run `setup-runner.sh` again (above).
 4. **To see the Mac's state while the runner is down,** give the owner the setup check with `--send`. It changes nothing, and saves its report in this repo as `knowledge/systems/setup-check.md`, so you can pull and read it:
@@ -84,7 +84,7 @@ A new brain's [getting-started skill](../getting-started/SKILL.md) was written f
   echo "Developer tools: $(xcode-select -p 2>/dev/null || echo none)"
   for t in git gh python3 node brew ffmpeg; do printf '%s: %s\n' "$t" "$(command -v "$t" || echo 'not found')"; done
   ```
-  Put what it found in the Mac's note, `knowledge/systems/my-mac.md`, under "What's on the Mac", dated, and tell the owner in two lines. If it sits in "queued" for more than a few minutes, go through "If the runner stops picking up jobs" above; if they skipped the runner, give them the command in "Setting it up again".
+  Put what it found in the Mac's note, `knowledge/systems/my-mac.md`, under "What's on the Mac", dated, and tell the owner in two lines. Then add the Mac's row to `knowledge/systems/devices.md` and run the devices check, as getting-started's step 4 says (Runner `my-mac`, Spot it the Mac's `hostname -s`), so later sessions know which computer they're on and whether it's on. If it sits in "queued" for more than a few minutes, go through "If the runner stops picking up jobs" above; if they skipped the runner, give them the command in "Setting it up again".
 - **Step 5, the tour:** Obsidian's shortcuts use Cmd where the skill says Ctrl (Cmd+G opens the map, Cmd+P the commands). Files go in with Finder's right-click, Quick Actions, My brain ("Giving the brain files" above). Keys go in with one line in Terminal ("Keys on a Mac" above).
 - **Step 4, if the command stopped:** what it showed, and `~/AI-Brain-Link/_logs/install.log`, which has each step and the versions of the tools it found; then `bash ~/AI-Brain-Link/<repo name>/skills/my-mac/check-setup.sh` once the Mac parts are in.
 - **Step 7, their files:** wherever it says Send to, My brain, it's My brain under Quick Actions in Finder's right-click menu ("Giving the brain files" above), and "on their PC" is on their Mac.
