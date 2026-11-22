@@ -36,6 +36,8 @@ jobs:
             git add knowledge/systems/keys-check-log.md 2>/dev/null || true
             git commit -qam "Keys table: weekly check"
             git push origin HEAD:main && exit 0
+            # Refused because something else pushed first: undo the commit (its changes stay), so the stash has them.
+            git reset -q --soft HEAD~1
             git stash -q
             git fetch -q origin main
             git reset -q --hard origin/main
