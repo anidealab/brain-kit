@@ -53,3 +53,5 @@ When it runs, the devices check sends each computer with a runner a tiny job tha
 7. **Run `python3 skills/brain-spec/brain_update.py compare`,** and fix what it finds.
 8. **Run `python3 skills/brain-spec/brain_update.py finish`,** and fill in the report's sections, steps 3 and 4's findings included.
 9. **Check the report went:** the "Send brain update reports" run for your push should say "Sent 0010-report.md" in its log. If it says anything else, run that workflow by hand.
+
+The exemplar, the kit's brain at this update: https://github.com/AnIdeaLab/brain-kit/tree/64521a605dd37c03a5502f4d4ec74b88d1d6f461/brain. `compare` prints it too.
