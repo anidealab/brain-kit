@@ -255,13 +255,8 @@ if (-not $check) {
 }
 if (-not $check) { Set-QuickEdit $false }
 
-# Claude, before the installs: making an account and choosing a plan can be done while they run.
-if (-not $check) {
-  Say 'Your brain works with Claude, in Claude Code. That needs a Claude account on a paid plan (Pro or above): the free plan doesn''t include Claude Code. Already signed in on a paid plan? Type S to skip. Otherwise press Enter to open Claude in your browser: sign in, or make an account and choose a plan there. The setup carries on here while you do.'
-  $a = "$(Read-Host 'Press Enter to open Claude, or type S to skip')".Trim()
-  if ($a -notmatch '^[Ss]') { try { Start-Process 'https://claude.ai/code' } catch { Write-Host 'Open https://claude.ai/code in your browser.' } }
-  Log $(if ($a -match '^[Ss]') { 'Claude: skipped, already set up' } else { 'Claude: opened claude.ai/code to sign in or sign up' })
-}
+# Claude isn't asked about here: nearly everyone runs this from their brain's first chat, so they're in Claude
+# already, and a brain made here gets the plan's line in the last step below (22 Nov 2026).
 
 # Obsidian is an extra, so it's asked about, here, before anything is installed: the answer covers the app, its
 # Git plugin, the brain in its list of vaults and opening it at the end, and a no leaves an Obsidian that's
@@ -522,11 +517,11 @@ if (-not $wantObsidian) { Step 'Obsidian opened on your brain' 'skipped' } else 
 
 Show-Steps
 if (-not $check) { Set-QuickEdit $true }
-if (-not $wantObsidian) { Say 'No Obsidian, as you chose. To add it later, paste the same command again, give the same brain name, and answer Y to the Obsidian question.' }
+if (-not $wantObsidian) { Say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.' }
 elseif ($hasObsidian) { Say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.' }
 else {
   Write-Host ''
-  Write-Host "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again, and give the same brain name." -ForegroundColor Yellow
+  Write-Host "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again." -ForegroundColor Yellow
 }
 if ($runnerOk) { Say 'All done on this PC.' } else {
   Write-Host ''
@@ -537,21 +532,20 @@ if ($runnerOk) { Say 'All done on this PC.' } else {
 Write-Host "Your brain on GitHub: https://github.com/$repo"
 Write-Host "Your copy on this PC: $vault$(if ($wantObsidian) { ' (open in Obsidian)' })"
 Write-Host ''
+if (-not $fresh) {
+  # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
+  # chat since), or a run again. So the chat is open, and that's where they go back to.
+  Write-Host 'Last step: go back to your chat with your brain and say it''s finished.' -ForegroundColor Cyan
+} else {
 Write-Host 'Last step, in Claude:' -ForegroundColor Cyan
-Write-Host '  1. Go to https://claude.ai/code. If it asks, connect GitHub and let Claude see your brain repo.'
+Write-Host '  1. Go to https://claude.ai/code. It needs a paid plan (Pro or above). If it asks, connect GitHub and let Claude see your brain repo.'
 Write-Host "  2. Start a new session with $repo selected."
 Write-Host '  3. Send this message:'
 Write-Host '       This is my new second brain. Read CLAUDE.md and get me set up.' -ForegroundColor Green
 
 # Last, AnIdeaLab's tutorials page opens in the browser: these steps, and the rest, with a video each.
-# It's on anidealab.com once the site's moved there, and on the site's preview address until then.
 $tutorials = 'https://anidealab.com/second-brain/tutorials'
-if (-not $check) {
-  try {
-    $r = Invoke-WebRequest -Uri $tutorials -UseBasicParsing -TimeoutSec 8
-    if ($r.StatusCode -ne 200 -or $r.Content -notmatch 'second-brain/tutorials') { throw 'not there yet' }
-  } catch { $tutorials = 'https://anidealab.com/second-brain/tutorials' }
-}
 Write-Host ''
 Write-Host "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials" -ForegroundColor Cyan
 if (-not $check) { try { Start-Process $tutorials } catch { } }
+}
