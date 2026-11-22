@@ -90,7 +90,7 @@ Then add the computer to [devices](../../knowledge/systems/devices.md), so later
 - **When a site is blocked** in a Claude session, the agent will say which; the owner can allow it in the session's environment settings (the environment menu in the session's title bar, then Edit, then Network access).
 
 ## 6. Offer the weekly tidy-up and the monthly deep audit
-The [brain-audit skill](../brain-audit/SKILL.md) tidies the brain once a week. It's a reminder, not a scheduled job: nothing runs, and none of their plan is used, until they say yes to it in a session. Ask if they'd like it. If yes, add its row to the owner's own table in [routines](../../knowledge/systems/routines.md), as the comment there shows, starting from the next Saturday, and commit.
+The [brain-audit skill](../brain-audit/SKILL.md) tidies the brain once a week. It's a reminder, not a scheduled job: nothing runs, and none of their plan is used, until they say yes to it in a session. Ask if they'd like it, in a friendly line rather than as a chore ("audit" can sound daunting): it keeps the brain's answers sharp, it only tidies their notes, and they can say "not now" whenever it comes up. If yes, add its row to the owner's own table in [routines](../../knowledge/systems/routines.md), as the comment there shows, starting from the next Saturday, and commit.
 
 Then offer [the monthly deep audit](../brain-audit/deep-audit.md), in a line: once a month it reads every decision in full for rules that clash, hunts down removed rules that survive elsewhere, and checks a sample of cards. It uses more of their plan than the tidy-up, and also runs only when they say yes. If they'd like it, add its row the same way, from the first Saturday of next month.
 

@@ -218,7 +218,7 @@ def main(argv):
         except (OSError, subprocess.SubprocessError):
             pass
     rows, problems = read_reminders()
-    due_lines = []
+    due_lines, due_rows = [], []
     zone = f"{ZONE_NAME} time" if ZONE is not None else "this computer's time"
     for r in rows:
         due = (latest_due_monthly if r["monthly"] else latest_due)(now, r["weekday"], r["hour"], r["minute"])
@@ -231,6 +231,7 @@ def main(argv):
         log = os.path.relpath(r["log"], ROOT).replace(os.sep, "/")
         newest = "it has no entries yet" if last is None else (
             f"its newest entry is dated {last.day} {last:%b %Y}")
+        due_rows.append(r)
         due_lines.append(
             f"- {r['name']} ({r['owner']}): due {local:%A} {local.day} {local:%b %Y}, {local:%H:%M} {zone} "
             f"[UTC date {due.day} {due:%b %Y}]. What runs: {r['what']}. "
@@ -247,6 +248,15 @@ def main(argv):
             "this if the owner didn't start this session (a scheduled run or another agent's session), "
             "or if, after you pull, the log has an entry dated on or after the UTC date given."
         )
+        if any("audit" in (r.get("what", "") + r.get("name", "") + r.get("log", "")).lower() or "tidy" in r.get("name", "").lower()
+               for r in due_rows):
+            print(
+                "For the weekly tidy-up or the monthly deep audit, keep it to one short, friendly line, not a chore or a "
+                "warning (\"audit\" can sound daunting to someone new): call it a tidy-up, say it keeps their brain's "
+                "answers sharp and is worth it if answers have felt a bit off lately, that it only tidies their notes, "
+                "and that \"not now\" is fine. Example: \"Your weekly tidy-up is due: it keeps answers sharp, handy if "
+                "things have felt a bit off. Want me to run it, or leave it for now?\""
+            )
     if rows and ZONE is None:
         problems.append(
             ("the owner's time zone isn't set" if ZONE_NAME is None else
