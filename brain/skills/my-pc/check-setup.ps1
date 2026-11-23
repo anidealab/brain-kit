@@ -1,5 +1,5 @@
 # Checks a second brain's setup on this Windows PC against the AnIdeaLab brain kit: the tools, the GitHub
-# sign-in, the brain's repo and its settings, the PC runner and its service, your copy of the brain
+# sign-in, the brain's repo and its settings, the PC runner and how it starts, your copy of the brain
 # and Obsidian, and the PC's settings. It changes nothing, apart from saving its report. Each line
 # says OK, FIX (with what to do, as a command where there is one), NOTE or INFO. The report is saved
 # in C:\AI-Brain-Link (or your temp folder) and copied, so you can paste it into a Claude session on
@@ -92,9 +92,39 @@ if ($gh) {
 # The runner on this PC ----------------------------------------------------------------------------
 Section 'The PC runner'
 $runnerDir = $null; $runnerRepo = $null; $runnerName = $null
+# The kit's runner starts hidden at sign-in, from a task (or, where Windows wouldn't allow that, the
+# account's startup list) running start-runner.js beside the runner. PCs set up by an earlier kit run it
+# as a Windows service instead, which still works.
+$starts = @()
+foreach ($t in @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { "$($_.Actions.Arguments)" -match 'start-runner\.js' })) {
+  $starts += [pscustomobject]@{ Kind = 'task'; Name = $t.TaskName; Args = "$($t.Actions.Arguments)"; Task = $t }
+}
+$rk = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue
+if ($rk) { foreach ($pp in $rk.PSObject.Properties) { if ("$($pp.Value)" -match 'start-runner\.js') { $starts += [pscustomobject]@{ Kind = 'startup'; Name = $pp.Name; Args = "$($pp.Value)"; Task = $null } } } }
+foreach ($sr in $starts) {
+  $m = [regex]::Match($sr.Args, '"?([^"]+?)\\start-runner\.js')
+  $dir = if ($m.Success) { $m.Groups[1].Value } else { $null }
+  if ($sr.Kind -eq 'task') {
+    Info "Sign-in task '$($sr.Name)'"
+    $tt = $sr.Task
+    if ($tt.State -eq 'Disabled') { Fix 'The task is turned off, so the runner no longer starts when you sign in' "Enable-ScheduledTask -TaskName '$($sr.Name)'" } else { Ok 'It starts the runner, hidden, when you sign in' }
+    $who = "$($tt.Principal.UserId)"
+    if ($who -and $who -ine $me -and $who -ine $me.Split('\')[-1]) { Note "It runs as $who, and you are $me" "Fine if that's you; otherwise set it up again with setup-runner.ps1" }
+  } else {
+    Info "Startup entry '$($sr.Name)'"
+    Ok 'It starts the runner, hidden, when you sign in (from your startup list; Task Manager, Startup apps, must keep it on)'
+  }
+  if ($dir) {
+    $going = @(Get-CimInstance Win32_Process -Filter "Name = 'Runner.Listener.exe'" -ErrorAction SilentlyContinue | Where-Object { "$($_.ExecutablePath)" -like "$dir\bin\*" })
+    if ($going) { Ok 'The runner is going now' }
+    else { Fix "The runner isn't going now, so jobs wait in the queue" $(if ($sr.Kind -eq 'task') { "Start-ScheduledTask -TaskName '$($sr.Name)' (or sign out and in again)" } else { 'Sign out and in again' }) }
+    if (-not $runnerDir) { $runnerDir = $dir }
+  }
+}
 $services = @(Get-CimInstance Win32_Service -Filter "Name LIKE 'actions.runner.%'" -ErrorAction SilentlyContinue)
 foreach ($s in $services) {
   Info "Service $($s.Name)"
+  Note 'The runner runs the older way, as a Windows service with your password. It works; setup-runner.ps1 again moves it to starting when you sign in, with no password (it asks for admin rights once)'
   if ($s.State -eq 'Running') { Ok 'It is running' } else { Fix "It is $($s.State.ToLower()), so jobs wait in the queue" "PowerShell as administrator: Start-Service '$($s.Name)'" }
   if ($s.StartMode -eq 'Auto') { Ok 'It starts with Windows' } else { Fix "It doesn't start with Windows (start type: $($s.StartMode))" "PowerShell as administrator: Set-Service '$($s.Name)' -StartupType Automatic" }
   $acct = "$($s.StartName)"
@@ -109,10 +139,10 @@ foreach ($s in $services) {
   $m = [regex]::Match("$($s.PathName)", '"?([^"]+?)\\bin\\RunnerService\.exe')
   if ($m.Success -and -not $runnerDir) { $runnerDir = $m.Groups[1].Value }
 }
-if (-not $services) {
+if (-not $services -and -not $starts) {
   $dirs = @((Join-Path $Root '_runner'), 'C:\actions-runner', 'D:\actions-runner')
   $runnerDir = $dirs | Where-Object { Test-Path (Join-Path $_ '.runner') } | Select-Object -First 1
-  if ($runnerDir) { Fix "There's a runner in $runnerDir, but not as a Windows service, so it only runs while its window is open" 'Set it up as a service with setup-runner.ps1 (my-pc skill)' }
+  if ($runnerDir) { Fix "There's a runner in $runnerDir, but nothing starts it, so it only runs while its window is open" 'Set it up again with setup-runner.ps1 (my-pc skill), which makes it start when you sign in' }
   else { Fix 'No GitHub Actions runner is set up on this PC, so agents can''t run jobs here' "Set one up with setup-runner.ps1, from the AnIdeaLab brain kit (skills\my-pc)" }
 }
 if ($runnerDir) {
@@ -169,7 +199,7 @@ else {
       if (-not $rl.total_count) { Fix 'No runner is registered to the repo' 'Set one up with setup-runner.ps1 (my-pc skill)' }
       foreach ($x in $rl.runners) {
         $labels = ($x.labels | ForEach-Object { $_.name }) -join ', '
-        if ($x.status -eq 'online') { Ok "Runner '$($x.name)' is online (labels: $labels)" } else { Fix "Runner '$($x.name)' is $($x.status) (labels: $labels)" "Is that PC on and awake, with its runner service running?" }
+        if ($x.status -eq 'online') { Ok "Runner '$($x.name)' is online (labels: $labels)" } else { Fix "Runner '$($x.name)' is $($x.status) (labels: $labels)" "Is that PC on and awake, and signed in (or, set up the older way, its runner service running)?" }
         if ($x.name -eq $runnerName -or (-not $runnerName -and $x.name -eq $env:COMPUTERNAME)) { $mine = $x }
       }
       if ($runnerName -and -not $mine -and $runnerRepo -eq $Repo) { Fix "This PC's runner ('$runnerName') isn't registered on GitHub any more" 'Set it up again with setup-runner.ps1' }

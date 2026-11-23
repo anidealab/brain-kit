@@ -51,7 +51,7 @@ jobs:
       # has Obsidian, its Git plugin syncs the copy, and this leaves it alone. Without Obsidian nothing else
       # would, and the setup scripts the owner pastes run from that copy. A fast-forward only, signed in as
       # this job, and it never stops the job: a copy with changes of its own in the way stays as it is, and
-      # the log says why. safe.directory: the copy belongs to the owner, and this job runs with admin rights.
+      # the log says why. safe.directory: the copy belongs to the owner, and a job on the older service runs with admin rights.
       - name: Bring the PC's copy of the brain up to date
         continue-on-error: true
         timeout-minutes: 3
