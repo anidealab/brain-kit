@@ -33,7 +33,7 @@ Some of these skills were written for Claude's apps. Any agent can do the same w
 
 | When a skill says | Do this instead |
 |---|---|
-| Render or publish an artifact | Write the HTML file, save it where any agent can get it, and open it in a browser or send it to the owner. Never a Claude artifact |
+| Render or publish an artifact, show a preview | Write the file, save it where any agent can get it, and open it in a browser or send it to the owner as a chat download. Never a Claude artifact or a preview that lives only in the chat |
 | Present a file to the owner (`SendUserFile`, `present_files`) | Whatever your app has for sending the owner a file as a download; without one, give its path on their PC. Never a GitHub link instead |
 | Connectors, or "suggest a connector" | Use whatever tool you have for that app, and tell the owner in words which app to connect |
 | Ask with choice cards | Ask in plain text, with numbered options |
