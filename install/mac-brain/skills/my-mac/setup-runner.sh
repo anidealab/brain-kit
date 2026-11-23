@@ -121,7 +121,7 @@ main() {
   local live="$root/AI Brain Link - live jobs.command"
   printf '#!/bin/bash\n# Opens the live jobs window: what agents run on this Mac, as it runs.\nexec /bin/bash "%s"\n' "$root/Tools/watch-jobs.sh" > "$live" && chmod +x "$live"
 
-  printf '\n\033[33m%s\033[0m\n' "Answer Y to the next question, unless you have a reason not to: when this Mac sleeps, your brain can't reach it."
+  # 5. No sleep on the charger, through a LaunchAgent that holds caffeinate -s, which needs no password.
   if yes_to "Keep this Mac awake while it's on the charger, so Claude can do what you ask when you're away from it? The screen still turns off as usual, and closing the lid still puts it to sleep."; then
     local plist="$HOME/Library/LaunchAgents/com.anidealab.brain-keep-awake.plist"
     mkdir -p "$HOME/Library/LaunchAgents"
