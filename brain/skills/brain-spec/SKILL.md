@@ -110,6 +110,7 @@ Two kinds of hand-off:
 - **One note per thing:** one person, one decision, one project.
 - **When:** save the owner's decisions straight away, so a dropped session can't lose them. Save everything else when a task closes, and whenever the owner says "remember this".
 - **A decision** gets its own note: its card, then "**Decided** <date>, by <who, where>", the decision with the owner's words in quotes, and what it means in practice. When it changes, write the new note and mark the old one `status: superseded` with a line linking the new one. Never delete a decision. A rule every agent must follow also gets one line in the core.
+- **A rule that limits what agents can do** (a "never", an "only", an "asks first"), anywhere outside the core: write it where it does its job, add a row to [the rules table](../../knowledge/decisions/rules.md) marked "not checked yet", and mention it to the owner in the thread. It's kept only once they confirm it: then the row says so with their words, and "(confirmed: the rules table)" goes beside the rule. The monthly deep audit asks them about any still unchecked, so an agent's guess never stands as a rule.
 - **An idea** gets its own note: what it is, why it might be worth it and what it would take, its status and where it came from.
 - **A blocker that slowed you down** is one row in the [friction log](../../knowledge/ideas/friction-log.md).
 

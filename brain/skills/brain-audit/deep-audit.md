@@ -15,10 +15,17 @@ The brain has two levels of audit. The [weekly tidy-up](SKILL.md) is cheap: scri
 3. **Fix the clear cases:** mark a replaced decision `status: superseded`, with a line at its top linking the newer one; add a dated pointer line to an older note a newer one changes; reword a skill line that states a removed rule. When it isn't clear which of two notes stands, ask the owner, quoting both, and leave them until they answer. Never guess for them.
 4. **Leave copied skills as they came,** apart from folding in their lessons, as the tidy-up does.
 
-## 2. Cards that drifted
+## 2. Rules not checked with the owner
+Agents write rules as they go, and a guess written as a rule fences in every agent after it. So each rule that limits what agents can do is kept only once the owner confirms it, in [the rules table](../../knowledge/decisions/rules.md).
+1. **Find them.** In the knowledge library and the brain's own skills (not copied ones), look for rules that limit what agents can do: "never", "only", "doesn't", "can't", "asks first", "must", and the same idea in other words. Leave out the core's gates and defaults. Also take every row of the rules table still marked "not checked yet".
+2. **Sort them.** A rule in the table as confirmed is done. One from the owner's own decision (their words in a decision note) goes in the table as confirmed, with the link, without asking again. Every other one is for the owner.
+3. **Ask the owner in one list:** each rule, where it lives, who wrote it and when, and your recommendation (keep or cut, and why). Leave every rule as it is until they answer.
+4. **Do what they say.** Kept: its row says "Confirmed <date>" with their words (a new row if it wasn't listed), and "(confirmed: the rules table)" goes beside the rule where it lives. Cut: delete the rule from where it lives, and its row if it had one.
+
+## 3. Cards that drifted
 The tidy-up rechecks the cards of notes that changed. Here, open 10 current notes that haven't changed in a while (the 5 most linked-to and 5 at random), and fix any card that doesn't say what its note holds.
 
-## 3. Log it and tell the owner
+## 4. Log it and tell the owner
 - Add a heading to the top of [the deep audit log](../../knowledge/areas/the-brain/deep-audit-log.md), with today's UTC date, like `## 7 Nov 2026: deep audit`, and two or three lines under it: what was fixed, and what waits on the owner. That heading turns the reminder off until next month.
 - Commit in small commits with plain messages, and push.
 - Tell the owner the short version in the thread.

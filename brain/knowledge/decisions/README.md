@@ -8,4 +8,6 @@ One note per decision, named for its date. Each sits on the sub-shelf of the pro
 
 <!-- index:start -->
 - [the-brain/](the-brain/README.md): Brain-wide decisions: the owner's rules and defaults for every agent, and how the brain runs. Read before changing how the brain works or setting a rule for everyone. [the-brain]
+
+- [rules](rules.md): The rules table: every rule outside the core that limits what agents can do, whether the owner has confirmed it, and their words. Read before writing a rule like that, and in the monthly deep audit. [the-brain]
 <!-- index:end -->
