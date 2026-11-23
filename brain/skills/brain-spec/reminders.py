@@ -32,7 +32,9 @@ update costs the session nothing. In a session on the owner's PC, in the brain's
 says how many things are waiting at the upload point and since when (_upload/waiting.txt beside the
 brain's copy, which Send to, My brain writes), so the agent asks the owner what to do with them. It's
 silent when nothing's waiting, and anywhere that file isn't, a cloud session included.
-It starts with one line saying which computer the session is on, from devices.py.
+It starts with one line saying which computer the session is on, from devices.py, then one saying who
+the owner is and what time it is where they live, from the core's first line ("<Name>'s second brain"),
+their note in knowledge/people/ and the time zone, so every session knows both without being told again.
 Try it: python3 skills/brain-spec/reminders.py --now 2026-10-24T03:00Z
 """
 import os
@@ -205,6 +207,29 @@ def upload_point():
             "Ignore this if the owner didn't start this session.")
 
 
+def owner_line(now):
+    """Who the owner is, where their note is, and their clock now; None until the first session has set them up."""
+    try:
+        with open(os.path.join(ROOT, "CLAUDE.md"), encoding="utf-8") as fh:
+            text = fh.read(4000)
+    except OSError:
+        return None
+    m = re.search(r"^(\S[^\n]*?)['\u2019]s second brain\b", text, re.M)
+    name = m.group(1).strip() if m else None
+    if name is None and ZONE is None:
+        return None
+    parts = []
+    if name:
+        note = os.path.join("knowledge", "people", re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") + ".md")
+        parts.append(f"Owner: {name}" + (f" (their note, {note.replace(os.sep, '/')}: read it before any job for them)"
+                                          if os.path.isfile(os.path.join(ROOT, note)) else ""))
+    if ZONE is not None:
+        local = now.astimezone(ZONE)
+        parts.append(f"their time now: {local:%A} {local.day} {local:%b %Y}, {local:%H:%M} ({ZONE_NAME})")
+    line = "; ".join(parts) + "."
+    return line[0].upper() + line[1:]
+
+
 def main(argv):
     now = datetime.now(UTC)
     if len(argv) == 3 and argv[1] == "--now":
@@ -217,6 +242,9 @@ def main(argv):
                 print(r.stdout.strip())
         except (OSError, subprocess.SubprocessError):
             pass
+    who = owner_line(now)
+    if who:
+        print(who)
     rows, problems = read_reminders()
     due_lines, due_rows = [], []
     zone = f"{ZONE_NAME} time" if ZONE is not None else "this computer's time"

@@ -22,6 +22,13 @@ gh command line; inside a GitHub Actions job (the workflow's "check" mode, for a
 only a run-workflow tool) through the job's own GITHUB_TOKEN. The self-hosted jobs cost no
 Actions minutes; the check mode costs one or two of GitHub's minutes each time.
 
+A runner that works but has no row (the owner ran an install command and no session recorded it)
+would otherwise look like no runner at all. So "status" also pings the kit's own labels, my-pc and
+my-mac, when no row has them, and any runner GitHub lists for the repo that no row has (the list
+needs the owner's own gh sign-in; a job's token can't read it, so it's skipped there). One that
+answers is reported as on but missing from devices.md, so the agent adds its row; one that doesn't
+is cancelled and left out, unless GitHub listed it.
+
 Standard library only, Python 3.9 or newer, so it runs on any computer the brain uses.
 """
 import json
@@ -43,6 +50,7 @@ NOTE_REL = "knowledge/systems/devices.md"
 WORKFLOW = "devices.yml"
 PING_TITLE = "Devices: ping {}"
 NONE = {"", "-", "—", "–", "none", "n/a"}
+KIT_LABELS = ["my-pc", "my-mac"]  # the labels the kit's installers give a PC's and a Mac's runner
 
 
 # ---------- the table ----------
@@ -247,20 +255,36 @@ def facts_from_log(text):
     return facts
 
 
+def registered(gh):
+    """{label: (runner name, online)} for the repo's self-hosted runners, or None where GitHub won't say."""
+    try:
+        runners = gh.call("GET", "actions/runners?per_page=100").get("runners", [])
+    except RuntimeError:
+        return None
+    out = {}
+    for r in runners:
+        for label in r.get("labels", []):
+            if label.get("type") == "custom":
+                out[label["name"]] = (r.get("name", "?"), r.get("status") == "online")
+    return out
+
+
 def status(wait=60, ref="main"):
     rows = read_devices()
     if rows is None:
         print(f"No {NOTE_REL} in this brain, so there are no computers to check.")
         return 1
     targets = [(r["name"], label) for r in rows for label in r["runners"]]
-    if not targets:
-        print(f"No computer in {NOTE_REL} has a runner yet, so none can be checked. A cloud session is always on.")
-        return 0
     repo = find_repo()
     if not repo:
         print("Couldn't tell which GitHub repo this brain is (no GITHUB_REPOSITORY, and git's origin isn't GitHub).")
         return 1
     gh = GitHub(repo)
+    listed = {label for _, label in targets}
+    known = registered(gh)
+    extras = [l for l in KIT_LABELS if l not in listed]
+    extras += [l for l in (known or {}) if l not in listed and l not in extras]
+    targets += [(None, label) for label in extras]
     busy = jobs_now(gh)
     started = datetime.now(timezone.utc).replace(microsecond=0)
     for _, label in targets:
@@ -282,8 +306,22 @@ def status(wait=60, ref="main"):
         time.sleep(5)
 
     lines = ["| Device | Runner | Now | What it reported |", "|---|---|---|---|"]
+    missing = []
     for name, label in targets:
         run = found.get(label)
+        if name is None:  # a runner with no row in devices.md
+            answered = (run and run.get("status") in ("completed", "in_progress")) or \
+                any(j[0] == "in_progress" for j in busy.get(label, []))
+            if not answered:
+                if run:
+                    try:
+                        gh.call("POST", f"actions/runs/{run['id']}/cancel")
+                    except RuntimeError:
+                        pass
+                if not known or label not in known:
+                    continue  # nothing there: leave it out
+            missing.append(label)
+            name = f"**Not in {NOTE_REL}**" + (f" (GitHub's runner {known[label][0]})" if known and label in known else "")
         jobs = busy.get(label, [])
         running = [j for j in jobs if j[0] == "in_progress"]
         waiting = [j for j in jobs if j[0] == "queued"]
@@ -319,8 +357,16 @@ def status(wait=60, ref="main"):
                 if waiting:
                     now += f"; {len(waiting)} job(s) waiting for it"
         lines.append(f"| {name} | `{label}` | {now} | {details.replace('|', '/')} |")
+    if len(lines) == 2:
+        print(f"No computer in {NOTE_REL} has a runner, and no runner labelled {' or '.join(KIT_LABELS)} answered, "
+              f"so none is set up or on. A cloud session is always on.")
+        return 0
     stamp = datetime.now(timezone.utc).strftime("%d %b %Y %H:%M UTC")
     out = f"Devices, {stamp} (from {NOTE_REL}):\n\n" + "\n".join(lines)
+    if missing:
+        out += (f"\n\n{', '.join(missing)}: a runner with no row in {NOTE_REL}, so it was set up and never recorded. "
+                f"Add its row and its note's facts from what it reported (brain-spec, \"Devices\"), and bring the "
+                f"setup's task on the tasks shelf up to date, before telling the owner anything about that computer.")
     print(out)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:

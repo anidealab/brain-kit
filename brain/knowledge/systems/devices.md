@@ -9,7 +9,7 @@ One row per computer a session can run on or send work to, so any agent can tell
 
 - **Which one you're on:** the session-start script prints it in one line (`python3 skills/brain-spec/devices.py here`). It matches this computer's name against the "Spot it" column, so keep that right.
 - **Which are on now:** `python3 skills/brain-spec/devices.py status`, about a minute. It sends a tiny job to each computer's runner, cancels any that isn't picked up in time, and prints a table: on (with what the computer has now: system, GPU and how busy, disks, uptime), on and busy (with the job it's running), or off. No key is needed. With only a run-workflow tool, start "Which devices are on" (`devices.yml`) on `main` with the label left empty, and read its log.
-- **Adding or changing one:** the [brain spec's "Devices"](../../skills/brain-spec/SKILL.md#devices). The first session adds the owner's computer once its runner answers ([getting-started](../../skills/getting-started/SKILL.md), step 4).
+- **Adding or changing one:** the [brain spec's "Devices"](../../skills/brain-spec/SKILL.md#devices). The kit's installer adds the owner's computer once its runner is online, and the first session checks the row once its runner answers ([getting-started](../../skills/getting-started/SKILL.md), step 4). A runner with no row here still shows in `status`, as not in this note: add its row then.
 
 | Device | Ways in | On when | Good for | Runner | Spot it |
 |---|---|---|---|---|---|
