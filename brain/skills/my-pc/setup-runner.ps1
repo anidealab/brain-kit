@@ -183,7 +183,6 @@ try {
   $lnk.Save()
 
   Write-Host ''
-  Write-Host "Answer Y to the next question, unless you have a reason not to: a PC that sleeps can leave its runner disconnected after it wakes, until you sign out and in again. Staying awake is the simple way round that." -ForegroundColor Yellow
   if (Yes "Keep this PC awake while it's plugged in, so Claude can do what you ask when you're away from it? The screen still turns off as usual.") {
     Native { powercfg /change standby-timeout-ac 0 } | Out-Null
     $awake = $LASTEXITCODE -eq 0
