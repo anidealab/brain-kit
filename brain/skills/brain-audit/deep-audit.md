@@ -19,7 +19,7 @@ The brain has two levels of audit. The [weekly tidy-up](SKILL.md) is cheap: scri
 Agents write rules as they go, and a guess written as a rule fences in every agent after it. So each rule that limits what agents can do is kept only once the owner confirms it, in [the rules table](../../knowledge/decisions/rules.md).
 1. **Find them.** In the knowledge library and the brain's own skills (not copied ones), look for rules that limit what agents can do: "never", "only", "doesn't", "can't", "asks first", "must", and the same idea in other words. Leave out the core's gates and defaults. Also take every row of the rules table still marked "not checked yet".
 2. **Sort them.** A rule in the table as confirmed is done. One from the owner's own decision (their words in a decision note) goes in the table as confirmed, with the link, without asking again. Every other one is for the owner.
-3. **Ask the owner in one list:** each rule, where it lives, who wrote it and when, and your recommendation (keep or cut, and why). Leave every rule as it is until they answer.
+3. **Ask the owner in one list:** each rule, where it lives, who wrote it and when, a short line on what keeping it costs (what it stops agents doing, where it could get in the way), a few words on what it protects if that isn't obvious, and your recommendation (keep or cut). Keep each one short: they already know why a rule was made. Leave every rule as it is until they answer.
 4. **Do what they say.** Kept: its row says "Confirmed <date>" with their words (a new row if it wasn't listed), and "(confirmed: the rules table)" goes beside the rule where it lives. Cut: delete the rule from where it lives, and its row if it had one.
 
 ## 3. Cards that drifted
