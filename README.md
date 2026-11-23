@@ -3,7 +3,7 @@
 A second brain for working with AI agents: a private GitHub repo of plain Markdown that agents work from. It has a core every agent reads (`CLAUDE.md`), a library of skills for how to do things, and a knowledge library of what the brain knows. It's free, and an owner starts one in three steps, with nothing to install ([Start a brain](#start-a-brain)). Two extras go on the owner's PC or Mac, if they'd like them: a runner for jobs that need their computer, and Obsidian with a custom AnIdeaLab plugin to see the brain as a map ([On your computer](#on-your-computer-if-you-like)).
 
 ## Start a brain
-Three steps, about ten minutes, and a phone will do. Your brain is kept on GitHub, in a private repo that's yours, and your AI agent works in it from your browser.
+Three steps, and a phone will do. Your brain is kept on GitHub, in a private repo that's yours, and your AI agent works in it from your browser.
 
 1. **Get a Claude Pro plan,** or above: [claude.com/pricing](https://claude.com/pricing). Your agent is Claude, and working in a brain needs a paid plan. If you have one already, go on to step 2.
 2. **[Make your brain](https://github.com/new?template_owner=AnIdeaLab&template_name=second-brain&name=my-brain-ail&visibility=private).** The link opens GitHub, where your brain is kept. Sign in, or make a free account, then press "Create repository". Leave it set to Private.
