@@ -3,7 +3,7 @@
 This is the template a second brain is made from: a private GitHub repo of plain notes that your AI agents work from, so they know where each of your projects got to. It's free, from [AnIdeaLab](https://anidealab.com), and there's nothing to install.
 
 ## Make yours
-Three steps, about ten minutes, and a phone will do.
+Three steps, and a phone will do.
 
 1. **Get a Claude Pro plan,** or above: [claude.com/pricing](https://claude.com/pricing). Your agent is Claude, and working in a brain needs a paid plan. If you have one already, go on to step 2.
 2. **[Make your brain](https://github.com/new?template_owner=AnIdeaLab&template_name=second-brain&name=my-brain-ail&visibility=private).** Sign in to GitHub, or make a free account, then press "Create repository". Leave it set to Private. The green "Use this template" button on this page does the same; choose Private there.
@@ -14,6 +14,8 @@ Three steps, about ten minutes, and a phone will do.
    ```
 
 It asks you a few questions and sets everything up from there. Every chat after that starts the same way: a new session with `my-brain-ail` selected.
+
+Don't see `my-brain-ail` in the list? That happens if you'd connected GitHub before. Press "Repo not showing up?" under the list, install the Claude app for GitHub on `my-brain-ail`, and come back.
 
 The same steps, with tutorials for your first days, are at [anidealab.com/second-brain](https://anidealab.com/second-brain), where you can also have AnIdeaLab set your brain up for you.
 
