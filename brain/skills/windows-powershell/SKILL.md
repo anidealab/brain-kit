@@ -61,6 +61,6 @@ So `gh api user/repository_invitations --jq '.[] | "\(.id) \(.repository.full_na
 - **Say little.** Print "Success", or one line saying what went wrong and what to do; no step headings, since all the owner needs to know is whether it worked.
 
 ## Runner jobs on the owner's PC
-- **The runner's service sees the PATH from when it started,** so a program winget installed since isn't found: start the job with the PATH reload above, or restart the service.
+- **The runner sees the PATH from when it started,** so a program winget installed since isn't found: start the job with the PATH reload above, or restart the runner (the my-pc skill).
 - **Writing the job from a cloud session:** a bash heredoc without quotes (`<<EOF`) swallows every `$name` and runs backticks there and then. Use `<<'EOF'`, or a file. If you need bash to fill something in (a commit hash, say), use `<<EOF` and escape every PowerShell `$` as `\$`, then read the start of the generated script before starting the job.
-- More on jobs (the queue, logs, files the runner makes belonging to Administrators): the [my-pc skill](../my-pc/SKILL.md).
+- More on jobs (the queue, logs, no admin rights, files the older service made belonging to Administrators): the [my-pc skill](../my-pc/SKILL.md).

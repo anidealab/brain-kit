@@ -5,7 +5,7 @@ updated: {KIT_DATE}
 ---
 # The owner's PC
 
-The PC is a GitHub Actions self-hosted runner for this brain's repo, labelled `my-pc` (and `gpu` with an NVIDIA card), running as a Windows service under the owner's own account. The installer set it up; `skills/my-pc/setup-runner.ps1` sets it up again. **How to run a job on it** is the [my-pc skill](../../skills/my-pc/SKILL.md). `skills/my-pc/check-setup.ps1` checks the whole setup and changes nothing; with `-Send` its report also lands on this shelf, as `setup-check.md`.
+The PC is a GitHub Actions self-hosted runner for this brain's repo, labelled `my-pc` (and `gpu` with an NVIDIA card), started hidden when the owner signs in to Windows, under their own account, so it runs while they're signed in (a PC set up by an earlier kit runs it as a Windows service instead). The installer set it up; `skills/my-pc/setup-runner.ps1` sets it up again. **How to run a job on it** is the [my-pc skill](../../skills/my-pc/SKILL.md). `skills/my-pc/check-setup.ps1` checks the whole setup and changes nothing; with `-Send` its report also lands on this shelf, as `setup-check.md`.
 
 ## Folder layout
 ```
