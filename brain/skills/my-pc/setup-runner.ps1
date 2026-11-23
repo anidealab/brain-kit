@@ -175,7 +175,9 @@ try {
   Write-Host 'Adding the "AI Brain Link - live jobs" window to your desktop...'
   $watch = Join-Path $Root 'Tools\watch-jobs.ps1'
   Copy-Item (Join-Path $PSScriptRoot 'watch-jobs.ps1') $watch -Force
-  $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) 'AI Brain Link - live jobs.lnk'))
+  # A runner in another folder (a second one, or a test) gets its own shortcut, so the first one's stays.
+  $lnkName = if ((Split-Path $Root -Leaf) -eq 'AI-Brain-Link') { 'AI Brain Link - live jobs.lnk' } else { "AI Brain Link - live jobs ($(Split-Path $Root -Leaf)).lnk" }
+  $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) $lnkName))
   $lnk.TargetPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
   $lnk.Arguments = '-NoExit -ExecutionPolicy Bypass -File "' + $watch + '"'
   $lnk.Save()
