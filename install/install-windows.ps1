@@ -472,7 +472,10 @@ $runnerSetup = Join-Path (Join-Path (Join-Path $vault 'skills') 'my-pc') 'setup-
 $runnerOk = $true
 Step 'The PC runner' 'started'
 if (-not $check) {
-  if (Yes 'Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. It asks for admin rights, then your Windows password, in a second window.') {
+  # A brain from the template has the newer runner setup, which needs no password; one made from this kit's
+  # main branch has the older one until the update that brings it, so the question says what this brain's does.
+  $runnerAsks = if ((Test-Path $runnerSetup) -and (Select-String -LiteralPath $runnerSetup -Pattern 'windowslogonpassword' -Quiet)) { 'It asks for admin rights, then your Windows password, in a second window.' } else { "It runs while you're signed in to Windows, and needs no password." }
+  if (Yes "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks") {
     # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
     # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
     $runnerDir = Join-Path $root '_runner'
