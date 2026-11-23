@@ -1,7 +1,7 @@
 Your own second brain, started from the AnIdeaLab brain kit.
 
-THE QUICKEST WAY NEEDS NOTHING INSTALLED: three steps in your browser, about ten minutes, and a
-phone will do. They're here: https://github.com/AnIdeaLab/brain-kit#start-a-brain
+THE QUICKEST WAY NEEDS NOTHING INSTALLED: three steps in your browser, and a phone
+will do. They're here: https://github.com/AnIdeaLab/brain-kit#start-a-brain
 This page is the other way: starting from your Windows PC. It's also how you add Obsidian and
 the PC runner to a brain you've already made: every brain is called my-brain-ail, and the
 setup finds yours. A brain made before 22 Nov 2026 has another name: ask its chat for its

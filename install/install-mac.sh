@@ -474,6 +474,43 @@ add_mac_parts() {
   if [ -z "$check" ]; then git -C "$1" push -q origin HEAD >/dev/null 2>&1 || warn "Couldn't send the Mac parts to GitHub yet. Pasting the same command again sends them, and so does Obsidian Git's next sync, if you have Obsidian."; fi
 }
 
+# Once the runner is online, the brain records this Mac itself: its row in knowledge/systems/devices.md and
+# what it has in the Mac's note, in a commit of their own. Without it, a brain whose owner ran this after their
+# session ended said no computer had a runner, though this one worked, until an agent happened to test it.
+record_mac() {
+  local name host facts
+  name=$(scutil --get ComputerName 2>/dev/null || hostname -s)
+  host=$(hostname -s)
+  facts="macOS $(sw_vers -productVersion), $(sysctl -n hw.model) ($(uname -m)), $(sysctl -n machdep.cpu.brand_string), $(( $(sysctl -n hw.memsize) / 1073741824 )) GB RAM, $(df -H / | awk 'NR == 2 {print $4 " free of " $2}') on its disk"
+  python3 - "$1" "$name" "$host" "$facts" "$day" <<'PY' || { warn "Couldn't add this Mac to the brain's list of computers. It works: the first chat adds it."; return; }
+import os, re, sys
+vault, name, host, facts, day = sys.argv[1:6]
+devices = os.path.join(vault, "knowledge", "systems", "devices.md")
+if os.path.isfile(devices):
+    lines = open(devices, encoding="utf-8").read().split("\n")
+    rows = [i for i, l in enumerate(lines) if l.lstrip().startswith("|")]
+    if rows and not any("`my-mac`" in lines[i] for i in rows):
+        last = rows[0]
+        while last + 1 < len(lines) and lines[last + 1].lstrip().startswith("|"):
+            last += 1
+        cell = lambda t: t.replace("|", "/")
+        lines.insert(last + 1, f"| [{cell(name)}](my-mac.md) | The `my-mac` runner (`mac-run.yml`), added by the installer on {day} | "
+                               f"While the owner is logged in and it's awake | {cell(facts)} | `my-mac` | `{host}` |")
+        open(devices, "w", encoding="utf-8", newline="").write("\n".join(lines))
+note = os.path.join(vault, "knowledge", "systems", "my-mac.md")
+if os.path.isfile(note):
+    text = open(note, encoding="utf-8").read()
+    new = re.sub(r"(?m)^\*Not checked yet:.*\*$", f"Recorded by the installer on {day}, when the runner first came online: {name} (`{host}`), {facts}. "
+                 "A first job adds what's installed (the my-mac skill's \"The first session\").", text, count=1)
+    if new != text:
+        open(note, "w", encoding="utf-8", newline="").write(new)
+PY
+  git -C "$1" add -A knowledge/systems
+  if git -C "$1" diff --cached --quiet; then return; fi
+  git -C "$1" commit -q -m "This Mac's runner is set up: added it to the brain's devices" >/dev/null
+  git -C "$1" push -q origin HEAD >/dev/null 2>&1 || warn "Couldn't send this Mac's row to GitHub yet. Obsidian Git's next sync sends it, or pasting the same command again."
+}
+
 # Where the brain comes from (the notes at the top).
 if [ -z "$brain" ]; then brain="$(dirname "$here")/brain"; fi
 mkdir -p "$root/_logs" 2>/dev/null
@@ -736,7 +773,7 @@ if [ -z "$check" ]; then
     # "All done" only once GitHub sees the runner online.
     online=$("$gh" api "repos/$repo/actions/runners" --jq '[.runners[] | select(.status == "online")] | length' 2>/dev/null)
     if ! [ "${online:-0}" -gt 0 ] 2>/dev/null; then runner_ok=''; fi
-    if [ -n "$runner_ok" ]; then step 'The Mac runner' 'done'; else step 'The Mac runner' 'not done'; fi
+    if [ -n "$runner_ok" ]; then record_mac "$vault"; step 'The Mac runner' 'done'; else step 'The Mac runner' 'not done'; fi
   else
     step 'The Mac runner' skipped
     echo "Skipped. To set it up later, paste: bash \"$runner_setup\""

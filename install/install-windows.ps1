@@ -467,12 +467,51 @@ if (Test-Path -LiteralPath $uploadSetup) {
   } else { Step 'The upload point' 'done' }
 }
 
+# Once the runner is online, the brain records this PC itself: its row in knowledge/systems/devices.md and what
+# it has in the PC's note, in a commit of their own. Without it, a brain whose owner ran this after their session
+# ended said no computer had a runner, though this one worked, until an agent happened to test it.
+function Record-PC($vault) {
+  try {
+    $today = (Get-Date).ToUniversalTime().ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)
+    $os = Get-CimInstance Win32_OperatingSystem
+    $cs = Get-CimInstance Win32_ComputerSystem
+    $gpu = (@(Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }) -join ', ')
+    $disks = (@(Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object { '{0} {1:N0} GB free of {2:N0} GB' -f $_.DeviceID, ($_.FreeSpace / 1GB), ($_.Size / 1GB) }) -join ', ')
+    $facts = ("{0}, {1} {2}, {3}, {4:N0} GB RAM, GPU {5}, disks {6}" -f $os.Caption, $cs.Manufacturer, $cs.Model, ((Get-CimInstance Win32_Processor | Select-Object -First 1).Name).Trim(), ($cs.TotalPhysicalMemory / 1GB), $gpu, $disks) -replace '\|', '/'
+    $devices = Join-Path $vault 'knowledge\systems\devices.md'
+    if (Test-Path $devices) {
+      $lines = [Collections.Generic.List[string]]([IO.File]::ReadAllText($devices) -split "`n")
+      $rows = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i].TrimStart().StartsWith('|')) { $i } })
+      if ($rows.Count -and -not ($rows | Where-Object { $lines[$_] -match '`my-pc`' })) {
+        $last = $rows[0]
+        while ($last + 1 -lt $lines.Count -and $lines[$last + 1].TrimStart().StartsWith('|')) { $last++ }
+        $lines.Insert($last + 1, "| [This PC, $env:COMPUTERNAME](my-pc.md) | The ``my-pc`` runner (``pc-run.yml``), added by the installer on $today | While the owner is signed in and it's awake | $facts | ``my-pc`` | ``$env:COMPUTERNAME`` |")
+        [IO.File]::WriteAllText($devices, ($lines -join "`n"), $noBom)
+      }
+    }
+    $note = Join-Path $vault 'knowledge\systems\my-pc.md'
+    if (Test-Path $note) {
+      $text = [IO.File]::ReadAllText($note)
+      $new = [regex]::Replace($text, '(?m)^\*Not checked yet:.*\*\r?$', "Recorded by the installer on $today, when the runner first came online: $env:COMPUTERNAME, $facts. A first job adds what's installed (the getting-started skill, step 4).", 1)
+      if ($new -ne $text) { [IO.File]::WriteAllText($note, $new, $noBom) }
+    }
+    Native { & $git -C $vault add -A knowledge/systems } | Out-Null
+    Native { & $git -C $vault diff --cached --quiet } | Out-Null
+    if ($LASTEXITCODE -eq 0) { return }
+    Native { & $git -C $vault commit -q -m "This PC's runner is set up: added it to the brain's devices" } | Out-Null
+    Native { & $git -C $vault push -q origin HEAD } | Out-Null
+  } catch { Log "couldn't record this PC in devices.md: $($_.Exception.Message)" }
+}
+
 # 6. The PC runner
 $runnerSetup = Join-Path (Join-Path (Join-Path $vault 'skills') 'my-pc') 'setup-runner.ps1'
 $runnerOk = $true
 Step 'The PC runner' 'started'
 if (-not $check) {
-  if (Yes 'Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. It asks for admin rights, then your Windows password, in a second window.') {
+  # A brain from the template has the newer runner setup, which needs no password; one made from this kit's
+  # main branch has the older one until the update that brings it, so the question says what this brain's does.
+  $runnerAsks = if ((Test-Path $runnerSetup) -and (Select-String -LiteralPath $runnerSetup -Pattern 'windowslogonpassword' -Quiet)) { 'It asks for admin rights, then your Windows password, in a second window.' } else { "It runs while you're signed in to Windows, and needs no password." }
+  if (Yes "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks") {
     # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
     # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
     $runnerDir = Join-Path $root '_runner'
@@ -495,6 +534,7 @@ if (-not $check) {
     $runnerOk = $LASTEXITCODE -eq 0
     try { $list = Native { & $gh api "repos/$repo/actions/runners" } | Out-String | ConvertFrom-Json } catch { $list = $null }
     if (-not ($list.runners | Where-Object { $_.status -eq 'online' })) { $runnerOk = $false }
+    if ($runnerOk) { Record-PC $vault }
     Step 'The PC runner' $(if ($runnerOk) { 'done' } else { 'not done' })
   } else {
     Step 'The PC runner' 'skipped'
