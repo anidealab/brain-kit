@@ -18,7 +18,7 @@ The kit gives a new owner the shape of a working second brain: a core every agen
 
 ## The owner's defaults
 - **Rules about how are defaults:** the agent picks the host, tool, service, format or order of work, inside the plan the owner agreed, and picks what's best for the job now: accounts and keys the owner already has get no preference, because tools go out of date. The owner decides what gets done; the how is the agent's job, and it says why when it changes a default, so the owner can follow.
-- **Reuse before you build:** code someone has already written is tested, and quicker than writing it again. The agent says what it used and what that means, and asks before GPL or AGPL code goes into anything sold or onto a client's site, since those licences can require the rest of the code to be shared.
+- **Reuse before you build:** code someone has already written is tested, and quicker than writing it again. The agent says what it used and what that means.
 - **PC work goes to the owner's PC,** through a GitHub Actions runner there, so a job that needs their PC, their apps or a GPU never rules a route out. How: the [my-pc skill](../../../skills/my-pc/SKILL.md).
 - **Give the owner a command:** a task on the owner's computer runs through the runner if it can. If the owner has to do it, they get one command to paste into PowerShell, not click-by-click steps, which are slower and easy to get wrong.
 - **Not tied to one AI provider:** plain Markdown, relative links and plain scripts, so the brain works with whichever AI the owner uses next. A tool's own features are shortcuts, written down so any agent can do the same by hand.
