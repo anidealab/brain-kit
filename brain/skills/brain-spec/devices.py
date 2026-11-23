@@ -29,6 +29,13 @@ needs the owner's own gh sign-in; a job's token can't read it, so it's skipped t
 answers is reported as on but missing from devices.md, so the agent adds its row; one that doesn't
 is cancelled and left out, unless GitHub listed it.
 
+Each computer also says its clock's time zone (a Mac and Windows set it from where they are, when
+"set time zone automatically" is on). Where its offset from UTC differs from the owner's time zone in
+knowledge/systems/routines.md, the check says so, so the agent asks the owner whether they're away
+or have moved, rather than reading their reminders and "today" in the wrong time. "here", run at
+the start of every session, does the same for the computer the session is on (not a cloud session,
+whose clock is UTC wherever the owner is).
+
 Standard library only, Python 3.9 or newer, so it runs on any computer the brain uses.
 """
 import json
@@ -50,7 +57,9 @@ NOTE_REL = "knowledge/systems/devices.md"
 WORKFLOW = "devices.yml"
 PING_TITLE = "Devices: ping {}"
 NONE = {"", "-", "—", "–", "none", "n/a"}
-KIT_LABELS = ["my-pc", "my-mac"]  # the labels the kit's installers give a PC's and a Mac's runner
+KIT_LABELS = ["my-pc", "my-mac"]
+ROUTINES = os.path.join(ROOT, "knowledge", "systems", "routines.md")
+ZONE_LINE = re.compile(r"(?m)^\*\*Time zone:\*\*[ \t]*([A-Za-z][A-Za-z_]*(?:/[A-Za-z0-9_+-]+)+|UTC)\b")  # the labels the kit's installers give a PC's and a Mac's runner
 
 
 # ---------- the table ----------
@@ -146,13 +155,56 @@ def here(brief=False):
     if match:
         line = (f"Device: you're on {match['name']} ({os_words()}, {host}), in {os.getcwd()}. "
                 f"What it can do, and the brain's other computers: {NOTE_REL}.")
-        return line if brief else line + f" Which are on now: {check}."
+        line = line if brief else line + f" Which are on now: {check}."
+        local = datetime.now().astimezone()
+        clash = zone_check("This computer", local.tzname() or "its own time",
+                           int(local.utcoffset().total_seconds() // 60))
+        return line + (" " + clash if clash else "")
     if cloud:
         return (f"Device: a cloud session ({os_words()}), and {NOTE_REL} has no `cloud` row yet. "
                 f"Add one (brain-spec, \"Devices\").")
     return (f"Device: this computer isn't in {NOTE_REL} yet: {os_words()}, named {host}, user "
             f"{os.environ.get('USER') or os.environ.get('USERNAME') or '?'}. Add its row (brain-spec, \"Devices\"), "
             f"asking the owner what it is if that isn't clear.")
+
+
+# ---------- the owner's time zone ----------
+
+def owner_zone():
+    """(the owner's time zone's name from routines.md, its UTC offset now in minutes), or (None, None)."""
+    try:
+        with open(ROUTINES, encoding="utf-8") as f:
+            m = ZONE_LINE.search(f.read())
+        from zoneinfo import ZoneInfo
+        off = datetime.now(ZoneInfo(m.group(1))).utcoffset()
+        return m.group(1), int(off.total_seconds() // 60)
+    except Exception:  # not set, no time zone database, or not a zone's name
+        return None, None
+
+
+def offset_minutes(text):
+    """Minutes from a UTC offset written +13:00 or +1300; None if there isn't one."""
+    m = re.search(r"([+-])(\d\d):?(\d\d)\s*$", text or "")
+    return None if not m else (1 if m.group(1) == "+" else -1) * (int(m.group(2)) * 60 + int(m.group(3)))
+
+
+def zone_words(minutes):
+    return "UTC" + ("+" if minutes >= 0 else "-") + f"{abs(minutes) // 60}" + (f":{abs(minutes) % 60:02d}" if minutes % 60 else "")
+
+
+def zone_check(device, clock, minutes):
+    """A sentence when a computer's clock is in another time zone from the owner's; None when they match."""
+    if minutes is None:
+        return None
+    name, owner = owner_zone()
+    if name is None:
+        return (f"{device}'s clock is on {clock} ({zone_words(minutes)}), and routines.md has no time zone for the owner: "
+                f"ask them, in a line, whether that's where they live, and put it on routines.md's Time zone line.")
+    if minutes != owner:
+        return (f"{device}'s clock is on {clock} ({zone_words(minutes)}), but the owner's time zone in routines.md is {name} "
+                f"({zone_words(owner)}): ask them, in a line, whether they're away or have moved. If they've moved, change "
+                f"routines.md's Time zone line; if they're away, use their time there for \"today\" while they are.")
+    return None
 
 
 # ---------- talking to GitHub ----------
@@ -306,7 +358,7 @@ def status(wait=60, ref="main"):
         time.sleep(5)
 
     lines = ["| Device | Runner | Now | What it reported |", "|---|---|---|---|"]
-    missing = []
+    missing, clashes = [], []
     for name, label in targets:
         run = found.get(label)
         if name is None:  # a runner with no row in devices.md
@@ -333,6 +385,11 @@ def status(wait=60, ref="main"):
                 job = gh.call("GET", f"actions/runs/{run['id']}/jobs").get("jobs", [{}])[0]
                 facts = facts_from_log(gh.call("GET", f"actions/jobs/{job['id']}/logs", raw=True))
                 details = "; ".join(f"{k}: {v}" for k, v in facts)
+                for k, v in facts:
+                    if k == "timezone":
+                        clash = zone_check(plain(name or label), v.split(",")[0], offset_minutes(v))
+                        if clash:
+                            clashes.append(clash)
             except (RuntimeError, IndexError, KeyError) as e:
                 details = f"(couldn't read its log: {str(e)[:120]})"
         elif run and run.get("status") == "completed":
@@ -363,6 +420,8 @@ def status(wait=60, ref="main"):
         return 0
     stamp = datetime.now(timezone.utc).strftime("%d %b %Y %H:%M UTC")
     out = f"Devices, {stamp} (from {NOTE_REL}):\n\n" + "\n".join(lines)
+    if clashes:
+        out += "\n\n" + "\n".join(clashes)
     if missing:
         out += (f"\n\n{', '.join(missing)}: a runner with no row in {NOTE_REL}, so it was set up and never recorded. "
                 f"Add its row and its note's facts from what it reported (brain-spec, \"Devices\"), and bring the "

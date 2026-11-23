@@ -67,6 +67,7 @@ jobs:
           $up = (Get-Date) - $os.LastBootUpTime
           Write-Output ("DEVICE up: {0}d {1}h" -f $up.Days, $up.Hours)
           Write-Output "DEVICE user: $(whoami)"
+          Write-Output "DEVICE timezone: $([TimeZoneInfo]::Local.Id), UTC offset now $(Get-Date -Format 'zzz')"
 
       - name: What this Mac or Linux computer has
         if: runner.os != 'Windows'
@@ -92,3 +93,6 @@ jobs:
           fi
           echo "DEVICE up: $(uptime | sed 's/.*up *//; s/, *[0-9]* users*.*//')"
           echo "DEVICE user: $(whoami)"
+          if [ "$(uname)" = Darwin ]; then zone=$(readlink /etc/localtime | sed 's#.*/zoneinfo/##')
+          else zone=$(timedatectl show -p Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null); fi
+          echo "DEVICE timezone: ${zone:-unknown}, UTC offset now $(date +%z)"
