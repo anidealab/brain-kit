@@ -42,7 +42,7 @@ A big job runs in stages ([guide mode](../guide-mode/SKILL.md)). At the end of e
 4. **Tell the owner** in a few plain lines where things stand.
 
 ## At the nudge
-In Claude Code, a hook tells you when the conversation passes 250,000 tokens, and again at 350,000 and each extra 100,000. A token is a word or part of a word: about how much the agent reads. From 500,000 the nudge is urgent, and after that every message the owner sends comes with a reminder to start a fresh chat. Then:
+In Claude Code, a hook tells you when the conversation passes 300,000 tokens, and again at 400,000 and each extra 100,000. A token is a word or part of a word: about how much the agent reads. From 500,000 the nudge is urgent, and after that every message the owner sends comes with a reminder to start a fresh chat. Then:
 1. **Finish what you're doing.** It's a nudge, not a hard stop. Bring the step you're on to a safe point (a change that works, a message sent, an answer the owner is waiting for), but don't start a new piece. When it's urgent, stop at the first safe point.
 2. **Save what's lasting,** and **bring the task note up to date,** with the last messages word for word. If the job has no task note yet, make one now. If the conversation covers more than one job, update each one's note.
 3. **Commit and push** it.
@@ -88,7 +88,7 @@ updated: {KIT_DATE}
 `kind` is `brief` or `report` (`session` only on notes from before brain update 6). Statuses: `open` when written, `picked-up` once someone starts from it, `done` once its work is finished; whoever does each step changes it. Save it where anyone can get it: pull, run `python3 skills/brain-spec/library.py build`, commit only your paths, and push to `main`.
 
 ## The sub-agent nudge
-An agent you hand work to (a sub-agent) gets one nudge of its own, at 250,000 tokens of its own conversation, the same as the chat's first: a long agent's work loses detail the same way. Sizing the job first ([guide mode](../guide-mode/SKILL.md)) stays the main way work is split; this is the safety net for when a job turns out bigger than you thought.
+An agent you hand work to (a sub-agent) gets one nudge of its own, at 250,000 tokens of its own conversation, a little before the chat's first: a long agent's work loses detail the same way, and its report has to fit back into the chat. Sizing the job first ([guide mode](../guide-mode/SKILL.md)) stays the main way work is split; this is the safety net for when a job turns out bigger than you thought.
 - **The agent, at its nudge:** finish the step you're on, write your report back as above (what's done, what's left, and where everything is), and stop. The owner has nothing to paste, and there's no second nudge.
 - **The chat that started it** picks up from the report: it checks what's done, and carries on what's left itself or hands it to a fresh agent with the report as its brief.
 - **It's separate from the chat's own nudge:** an agent's nudge doesn't use up the chat's, and the chat's never reaches an agent.

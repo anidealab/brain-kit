@@ -51,7 +51,7 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS = os.path.join(HERE, "nudge.json")
 DEFAULTS = {
-    "first_at": 250000,
+    "first_at": 300000,
     "repeat_every": 0,
     "urgent_at": 0,
     "every_prompt_after": 0,
