@@ -371,9 +371,9 @@ if mode == "new":
     # The core: its first session, and the two defaults about the owner's computer. It stays under the kit's 6 KB.
     edit("CLAUDE.md", "**A new brain.**", " and follow it, with [my-mac](skills/my-mac/SKILL.md) for its PC steps.", how="swap", old=" and follow it.")
     edit("CLAUDE.md", "- **PC work goes to the owner's PC,**",
-         "- **Mac work goes to the owner's Mac,** through the `my-mac` runner, so needing it never rules a route out (how: the [my-mac skill](skills/my-mac/SKILL.md)).")
+         "- **Mac work goes to the owner's Mac,** through the `my-mac` runner, so needing it never rules a route out; not set up yet? offer it, never a local session (how: the [my-mac skill](skills/my-mac/SKILL.md)).")
     edit("CLAUDE.md", "- **Give the owner a command:**",
-         "- **Give the owner a command:** when something has to happen on their Mac, run it through the runner if you can; if they have to do it, give one command to paste into Terminal, not click-by-click steps.")
+         "- **Give the owner a command:** Mac jobs go through the runner if they can; otherwise one command to paste into Terminal, not click-by-click steps.")
     rules = "knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md"
     edit(rules, "- **PC work goes to the owner's PC,**",
          "- **Mac work goes to the owner's Mac,** through a GitHub Actions runner there, so a job that needs their Mac or their apps never rules a route out. How: the [my-mac skill](../../../skills/my-mac/SKILL.md).")

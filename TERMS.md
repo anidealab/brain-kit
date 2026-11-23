@@ -10,7 +10,7 @@ You don't pay AnIdeaLab anything for the kit or its updates. The kit's own files
 ## 2. Your brain is yours
 Your brain lives in a private repo on your own GitHub account, and what you put in it is yours. You're responsible for what's in it, for what you and your agents do with it, and for the accounts and keys it uses. Keep keys and passwords out of its files: the brain's rules say where they go.
 
-**The PC runner is completely optional.** It's a GitHub runner on your PC that lets AI agents run jobs there. The setup asks whether you want it, and your brain works without it; you can set it up later, or never. If you do set it up, jobs from your repo run on your PC with your Windows account's rights, so anyone who can change your repo can run jobs on your PC. Keep the repo private and invite only people you trust. You can take the runner off any time: your repo on GitHub, Settings, Actions, Runners.
+**The PC runner is completely optional.** It's a GitHub runner on your PC that lets AI agents run jobs there. The setup asks whether you want it, and your brain works without it; you can set it up later, or never. If you do set it up, jobs from your repo run on your PC with your Windows account's rights while you're signed in, so anyone who can change your repo can run jobs on your PC. Keep the repo private and invite only people you trust. You can take the runner off any time: your repo on GitHub, Settings, Actions, Runners.
 
 **So is the Mac runner.** On a Mac, the setup offers the Mac runner instead: the same kind of GitHub runner, running under your Mac account while you're logged in. Everything above applies to it the same way, with your Mac and your Mac account in place of your PC and your Windows account.
 

@@ -30,13 +30,10 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
    - say whether you'd like Obsidian (press Enter for yes). Your brain works without it;
    - sign in to GitHub in your browser, copying a code from the window (no account yet? make
      one on that page, it's free);
-   - say yes to the PC runner. A second window asks for admin rights, then your Windows
-     password: the one you type at the sign-in screen, NOT your PIN. With a Microsoft account,
-     it's that account's password;
-   - say yes to keeping the PC awake while it's plugged in, so Claude can do what you ask when
-     you're away from it. Most people say no here. A PC that
-     sleeps can leave its runner disconnected after it wakes, until you restart the runner by
-     hand; staying awake is the simple way round that. The screen still turns off;
+   - say yes to the PC runner, so Claude can do things on your PC when you ask. It needs no
+     password, and starts by itself whenever you sign in to Windows;
+   - say whether to keep the PC awake while it's plugged in, so Claude can do what you ask when
+     you're away from it. The screen still turns off;
    - last, if you chose it, Obsidian opens your brain: choose "Trust author and enable plugins", then come
      back to the blue window, which lists each step and what to do next.
 

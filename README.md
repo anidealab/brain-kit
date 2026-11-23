@@ -52,7 +52,7 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 - invites AnIdeaLab's testing account to that repo, as the terms say;
 - puts your copy in `C:\AI-Brain-Link\<your brain's name>`, set up for Obsidian with your edits syncing to GitHub, if you chose Obsidian;
 - adds the upload point, a Send to entry for giving your brain files with a right-click;
-- sets up the PC runner, if you say yes to it, so you can ask your agent to do things on your PC. It asks for admin rights and your Windows password, then whether to keep the PC awake while it's plugged in, and says to answer yes: a sleeping PC can't run jobs, and its runner can stay disconnected after it wakes until it's restarted by hand;
+- sets up the PC runner, if you say yes to it, so you can ask your agent to do things on your PC. It needs no password and starts by itself whenever you sign in to Windows, then asks whether to keep the PC awake while it's plugged in, since a sleeping PC can't run jobs;
 - opens your brain in Obsidian, if you chose it, last, so it can't hide a question in the PowerShell window.
 - then opens AnIdeaLab's tutorials page in your browser, for connecting Claude and the rest (anidealab.com/second-brain/tutorials, or the site's preview address until the site moves there).
 
