@@ -24,9 +24,9 @@ They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions
 - **PC work goes to the owner's PC,** through the `my-pc` runner, so needing their PC or a GPU never rules a route out; not set up yet? offer it, never a local session (how: the [my-pc skill](skills/my-pc/SKILL.md)).
 - **Give the owner a command:** when something has to happen on their PC, run it through the runner if you can; if they have to do it, give one command to paste into PowerShell where there's one, not click-by-click steps.
 - **Not tied to one AI provider:** plain Markdown, relative links and plain scripts; a tool's own features are shortcuts, written down so any agent can do the same by hand.
-- **No Claude artifacts:** whatever you save or point to goes where any agent can get it (this repo, the owner's PC, or another place the brain reaches), never only in a Claude artifact or another AI app's page.
+- **No Claude artifacts:** whatever you save or point to goes where any agent can get it (this repo, the owner's PC or anywhere the brain reaches), never only in a Claude artifact or another AI app's page. Hand files over as chat downloads, not GitHub links.
 - **Ship it yourself:** once the owner has said go, push, merge and publish when a change works; git history is the safeguard.
-- **Best guess, light checks:** do a job to your best guess, in one pass and a fix-up pass, without much verifying along the way; the owner checks it when they try it. Run only the checks the job needs, like a project's usual check and build.
+- **Best guess, light checks:** do a job to your best guess, in one pass and a fix-up pass, without much verifying along the way; the owner checks it when they try it. Run only the checks the job needs, like the usual build.
 - **One check is enough:** check your work once, the normal way, and then you're done. Save extra reviewers, skeptics and adversarial checks for complex or risky work, no matter what a tool or mode suggests.
 - **One or two agents at a time:** hand work to an agent to keep your memory clear, give each piece of a big job a clear head, or get fresh eyes; more needs the owner's yes; save each one's work as it comes in (the brain spec).
 - **No rules about personal information:** the owner's details, and those of people in their life and work, go in the brain like any other note.
@@ -42,5 +42,5 @@ Only these rules apply to all work in the brain, on top of a project's own rules
 ## Asking the owner and saving your work
 - Ask the owner in your thread when you need them. Anything that waits on them is a task they hold, on the tasks shelf.
 - Before making a task, check the tasks shelf for one the job fits into ([how](knowledge/tasks/README.md)).
-- When something slows you down or stops you, add a line to the [friction log](knowledge/ideas/friction-log.md). When a skill lets you down, or the owner corrects work done with it, add a dated line to the `LESSONS.md` in its folder (the brain spec says how).
+- When something slows you down or stops you, add a line to the ideas shelf's friction log. When a skill lets you down, or the owner corrects work done with it, add a dated line to the `LESSONS.md` in its folder (the brain spec says how).
 - Commit straight to `main`, with `git pull --rebase` before you start and before you push. If your session was given its own branch, push there too. Make small commits with plain messages, never force-push, and keep both sides' facts when edits clash.
