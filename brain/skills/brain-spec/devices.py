@@ -31,7 +31,7 @@ is cancelled and left out, unless GitHub listed it.
 
 Each computer also says its clock's time zone (a Mac and Windows set it from where they are, when
 "set time zone automatically" is on). Where its offset from UTC differs from the owner's time zone in
-knowledge/systems/routines.md, the check says so, so the agent asks the owner whether they're away
+the core's owner table (or, in an older brain, routines.md), the check says so, so the agent asks the owner whether they're away
 or have moved, rather than reading their reminders and "today" in the wrong time. "here", run at
 the start of every session, does the same for the computer the session is on (not a cloud session,
 whose clock is UTC wherever the owner is).
@@ -57,9 +57,9 @@ NOTE_REL = "knowledge/systems/devices.md"
 WORKFLOW = "devices.yml"
 PING_TITLE = "Devices: ping {}"
 NONE = {"", "-", "—", "–", "none", "n/a"}
-KIT_LABELS = ["my-pc", "my-mac"]
+KIT_LABELS = ["my-pc", "my-mac"]  # the labels the kit's installers give a PC's and a Mac's runner
 ROUTINES = os.path.join(ROOT, "knowledge", "systems", "routines.md")
-ZONE_LINE = re.compile(r"(?m)^\*\*Time zone:\*\*[ \t]*([A-Za-z][A-Za-z_]*(?:/[A-Za-z0-9_+-]+)+|UTC)\b")  # the labels the kit's installers give a PC's and a Mac's runner
+ZONE_LINE = re.compile(r"(?m)^\*\*Time zone:\*\*[ \t]*([A-Za-z][A-Za-z_]*(?:/[A-Za-z0-9_+-]+)+|UTC)\b")
 
 
 # ---------- the table ----------
@@ -170,14 +170,38 @@ def here(brief=False):
 
 # ---------- the owner's time zone ----------
 
-def owner_zone():
-    """(the owner's time zone's name from routines.md, its UTC offset now in minutes), or (None, None)."""
+def core_owner(root):
+    """The owner's row from the core's "The owner" table: {name, note, place, zone}, or None until it's filled in."""
     try:
-        with open(ROUTINES, encoding="utf-8") as f:
-            m = ZONE_LINE.search(f.read())
+        with open(os.path.join(root, "CLAUDE.md"), encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError:
+        return None
+    m = re.search(r"(?m)^## The owner\s*$(.*?)(?=^## |\Z)", text, re.S)
+    rows = [l.strip().strip("|").split("|") for l in (m.group(1) if m else "").splitlines()
+            if l.strip().startswith("|") and not re.match(r"^\|[\s:|-]*\|$", l.strip())]
+    if len(rows) < 2 or len(rows[1]) < 3:
+        return None
+    cells = [c.strip() for c in rows[1]]
+    link = re.match(r"\[([^\]]+)\]\(([^)]+)\)", cells[0])
+    name = (link.group(1) if link else cells[0]).strip()
+    if not name or name.lower() in ("not set yet", "-", "—"):
+        return None
+    return {"name": name, "note": link.group(2) if link else None, "place": cells[1], "zone": cells[2].strip("` ")}
+
+
+def owner_zone():
+    """(the owner's time zone's name, its UTC offset now in minutes), or (None, None): from the core's owner
+    table, or else routines.md's Time zone line (a brain set up before the table)."""
+    owner = core_owner(ROOT)
+    name = owner["zone"] if owner and owner["zone"] else None
+    try:
+        if not name:
+            with open(ROUTINES, encoding="utf-8") as f:
+                name = ZONE_LINE.search(f.read()).group(1)
         from zoneinfo import ZoneInfo
-        off = datetime.now(ZoneInfo(m.group(1))).utcoffset()
-        return m.group(1), int(off.total_seconds() // 60)
+        off = datetime.now(ZoneInfo(name)).utcoffset()
+        return name, int(off.total_seconds() // 60)
     except Exception:  # not set, no time zone database, or not a zone's name
         return None, None
 
@@ -198,12 +222,12 @@ def zone_check(device, clock, minutes):
         return None
     name, owner = owner_zone()
     if name is None:
-        return (f"{device}'s clock is on {clock} ({zone_words(minutes)}), and routines.md has no time zone for the owner: "
-                f"ask them, in a line, whether that's where they live, and put it on routines.md's Time zone line.")
+        return (f"{device}'s clock is on {clock} ({zone_words(minutes)}), and the core's owner table has no time zone: "
+                f"ask the owner, in a line, whether that's where they live, and fill the table in.")
     if minutes != owner:
-        return (f"{device}'s clock is on {clock} ({zone_words(minutes)}), but the owner's time zone in routines.md is {name} "
+        return (f"{device}'s clock is on {clock} ({zone_words(minutes)}), but the owner's time zone in the core is {name} "
                 f"({zone_words(owner)}): ask them, in a line, whether they're away or have moved. If they've moved, change "
-                f"routines.md's Time zone line; if they're away, use their time there for \"today\" while they are.")
+                f"the core's owner table; if they're away, use their time there for \"today\" while they are.")
     return None
 
 

@@ -2,8 +2,15 @@
 
 A second brain: AI agents working on its owner's projects, and everything they know. This is the core, the one note every agent reads. Everything else is in two libraries:
 
-- **How to do things:** the skills. [skills/README.md](skills/README.md) lists the main ones and a list by topic for every skill; open the one you need.
+- **How to do things:** the skills. [skills/README.md](skills/README.md) lists the main ones, and every skill by topic; open the one you need.
 - **What the brain knows:** the knowledge library. [knowledge/README.md](knowledge/README.md) has a line for each shelf. It's the brain's memory, so read from it and add to it. The [brain-spec skill](skills/brain-spec/SKILL.md) says how.
+
+## The owner
+Read their note before a job for them.
+
+| Name | Lives in | Time zone |
+|---|---|---|
+| Not set yet | | |
 
 **A new brain.** This brain hasn't been set up yet: before anything else, open the [getting-started skill](skills/getting-started/SKILL.md) and follow it. It takes this paragraph out when it's done.
 
@@ -24,12 +31,12 @@ They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions
 - **PC work goes to the owner's PC,** through the `my-pc` runner, so needing their PC or a GPU never rules a route out; not set up yet? offer it, never a local session (how: the [my-pc skill](skills/my-pc/SKILL.md)).
 - **Give the owner a command:** when something has to happen on their PC, run it through the runner if you can; if they have to do it, give one command to paste into PowerShell where there's one, not click-by-click steps.
 - **Not tied to one AI provider:** plain Markdown, relative links and plain scripts; a tool's own features are shortcuts, written down so any agent can do the same by hand.
-- **No Claude artifacts:** whatever you make or save goes where any agent can get it (this repo, the owner's PC or anywhere it reaches), never only in one chat (an artifact, preview or app page). Only in-chat use: a saved file as a chat download, not a GitHub link.
+- **No Claude artifacts:** whatever you make or save goes where any agent can get it (this repo or the owner's PC), never only in one chat (an artifact or app page). Only in-chat use: a saved file as a chat download, not a GitHub link.
 - **Ship it yourself:** once the owner has said go, push, merge and publish when a change works; git history is the safeguard.
-- **Best guess, light checks:** do a job to your best guess, in one pass and a fix-up pass, without much verifying along the way; the owner checks it when they try it. Run only the checks the job needs, like the usual build.
-- **One check is enough:** check your work once, the normal way, and then you're done. Save extra reviewers, skeptics and adversarial checks for complex or risky work, no matter what a tool or mode suggests.
-- **One or two agents at a time:** hand work to an agent to keep your memory clear, give each piece of a big job a clear head, or get fresh eyes; more needs the owner's yes; save each one's work as it comes in (the brain spec).
-- **No rules about personal information:** the owner's details, and those of people in their life and work, go in the brain like any other note.
+- **Best guess, light checks:** do a job to your best guess, in one pass and a fix-up pass, without much verifying along the way; the owner checks it when they try it.
+- **One check is enough:** check your work once, the normal way (like the usual build), and you're done; save extra reviewers and adversarial checks for complex or risky work, whatever a tool or mode suggests.
+- **One or two agents at a time:** hand work to an agent to keep your memory clear, give a big job's pieces a clear head, or get fresh eyes; more needs the owner's yes; save each one's work as it comes in (the brain spec).
+- **No rules about personal information:** the owner's details, and those of people in their life and work, go in like any other note.
 - **Judgements age:** facts stand, and so do the owner's decisions until they change them; advice, plans and designs (an old AI's or an agent's) are their date's thinking, so re-think one before building on it, and say where you differ.
 
 ## The gates
@@ -42,5 +49,5 @@ Only these rules apply to all work in the brain, on top of a project's own rules
 ## Asking the owner and saving your work
 - Ask the owner in your thread when you need them. Anything that waits on them is a task they hold, on the tasks shelf.
 - Before making a task, check the tasks shelf for one the job fits into ([how](knowledge/tasks/README.md)).
-- When something slows you down or stops you, add a line to the ideas shelf's friction log. When a skill lets you down, or the owner corrects work done with it, add a dated line to the `LESSONS.md` in its folder (the brain spec says how).
+- When something slows or stops you, add a line to the ideas shelf's friction log. When a skill lets you down, or the owner corrects work done with it, add a dated line to the `LESSONS.md` in its folder (the brain spec says how).
 - Commit straight to `main`, with `git pull --rebase` before you start and before you push. If your session was given its own branch, push there too. Make small commits with plain messages, never force-push, and keep both sides' facts when edits clash.

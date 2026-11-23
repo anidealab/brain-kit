@@ -8,7 +8,7 @@ updated: {KIT_DATE}
 Anything that runs, or falls due, on a beat.
 
 ## The rules
-1. **Keep three things apart:** what the job is (a script or skill in the repo), when it runs (its beat, in the owner's time zone, set on the Time zone line under "The owner's own", which `reminders.py` reads), and where it runs (GitHub Actions, the PC runner, or a session the owner starts).
+1. **Keep three things apart:** what the job is (a script or skill in the repo), when it runs (its beat, in the owner's time zone, from the core's "The owner" table, which `reminders.py` reads), and where it runs (GitHub Actions, the PC runner, or a session the owner starts).
 2. **Pick the kind:**
    - **Reminder,** for work that needs an AI or the owner. Nothing runs until the owner says yes in a session, so it uses none of their plan until then. `reminders.py` tells the agent when one is due.
    - **Code on a timer,** for work a script can do alone (a GitHub Actions `schedule:`, or a Windows task on the PC). It uses no AI.
@@ -23,7 +23,7 @@ Anything that runs, or falls due, on a beat.
 | Check keys | The brain | Code on a timer | Fridays 12:41 UTC, before the weekly tidy-up | `.github/workflows/check-keys.yml`: one free call per key in the brain's GitHub secrets, the date each answered into the [keys table](keys-and-accounts.md#keys), and what it printed into [the check log](keys-check-log.md), which the weekly tidy-up reads | GitHub Actions | [keys-check-log.md](keys-check-log.md) |
 
 ## The owner's own
-**Time zone:** not set yet. Getting-started asks the owner where they live and puts their time zone's name here, like Pacific/Auckland or Europe/London; `reminders.py` reads every reminder's time in it.
+**Time zone:** the owner's, in the core's "The owner" table (CLAUDE.md), which getting-started fills in; `reminders.py` reads every reminder's time in it. (A brain set up before that table kept it on this line, which `reminders.py` still reads when the table has none.)
 
 <!-- The owner's routines go in this table, at its end. A reminder row looks like this (the weekly tidy-up, once the owner says yes to it):
 | Weekly tidy-up | The brain | Reminder | Saturdays 09:00, from 24 Oct 2026 | the brain-audit skill | A session the owner starts | [audit-log.md](../areas/the-brain/audit-log.md) |

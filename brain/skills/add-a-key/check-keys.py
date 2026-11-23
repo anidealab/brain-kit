@@ -53,12 +53,18 @@ UA = "brain-key-check"
 
 
 def today():
-    """Today in the owner's time zone (routines.md's "Time zone" line), or UTC if it isn't set."""
+    """Today in the owner's time zone (the core's "The owner" table, or an older brain's "Time zone" line in
+    routines.md), or UTC if it isn't set."""
     tz = datetime.timezone.utc
     try:
         from zoneinfo import ZoneInfo
-        with open("knowledge/systems/routines.md", encoding="utf-8") as f:
-            m = re.search(r"\*\*Time zone:\*\*\s*([A-Za-z_]+/[A-Za-z_/]+)", f.read())
+        m = None
+        if os.path.isfile("CLAUDE.md"):
+            with open("CLAUDE.md", encoding="utf-8") as f:
+                m = re.search(r"(?m)^## The owner\s*$[^#]*?^\|[^|\n]*\|[^|\n]*\|\s*`?([A-Za-z_]+/[A-Za-z_/]+)`?\s*\|", f.read())
+        if not m:
+            with open("knowledge/systems/routines.md", encoding="utf-8") as f:
+                m = re.search(r"\*\*Time zone:\*\*\s*([A-Za-z_]+/[A-Za-z_/]+)", f.read())
         if m:
             tz = ZoneInfo(m.group(1))
     except Exception:

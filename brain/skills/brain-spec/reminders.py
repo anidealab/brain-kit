@@ -11,8 +11,10 @@ table in knowledge/systems/routines.md whose Kind is "Reminder":
 - its Log cell links to a note with one heading per run (or skipped week), newest
   first, starting "## <day> <month> <year>", like the audit log.
 
-The owner's time zone is the "**Time zone:**" line in routines.md, under "The owner's own":
-a time zone's name, like Pacific/Auckland or Europe/London, which getting-started asks for.
+The owner's time zone is in the core's "The owner" table (CLAUDE.md), which getting-started fills in:
+a time zone's name, like Pacific/Auckland or Europe/London. A brain set up before that table read it
+from the "**Time zone:**" line in routines.md, under "The owner's own", which still counts when the
+table has none.
 Until it's set, or where Python can't read it (no time zone database, on some Windows
 installs), times are read in this computer's own time zone, which in a cloud session is UTC,
 and the agent is told to ask the owner where they live.
@@ -63,20 +65,45 @@ LINK = re.compile(r"\[([^\]]*)\]\(([^)\s#]*)[^)]*\)")
 ZONE_LINE = re.compile(r"(?m)^\*\*Time zone:\*\*[ \t]*([A-Za-z][A-Za-z_]*(?:/[A-Za-z0-9_+-]+)+|UTC)\b")
 
 
-def owner_zone():
-    """The owner's time zone from routines.md: (its name, or None if not set; the zone, or None if Python can't read it)."""
+def core_owner(root):
+    """The owner's row from the core's "The owner" table: {name, note, place, zone}, or None until it's filled in."""
     try:
-        with open(ROUTINES, encoding="utf-8") as fh:
-            m = ZONE_LINE.search(fh.read())
+        with open(os.path.join(root, "CLAUDE.md"), encoding="utf-8") as fh:
+            text = fh.read()
     except OSError:
-        m = None
-    if not m:
+        return None
+    m = re.search(r"(?m)^## The owner\s*$(.*?)(?=^## |\Z)", text, re.S)
+    rows = [l.strip().strip("|").split("|") for l in (m.group(1) if m else "").splitlines()
+            if l.strip().startswith("|") and not re.match(r"^\|[\s:|-]*\|$", l.strip())]
+    if len(rows) < 2 or len(rows[1]) < 3:
+        return None
+    cells = [c.strip() for c in rows[1]]
+    link = re.match(r"\[([^\]]+)\]\(([^)]+)\)", cells[0])
+    name = (link.group(1) if link else cells[0]).strip()
+    if not name or name.lower() in ("not set yet", "-", "—"):
+        return None
+    return {"name": name, "note": link.group(2) if link else None, "place": cells[1], "zone": cells[2].strip("` ")}
+
+
+def owner_zone():
+    """The owner's time zone: (its name, or None if not set; the zone, or None if Python can't read it).
+    From the core's owner table, or else routines.md's Time zone line."""
+    owner = core_owner(ROOT)
+    name = owner["zone"] if owner and re.match(r"^([A-Za-z][A-Za-z_]*(/[A-Za-z0-9_+-]+)+|UTC)$", owner["zone"]) else None
+    if name is None:
+        try:
+            with open(ROUTINES, encoding="utf-8") as fh:
+                m = ZONE_LINE.search(fh.read())
+        except OSError:
+            m = None
+        name = m.group(1) if m else None
+    if name is None:
         return None, None
     try:
         from zoneinfo import ZoneInfo
-        return m.group(1), ZoneInfo(m.group(1))
+        return name, ZoneInfo(name)
     except Exception:  # no time zone database (some Windows installs), or not a zone's name
-        return m.group(1), None
+        return name, None
 
 
 ZONE_NAME, ZONE = owner_zone()
@@ -208,21 +235,25 @@ def upload_point():
 
 
 def owner_line(now):
-    """Who the owner is, where their note is, and their clock now; None until the first session has set them up."""
-    try:
-        with open(os.path.join(ROOT, "CLAUDE.md"), encoding="utf-8") as fh:
-            text = fh.read(4000)
-    except OSError:
-        return None
-    m = re.search(r"^(\S[^\n]*?)['\u2019]s second brain\b", text, re.M)
-    name = m.group(1).strip() if m else None
+    """Who the owner is, where they live, their note and their clock now; None until the first session has set them up."""
+    owner = core_owner(ROOT)
+    name, note, place = (owner["name"], owner["note"], owner["place"]) if owner else (None, None, "")
+    if name is None:  # a brain set up before the core's owner table: "<Name>'s second brain"
+        try:
+            with open(os.path.join(ROOT, "CLAUDE.md"), encoding="utf-8") as fh:
+                m = re.search(r"^(\S[^\n]*?)['\u2019]s second brain\b", fh.read(4000), re.M)
+        except OSError:
+            m = None
+        if m:
+            name = m.group(1).strip()
+            guess = "knowledge/people/" + re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") + ".md"
+            note = guess if os.path.isfile(os.path.join(ROOT, guess)) else None
     if name is None and ZONE is None:
         return None
     parts = []
     if name:
-        note = os.path.join("knowledge", "people", re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") + ".md")
-        parts.append(f"Owner: {name}" + (f" (their note, {note.replace(os.sep, '/')}: read it before any job for them)"
-                                          if os.path.isfile(os.path.join(ROOT, note)) else ""))
+        parts.append(f"Owner: {name}" + (f", in {place}" if place else "") +
+                     (f" (their note, {note}: read it before a job for them)" if note else ""))
     if ZONE is not None:
         local = now.astimezone(ZONE)
         parts.append(f"their time now: {local:%A} {local.day} {local:%b %Y}, {local:%H:%M} ({ZONE_NAME})")
@@ -291,8 +322,8 @@ def main(argv):
              f"Python couldn't read the time zone {ZONE_NAME} (not a time zone's name, or no time zone database here: "
              "on Windows, py -m pip install tzdata adds one)")
             + ", so reminders were read in this computer's time, which in a cloud session is UTC. Ask the owner where "
-            "they live, in a line, and put their time zone's name on the \"Time zone\" line under \"The owner's own\" "
-            "in knowledge/systems/routines.md (like **Time zone:** Europe/London), then commit.")
+            "they live, in a line, and fill in the core's \"The owner\" table (CLAUDE.md): their town and country, and "
+            "their time zone's name, like Europe/London; then commit.")
     for p in problems:
         print("skills/brain-spec/reminders.py: " + p)
     waiting = upload_point()
