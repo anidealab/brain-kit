@@ -86,6 +86,7 @@ AnIdeaLab sends fixes, new rules and new parts to brains made from the kit. A br
 - **[inbox/](inbox/)**: after each update, a brain sends a report of how it went to AnIdeaLab's private inbox, so the kit gets better.
 - **[TERMS.md](TERMS.md)**: AnIdeaLab's terms of use for the kit, which the installer asks each owner to accept.
 - **[testing/](testing/)**: AnIdeaLab's scripts for its testing account, which the installer invites to each new brain's repo, as the terms say: `diagnostic-setup.ps1` invites it to a brain made before the installer did, and `copy-brains.ps1` copies the brains it's invited to. `network-check.ps1` is for a PC whose install stops on a download: it changes nothing, and saves and copies a report of the PC's antivirus, proxy, DNS and how GitHub's downloads answer.
+- **[set-up/](set-up/)**: what AnIdeaLab runs for its paid set-up, not part of a brain: "index my computer", the job that finds a set-up buyer's documents from the last year and turns them into text for their brain.
 - **[tools/kit.py](tools/kit.py)**: the kit's build, which checks it after each change (a brain made on a Mac too), and makes the zip a Windows owner can install from instead of the one command. How to work on the kit: [CLAUDE.md](CLAUDE.md).
 - **[.github/workflows/](.github/workflows/)**: the kit's own workflows: one tries the Mac installer on GitHub's Macs, one publishes the template.
 

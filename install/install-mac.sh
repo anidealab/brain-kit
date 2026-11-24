@@ -26,6 +26,10 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 check="${BRAIN_KIT_CHECK:-}"
 tools_check="${BRAIN_KIT_CHECK_TOOLS:-}"
 if [ -n "$check" ]; then root="$check"; else root="$HOME/AI-Brain-Link"; fi
+# AnIdeaLab's set-up (the brain set up for you): BRAIN_KIT_SETUP=1, in the command its set-up page gives. It
+# lets AnIdeaLab's set-up account in to the brain even when the brain was made already (from the template),
+# says what the runner is for in the set-up, and ends with "we'll take it from here" instead of the chat steps.
+setup="${BRAIN_KIT_SETUP:-}"
 brain=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -652,7 +656,7 @@ invite_tester() {
   if "$gh" api -X PUT "repos/$repo/collaborators/$tester" --silent >/dev/null 2>&1; then log 'the testing account was invited'
   else warn "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester"; fi
 }
-if [ -n "$fresh" ]; then invite_tester; fi
+if [ -n "$fresh" ] || [ -n "$setup" ]; then invite_tester; fi
 
 # 4. The brain on this Mac, and on GitHub
 step "Your brain on GitHub, and your copy in $vault" started
@@ -768,7 +772,9 @@ runner_setup="$vault/skills/my-mac/setup-runner.sh"
 runner_ok=yes
 step 'The Mac runner' started
 if [ -z "$check" ]; then
-  if yes_to "Set up the Mac runner now, so you can ask Claude to do things on this Mac from any chat, even your phone? It only does what you ask. It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
+  runner_q="Set up the Mac runner now, so you can ask Claude to do things on this Mac from any chat, even your phone? It only does what you ask."
+  if [ -n "$setup" ]; then runner_q="Set up the Mac runner now? It's how we bring the documents you've worked on this past year into your brain for you, and after that it lets you ask Claude to do things on this Mac from any chat, even your phone."; fi
+  if yes_to "$runner_q It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
     /bin/bash "$runner_setup" --repo "$repo" --root "$root" || runner_ok=''
     # "All done" only once GitHub sees the runner online.
     online=$("$gh" api "repos/$repo/actions/runners" --jq '[.runners[] | select(.status == "online")] | length' 2>/dev/null)
@@ -815,7 +821,10 @@ echo "Your brain on GitHub: https://github.com/$repo"
 if [ -n "$want_obsidian" ]; then echo "Your copy on this Mac: $vault (open in Obsidian)"; else echo "Your copy on this Mac: $vault"; fi
 echo "Files for your brain: select them in Finder, right-click, then Quick Actions, My brain, and tell Claude."
 echo ''
-if [ -z "$fresh" ]; then
+if [ -n "$setup" ]; then
+  printf '\033[36m%s\033[0m\n' "That's everything on your side. We'll take it from here, and email you when your brain is ready."
+  if [ -z "$runner_ok" ]; then echo "(The runner isn't working yet, so we can't bring your documents in. Reply to our email and we'll sort it with you.)"; fi
+elif [ -z "$fresh" ]; then
   # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
   # chat since), or a run again. So the chat is open, and that's where they go back to.
   printf '\033[36m%s\033[0m\n' "Last step: go back to your chat with your brain and say it's finished."

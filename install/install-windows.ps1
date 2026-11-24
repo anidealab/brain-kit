@@ -22,6 +22,10 @@ $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $check = $env:BRAIN_KIT_CHECK # a test folder: nothing is installed, and GitHub and Obsidian aren't touched
 $root = if ($check) { $check } else { 'C:\AI-Brain-Link' }
+# AnIdeaLab's set-up (the brain set up for you): BRAIN_KIT_SETUP=1, in the command its set-up page gives. It
+# lets AnIdeaLab's set-up account in to the brain even when the brain was made already (from the template),
+# says what the runner is for in the set-up, and ends with "we'll take it from here" instead of the chat steps.
+$setup = [bool]$env:BRAIN_KIT_SETUP
 $noBom = New-Object Text.UTF8Encoding $false # Obsidian can't read JSON that starts with a byte-order mark
 
 function Say($t) { Write-Host ''; Write-Host $t -ForegroundColor Cyan }
@@ -352,7 +356,7 @@ function Invite-Tester {
   if ($LASTEXITCODE -ne 0) { Write-Host "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester" -ForegroundColor Yellow }
   else { Log 'the testing account was invited' }
 }
-if ($fresh) { Invite-Tester }
+if ($fresh -or $setup) { Invite-Tester }
 
 # 4. The brain on this PC, and on GitHub
 Step "Your brain on GitHub, and your copy in $vault" 'started'
@@ -511,7 +515,8 @@ if (-not $check) {
   # A brain from the template has the newer runner setup, which needs no password; one made from this kit's
   # main branch has the older one until the update that brings it, so the question says what this brain's does.
   $runnerAsks = if ((Test-Path $runnerSetup) -and (Select-String -LiteralPath $runnerSetup -Pattern 'windowslogonpassword' -Quiet)) { 'It asks for admin rights, then your Windows password, in a second window.' } else { "It runs while you're signed in to Windows, and needs no password." }
-  if (Yes "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks") {
+  $runnerQ = if ($setup) { "Set up the PC runner now? It's how we bring the documents you've worked on this past year into your brain for you, and after that it lets you ask Claude to do things on this PC from any chat, even your phone. $runnerAsks" } else { "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks" }
+  if (Yes $runnerQ) {
     # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
     # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
     $runnerDir = Join-Path $root '_runner'
@@ -572,7 +577,10 @@ if ($runnerOk) { Say 'All done on this PC.' } else {
 Write-Host "Your brain on GitHub: https://github.com/$repo"
 Write-Host "Your copy on this PC: $vault$(if ($wantObsidian) { ' (open in Obsidian)' })"
 Write-Host ''
-if (-not $fresh) {
+if ($setup) {
+  Write-Host "That's everything on your side. We'll take it from here, and email you when your brain is ready." -ForegroundColor Cyan
+  if (-not $runnerOk) { Write-Host "(The runner isn't working yet, so we can't bring your documents in. Reply to our email and we'll sort it with you.)" }
+} elseif (-not $fresh) {
   # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
   # chat since), or a run again. So the chat is open, and that's where they go back to.
   Write-Host 'Last step: go back to your chat with your brain and say it''s finished.' -ForegroundColor Cyan
