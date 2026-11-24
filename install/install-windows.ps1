@@ -24,7 +24,9 @@ $check = $env:BRAIN_KIT_CHECK # a test folder: nothing is installed, and GitHub 
 $root = if ($check) { $check } else { 'C:\AI-Brain-Link' }
 # AnIdeaLab's set-up (the brain set up for you): BRAIN_KIT_SETUP=1, in the command its set-up page gives. It
 # lets AnIdeaLab's set-up account in to the brain even when the brain was made already (from the template),
-# says what the runner is for in the set-up, and ends with "we'll take it from here" instead of the chat steps.
+# reads the documents of the past year on this PC last (set-up\index-computer.ps1, beside install\) and sends their
+# text to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
+# steps. Anyone can set it; it's off unless they do.
 $setup = [bool]$env:BRAIN_KIT_SETUP
 $noBom = New-Object Text.UTF8Encoding $false # Obsidian can't read JSON that starts with a byte-order mark
 
@@ -515,8 +517,7 @@ if (-not $check) {
   # A brain from the template has the newer runner setup, which needs no password; one made from this kit's
   # main branch has the older one until the update that brings it, so the question says what this brain's does.
   $runnerAsks = if ((Test-Path $runnerSetup) -and (Select-String -LiteralPath $runnerSetup -Pattern 'windowslogonpassword' -Quiet)) { 'It asks for admin rights, then your Windows password, in a second window.' } else { "It runs while you're signed in to Windows, and needs no password." }
-  $runnerQ = if ($setup) { "Set up the PC runner now? It's how we bring the documents you've worked on this past year into your brain for you, and after that it lets you ask Claude to do things on this PC from any chat, even your phone. $runnerAsks" } else { "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks" }
-  if (Yes $runnerQ) {
+  if (Yes "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks") {
     # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
     # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
     $runnerDir = Join-Path $root '_runner'
@@ -560,6 +561,32 @@ if (-not $wantObsidian) { Step 'Obsidian opened on your brain' 'skipped' } else 
   Step 'Obsidian opened on your brain' $(if ($hasObsidian) { 'done' } else { 'not done' })
 }
 
+# 8. AnIdeaLab's set-up only: the documents of the past year, read here, as the owner, so no runner is needed. Their
+# text, never the files, goes to the brain's repo as a private draft release (never into the brain's files) for the
+# set-up's agent to write up as notes; the agent deletes it once it has it. The originals stay where they are.
+$indexOk = $false
+if ($setup -and -not $check) {
+  Step 'Your documents, read for your set-up' 'started'
+  Say "Last, reading the documents you've worked on this past year, so we can put what's in them into your brain. Photos, and anything that looks like passwords or keys, are left out, and nothing on this PC is changed or moved. It can take a while: leave this window open."
+  $indexer = Join-Path (Split-Path -Parent $here) 'set-up\index-computer.ps1'
+  $indexWork = Join-Path $root '_intake\computer'
+  if (Test-Path -LiteralPath $indexer) {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $indexer -Root $root
+    if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath (Join-Path $indexWork 'index.md'))) {
+      $pack = Join-Path $env:TEMP 'anidealab-set-up-index.zip'
+      Remove-Item -LiteralPath $pack -Force -ErrorAction SilentlyContinue
+      try { Compress-Archive -Path (Join-Path $indexWork '*') -DestinationPath $pack -Force } catch { Log "couldn't zip the index: $($_.Exception.Message)" }
+      if (Test-Path -LiteralPath $pack) {
+        Native { & $gh release delete anidealab-set-up-index --repo $repo --yes 2>&1 } | Out-Null
+        Native { & $gh release create anidealab-set-up-index $pack --repo $repo --draft --title 'Your documents, for AnIdeaLab''s set-up' --notes 'The text of the documents your set-up read on your computer, for AnIdeaLab to write up as notes in your brain. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer.' 2>&1 } | Out-Host
+        $indexOk = $LASTEXITCODE -eq 0
+        Remove-Item -LiteralPath $pack -Force -ErrorAction SilentlyContinue
+      }
+    }
+  } else { Log "no set-up\index-computer.ps1 beside the installer" }
+  Step 'Your documents, read for your set-up' $(if ($indexOk) { 'done' } else { 'not done' })
+}
+
 Show-Steps
 if (-not $check) { Set-QuickEdit $true }
 if (-not $wantObsidian) { Say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.' }
@@ -579,7 +606,7 @@ Write-Host "Your copy on this PC: $vault$(if ($wantObsidian) { ' (open in Obsidi
 Write-Host ''
 if ($setup) {
   Write-Host "That's everything on your side. We'll take it from here, and email you when your brain is ready." -ForegroundColor Cyan
-  if (-not $runnerOk) { Write-Host "(The runner isn't working yet, so we can't bring your documents in. Reply to our email and we'll sort it with you.)" }
+  if (-not $indexOk) { Write-Host "(Your documents didn't get read just now. Nothing to do: we'll sort it with you by email.)" }
 } elseif (-not $fresh) {
   # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
   # chat since), or a run again. So the chat is open, and that's where they go back to.

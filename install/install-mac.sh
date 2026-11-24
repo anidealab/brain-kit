@@ -28,7 +28,9 @@ tools_check="${BRAIN_KIT_CHECK_TOOLS:-}"
 if [ -n "$check" ]; then root="$check"; else root="$HOME/AI-Brain-Link"; fi
 # AnIdeaLab's set-up (the brain set up for you): BRAIN_KIT_SETUP=1, in the command its set-up page gives. It
 # lets AnIdeaLab's set-up account in to the brain even when the brain was made already (from the template),
-# says what the runner is for in the set-up, and ends with "we'll take it from here" instead of the chat steps.
+# reads the documents of the past year on this Mac last (set-up/index-computer.sh, beside install/) and sends their
+# text to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
+# steps. Anyone can set it; it's off unless they do.
 setup="${BRAIN_KIT_SETUP:-}"
 brain=""
 while [ $# -gt 0 ]; do
@@ -772,9 +774,7 @@ runner_setup="$vault/skills/my-mac/setup-runner.sh"
 runner_ok=yes
 step 'The Mac runner' started
 if [ -z "$check" ]; then
-  runner_q="Set up the Mac runner now, so you can ask Claude to do things on this Mac from any chat, even your phone? It only does what you ask."
-  if [ -n "$setup" ]; then runner_q="Set up the Mac runner now? It's how we bring the documents you've worked on this past year into your brain for you, and after that it lets you ask Claude to do things on this Mac from any chat, even your phone."; fi
-  if yes_to "$runner_q It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
+  if yes_to "Set up the Mac runner now, so you can ask Claude to do things on this Mac from any chat, even your phone? It only does what you ask. It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
     /bin/bash "$runner_setup" --repo "$repo" --root "$root" || runner_ok=''
     # "All done" only once GitHub sees the runner online.
     online=$("$gh" api "repos/$repo/actions/runners" --jq '[.runners[] | select(.status == "online")] | length' 2>/dev/null)
@@ -804,6 +804,28 @@ if [ -z "$want_obsidian" ]; then step 'Obsidian opened on your brain' skipped; e
   if [ -n "$has_obsidian" ]; then step 'Obsidian opened on your brain' 'done'; else step 'Obsidian opened on your brain' 'not done'; fi
 fi
 
+# 8. AnIdeaLab's set-up only: the documents of the past year, read here, as the owner, so no runner is needed. Their
+# text, never the files, goes to the brain's repo as a private draft release (never into the brain's files) for the
+# set-up's agent to write up as notes; the agent deletes it once it has it. The originals stay where they are.
+index_ok=''
+if [ -n "$setup" ] && [ -z "$check" ]; then
+  step 'Your documents, read for your set-up' started
+  say "Last, reading the documents you've worked on this past year, so we can put what's in them into your brain. Photos, and anything that looks like passwords or keys, are left out, and nothing on this Mac is changed or moved. It can take a while: leave this window open."
+  indexer="$here/../set-up/index-computer.sh"
+  index_work="$root/_intake/computer"
+  if [ -f "$indexer" ] && /bin/bash "$indexer" --root "$root" && [ -f "$index_work/index.md" ]; then
+    pack="${TMPDIR:-/tmp}"; pack="${pack%/}/anidealab-set-up-index.zip"
+    rm -f "$pack"
+    if (cd "$index_work" && zip -qr "$pack" .); then
+      "$gh" release delete anidealab-set-up-index --repo "$repo" --yes >/dev/null 2>&1
+      if "$gh" release create anidealab-set-up-index "$pack" --repo "$repo" --draft --title "Your documents, for AnIdeaLab's set-up" \
+        --notes "The text of the documents your set-up read on your computer, for AnIdeaLab to write up as notes in your brain. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer."; then index_ok=yes; fi
+    fi
+    rm -f "$pack"
+  fi
+  if [ -n "$index_ok" ]; then step 'Your documents, read for your set-up' done; else step 'Your documents, read for your set-up' 'not done'; fi
+fi
+
 show_steps
 if [ -z "$want_obsidian" ]; then say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.'
 elif [ -n "$has_obsidian" ]; then say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
@@ -823,7 +845,7 @@ echo "Files for your brain: select them in Finder, right-click, then Quick Actio
 echo ''
 if [ -n "$setup" ]; then
   printf '\033[36m%s\033[0m\n' "That's everything on your side. We'll take it from here, and email you when your brain is ready."
-  if [ -z "$runner_ok" ]; then echo "(The runner isn't working yet, so we can't bring your documents in. Reply to our email and we'll sort it with you.)"; fi
+  if [ -z "$index_ok" ]; then echo "(Your documents didn't get read just now. Nothing to do: we'll sort it with you by email.)"; fi
 elif [ -z "$fresh" ]; then
   # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
   # chat since), or a run again. So the chat is open, and that's where they go back to.
