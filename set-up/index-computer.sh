@@ -2,8 +2,9 @@
 # Index my computer, on a Mac. The installer runs it last when BRAIN_KIT_SETUP=1 is set (AnIdeaLab's set-up
 # command), as a file from the kit's folder, with --root ~/AI-Brain-Link. It also runs on its own:
 #   bash set-up/index-computer.sh --root ~/AI-Brain-Link
-#   INDEX_KIT_REF=<kit commit> /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AnIdeaLab/brain-kit/<kit commit>/set-up/index-computer.sh)"
-# (run that way, the folder it's run in is the root, and it downloads its Python files from the kit.)
+#   (as a runner job: download it to a file first, set INDEX_KIT_REF to the kit commit, and run it with --root;
+#   away from the kit's folder it downloads its Python files from the kit at that commit.) In a terminal, its
+#   progress is a bar that updates in place.
 # The same as index-computer.ps1: uv into a folder of its own, a Python and MarkItDown through it,
 # index-computer.py with the brain's file-intake tool, then uv and the rest taken off again. The work folder is
 # _intake/computer in the root. macOS's own bash 3.2.

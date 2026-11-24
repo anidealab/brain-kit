@@ -70,6 +70,62 @@ SECRET_TEXT = [
     re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"),                     # Google
 ]
 PASSWORD_LINE = re.compile(r"(?im)^\W*(?:password|passwd|pwd|pin|passcode)\s*[:=\-]\s*\S")
+# A folder with a program's own files straight in it is a program's or a game's (Git, a launcher, a game, a portable
+# app): left out whole, below the top folders (Downloads keeps its installers' neighbours). Tried on a PC, 24 Nov 2026:
+# without it, Git's, CurseForge's, Fortnite's and Tor Browser's readmes and licences were most of the "documents".
+PROGRAM_EXT = {".exe", ".dll", ".pak", ".jar", ".so", ".dylib", ".sys", ".asar", ".node", ".pyd", ".ucas", ".utoc",
+               ".assets", ".bundle", ".vpk", ".bsa", ".esm", ".esp", ".forge", ".wad"}
+# Folders named for games and launchers, which can hold saves and logs without a program in them.
+GAME_DIRS = {"games", "my games", "saved games", "curseforge", "epic", "battlestate", "battlestate games", "rockstar",
+             "rockstar games", "overwatch", "wpsystem", "zomboid", "minecraft", ".minecraft", "riot games", "steam",
+             "steamapps", "ubisoft game launcher", "ea app", "gog galaxy", "battle.net", "game recordings", "xboxgames"}
+# Programs' own papers, not the owner's.
+PROGRAM_PAPERS = re.compile(r"^(read\s*me|licen[cs]e|eula|change\s*log|changes|copying|notice|third[\s_-]*party|"
+                            r"thirdpartynotices|authors|credits|contributing|patents|history|news|install|todo|code_of_conduct)\b", re.I)
+HIDDEN = 0x2 | 0x4 | 0x400   # Windows' hidden, system and reparse point (a junction, like "Application Data")
+
+
+class Progress:
+    """One line that says how far it's got: a bar that updates in place in a terminal, PROGRESS| lines that
+    index-computer.ps1 turns into Windows' own progress bar, or a plain line now and then in a job's log."""
+    def __init__(self):
+        self.mode = "ps" if os.environ.get("INDEX_PROGRESS") == "ps" else ("tty" if sys.stdout.isatty() else "log")
+        self.last = 0.0
+        self.shown = False
+
+    def show(self, phase, status, pct=None, force=False):
+        now = time.time()
+        if not force and now - self.last < (2 if self.mode != "log" else 30):
+            return
+        self.last = now
+        if self.mode == "ps":
+            print(f"PROGRESS|{phase}|{-1 if pct is None else int(pct)}|{status}", flush=True)
+            if not force and now - getattr(self, "plain", 0) >= 60:   # and a plain line a minute, for a job's log
+                self.plain = now
+                print(status, flush=True)
+        elif self.mode == "tty":
+            bar = "" if pct is None else "[" + "#" * int(pct // 5) + "-" * (20 - int(pct // 5)) + f"] {int(pct)}%  "
+            sys.stdout.write("\r\033[K" + (bar + status)[:150])
+            sys.stdout.flush()
+            self.shown = True
+        else:
+            print(status, flush=True)
+
+    def end(self):
+        if self.mode == "tty" and self.shown:
+            sys.stdout.write("\n")
+            self.shown = False
+        elif self.mode == "ps":
+            print("PROGRESS|done|100|done", flush=True)
+
+
+def hidden(entry):
+    if entry.name.startswith("."):
+        return True
+    try:
+        return bool(getattr(entry.stat(follow_symlinks=False), "st_file_attributes", 0) & HIDDEN)
+    except OSError:
+        return True
 
 
 def load_intake(path):
@@ -144,7 +200,15 @@ def tidy(tops, never):
     """Real folders only, each once, none inside another (Documents inside OneDrive is searched with OneDrive)."""
     seen, out = set(), []
     for t in tops:
-        if not t or not os.path.isdir(t):
+        if not t or not os.path.isdir(t) or os.path.islink(t):
+            continue
+        name = os.path.basename(os.path.normpath(t)).lower()
+        try:
+            if getattr(os.stat(t, follow_symlinks=False), "st_file_attributes", 0) & HIDDEN:
+                continue   # "Application Data", "Local Settings": junctions into AppData
+        except OSError:
+            continue
+        if name in GAME_DIRS or name in DEEP_SKIP or name in {"node_modules", "appdata"}:
             continue
         real = norm(os.path.realpath(t))
         if real in seen or any(real == n or real.startswith(n + os.sep) for n in never):
@@ -180,12 +244,15 @@ def main():
     tops = tidy(args.folders or default_folders(home), never)
     left = collections.Counter()
     walked = [0]
+    found = [0]
+    bar = Progress()
+    where = [0, ""]   # which top folder it's in, for the bar
 
     def keep(kind, path):
-        """intake.walk's rows, sorted into what goes in and what's only counted."""
+        """A walked row: in, or only counted."""
         walked[0] += 1
-        if walked[0] % 20000 == 0:
-            print(f"{walked[0]:,} files looked at...", flush=True)
+        pct = 100 * where[0] / max(1, len(tops))
+        bar.show("Finding your documents", f"Finding your documents: {walked[0]:,} files looked at, {found[0]:,} found so far ({where[1]})", pct)
         name = os.path.basename(path)
         ext = os.path.splitext(name)[1].lower()
         if kind == "repo":
@@ -207,6 +274,9 @@ def main():
         if ext in intake.PLAIN and ext not in KEEP_PLAIN or ext in LEAVE_RICH:
             left["machine-made text (.json, .log, .xml, web pages)"] += 1
             return False
+        if PROGRAM_PAPERS.match(os.path.splitext(name)[0]):
+            left["programs' readmes, licences and change logs"] += 1
+            return False
         try:
             st = os.stat(path)
         except OSError:
@@ -217,22 +287,78 @@ def main():
         if st.st_size == 0:
             left["empty"] += 1
             return False
+        found[0] += 1
         return True
 
-    plain_walk = intake.walk
+    skip_dirs = set(intake.SKIP_DIRS) | DEEP_SKIP | GAME_DIRS
 
     def walk(top):
-        for kind, path in plain_walk(top):
-            if keep(kind, path):
-                yield kind, path
+        """intake.walk's way (a folder with .git is one row), plus a whole computer's rules: hidden folders and
+        junctions, programs' and games' folders, and tools' and caches' folders are left out."""
+        if top in tops:
+            where[0], where[1] = tops.index(top), top
+        if os.path.isfile(top):
+            if keep(intake.kind_of(top), top):
+                yield intake.kind_of(top), top
+            return
+        todo = [(top, 0)]
+        while todo:
+            folder, depth = todo.pop()
+            try:
+                entries = sorted(os.scandir(folder), key=lambda e: e.name.lower())
+            except OSError:
+                continue
+            if any(e.name == ".git" for e in entries):
+                if keep("repo", folder):
+                    yield "repo", folder
+                continue
+            if depth > 0 and any(os.path.splitext(e.name)[1].lower() in PROGRAM_EXT for e in entries):
+                left["programs' and games' folders (left out whole)"] += 1
+                continue
+            for e in entries:
+                try:
+                    if e.is_symlink() or hidden(e):
+                        continue
+                    if e.is_dir():
+                        if e.name.lower() not in skip_dirs:
+                            todo.append((e.path, depth + 1))
+                    elif e.is_file() and e.name.lower() not in intake.SKIP_FILES and not e.name.startswith("~$"):
+                        kind = intake.kind_of(e.name)
+                        if keep(kind, e.path):
+                            yield kind, e.path
+                except OSError:
+                    continue
 
-    # Deeper skips for a whole computer, on top of the pile's own.
-    intake.SKIP_DIRS = set(intake.SKIP_DIRS) | DEEP_SKIP
+    # intake's survey and convert, quietly (their own reports would flood the window), with the bar instead.
     intake.walk = walk
+    intake.print = lambda *a, **k: None
     print("Searching: " + "; ".join(tops), flush=True)
     intake.survey(argparse.Namespace(paths=tops, upload_list=None, work=work))
-    print(f"Turning the documents into text...", flush=True)
+    bar.show("Finding your documents", f"Found {found[0]:,} documents in {walked[0]:,} files.", 100, force=True)
+    bar.end()
+    rows = intake.read_rows(work)
+    total = sum(1 for r in rows if r["kind"] == "document" and not r["dup_of"])
+    read_so_far = [0]
+    reading_started = time.time()
+    text_dir = os.path.join(work, "text")
+    real_open = open
+
+    def counting_open(path, mode="r", *a, **k):
+        # convert writes each document's text once: that's one more read
+        if "w" in mode and os.path.dirname(os.path.abspath(str(path))) == os.path.abspath(text_dir):
+            read_so_far[0] += 1
+            n = read_so_far[0]
+            per = (time.time() - reading_started) / n
+            mins = per * (total - n) / 60
+            left_text = "under a minute left" if mins < 1 else f"about {mins:.0f} minute{'s' if mins >= 1.5 else ''} left"
+            bar.show("Reading your documents", f"Reading your documents: {n:,} of {total:,}, {left_text}", 100 * n / max(1, total))
+        return real_open(path, mode, *a, **k)
+
+    intake.open = counting_open
     intake.convert(argparse.Namespace(work=work))
+    bar.show("Reading your documents", f"Read {read_so_far[0]:,} documents.", 100, force=True)
+    bar.end()
+    del intake.open
 
     # After reading: drop a document whose text holds passwords or keys, and cut a very long one.
     rows = intake.read_rows(work)

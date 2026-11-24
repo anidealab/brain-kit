@@ -1,8 +1,8 @@
 # Index my computer, on Windows. The installer runs it last when BRAIN_KIT_SETUP=1 is set (AnIdeaLab's set-up
 # command), as a file from the kit's folder, with -Root C:\AI-Brain-Link. It also runs on its own, anywhere:
 #   powershell -ExecutionPolicy Bypass -File set-up\index-computer.ps1 -Root C:\AI-Brain-Link
-#   $env:INDEX_KIT_REF='<kit commit>'; irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/<kit commit>/set-up/index-computer.ps1 | iex
-# (piped in, the folder it's run in is the root, and it downloads its Python files from the kit.)
+#   (as a runner job: download it to a file first, set $env:INDEX_KIT_REF to the kit commit, and run it with -Root;
+#   away from the kit's folder it downloads its Python files from the kit at that commit.)
 # It gets uv (Astral's, MIT/Apache) into a folder of its own, and uv a Python and MarkItDown (Microsoft's,
 # MIT), then runs index-computer.py with the brain's file-intake tool, and takes uv and the rest off again.
 # The work folder, _intake\computer in the root, holds files.txt, survey.md, index.md and text\. Nothing else on
@@ -59,8 +59,24 @@ param([string]$Root = '')
 
   Write-Output 'Searching the computer and reading the documents. A big computer takes a while.'
   $ErrorActionPreference = 'Continue'   # uv and Python write their notes to stderr, which 5.1 would treat as errors
-  & $uv run --quiet --no-project --python 3.12 --with $markitdown python -I $py --work $work --intake $intake 2>&1 | ForEach-Object { "$_" }
+  # Its PROGRESS| lines become Windows' own progress bar at the top of the window; the rest is printed as it comes.
+  $env:INDEX_PROGRESS = 'ps'
+  $ProgressPreference = 'Continue'
+  & $uv run --quiet --no-project --python 3.12 --with $markitdown python -I $py --work $work --intake $intake 2>&1 | ForEach-Object {
+    $line = "$_"
+    if ($line.StartsWith('PROGRESS|')) {
+      $p = $line.Split('|', 4)
+      if ($p[1] -eq 'done') { Write-Progress -Activity 'Reading your documents' -Completed }
+      else {
+        $pct = [int]$p[2]
+        if ($pct -ge 0) { Write-Progress -Activity $p[1] -Status $p[3] -PercentComplete ([Math]::Min(100, $pct)) }
+        else { Write-Progress -Activity $p[1] -Status $p[3] }
+      }
+    } else { $line }
+  }
   $code = $LASTEXITCODE
+  Write-Progress -Activity 'Reading your documents' -Completed
+  $ProgressPreference = 'SilentlyContinue'
   Remove-Item -LiteralPath $tools -Recurse -Force -ErrorAction SilentlyContinue
   if ($code -ne 0) { Write-Output "The index stopped (exit $code). What went wrong is above."; exit $code }
   Write-Output "The work folder: $work"
