@@ -180,6 +180,10 @@ try {
   $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) $lnkName))
   $lnk.TargetPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
   $lnk.Arguments = '-NoExit -ExecutionPolicy Bypass -File "' + $watch + '"'
+  # AnIdeaLab's mark as its icon (the profile picture's, 24 Nov 2026), not PowerShell's
+  $ico = Join-Path $Root 'Tools\anidealab.ico'
+  Copy-Item (Join-Path $PSScriptRoot 'anidealab.ico') $ico -Force -ErrorAction SilentlyContinue
+  if (Test-Path $ico) { $lnk.IconLocation = "$ico,0" }
   $lnk.Save()
 
   Write-Host ''
