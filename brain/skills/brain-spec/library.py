@@ -44,7 +44,7 @@ MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", 
 FINISHED = {"done", "dropped", "superseded", "graduated"}
 STATUSES = {
     "tasks": {"open", "doing", "waiting", "done", "dropped"},
-    "decisions": {"current", "superseded"},
+    "decisions": {"current", "partly-superseded", "superseded"},
     "ideas": {"raw", "researching", "parked", "graduated", "dropped"},
     "ventures": {"current", "parked", "done"},
     "handoffs": {"open", "picked-up", "done"},

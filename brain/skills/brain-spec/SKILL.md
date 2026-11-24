@@ -1,6 +1,6 @@
 ---
 name: brain-spec
-description: "How to add to or change this second brain so it stays cohesive and cheap for agents to read: the core, the skills library and the knowledge library's shelves; whether something is a skill or knowledge; cards and tags; the indexes and scripts; tasks and hand-offs; what to save; writing notes; skills, lessons and routines; and checks before you push. Use before making or moving any note, task, decision, idea, skill or routine, or when unsure where something goes."
+description: "How to add to or change this second brain so it stays cohesive and cheap for agents to read: the core, the skills library and the knowledge library's shelves; whether something is a skill or knowledge; cards and tags; the indexes and scripts; tasks and hand-offs; what to save and where, with what goes wrong otherwise; the owner's answers and decisions; a project's own repo; writing notes; skills, lessons and routines; and checks before you push. Use before making or moving any note, task, decision, idea, skill or routine, or when unsure where something goes."
 ---
 
 # The brain spec
@@ -35,7 +35,7 @@ Beside them: `README.md` (the owner's front door), `.github/` (the Actions), `.o
 - **The working shelves are fixed. Subjects grow,** and so does everything inside a shelf. A new subject, project or area starts as one note, and becomes a folder with its own `README.md` once it has several.
 - **Every folder in `knowledge/` has a `README.md`:** its card, a few hand-written lines, and the index between `<!-- index:start -->` and `<!-- index:end -->`, which the script fills.
 - **Old history goes in a `history/` sub-shelf** of the project or area it's about, marked `status: done`. Obsidian hides every `history/` folder. Current notes don't link into `history/`: say where a retired note is in words.
-- **A new project** is a note (later a folder) in `ventures/`: what it is, its goal in the owner's words, where it stands, its code repo and its look; decisions, tasks and people about it are tagged with its name. Its "Where it stands" is short, dated and what's true now, linking the notes that hold the detail; the weekly tidy-up rewrites it each week the project moves ([its Part 4](../brain-audit/SKILL.md#4-the-report)).
+- **A new project** is a note (later a folder) in `ventures/`: what it is, its goal in the owner's words, where it stands, its code repo and its look; decisions, tasks and people about it are tagged with its name. Its "Where it stands" is short, dated and what's true now, a few lines linking the notes and tasks that hold the detail rather than copying them; the weekly tidy-up rewrites it each week the project moves ([its Part 4](../brain-audit/SKILL.md#4-the-report)).
 
 ## Cards
 Every note starts with a card in its front matter, which Obsidian shows as the note's properties:
@@ -51,7 +51,7 @@ updated: {KIT_DATE}
 |---|---|
 | `about` | One line, under 250 characters: what's in the note and **when you'd read it**. It's the line an agent picks by. Always in double quotes, with no double quotes or backslashes inside. |
 | `tags` | The projects, areas or subjects it's about, by their names. Optional. |
-| `status` | Tasks: `open`, `doing`, `waiting`, `done` or `dropped`. Decisions: `current` or `superseded`. Ideas: `raw`, `researching`, `parked`, `graduated` or `dropped` (turned down). Ventures: `current`, `parked` or `done`. Hand-offs: `open`, `picked-up` or `done`. Anything else: `current` (the default) or `done`. |
+| `status` | Tasks: `open`, `doing`, `waiting`, `done` or `dropped`. Decisions: `current`, `partly-superseded` or `superseded`. Ideas: `raw`, `researching`, `parked`, `graduated` or `dropped` (turned down). Ventures: `current`, `parked` or `done`. Hand-offs: `open`, `picked-up` or `done`. Anything else: `current` (the default) or `done`. |
 | `updated` | When someone last made sure the note and its card are true, like `{KIT_DATE}`. |
 | `holder` | Tasks only: `owner`, `open`, or the session link of the agent holding it. |
 | `parent` | Tasks only, optional: the file name of the task it came from. |
@@ -59,7 +59,7 @@ updated: {KIT_DATE}
 | `before` | Hand-offs only, optional: the file name of the hand-off it carries on from. |
 | `due` | Optional: a date. |
 
-The file name is the note's name, in lower-case words with hyphens. A decision's file name starts with its date (`{KIT_ISO}-...`). The body is free: a `# Title`, then dated, sourced writing.
+The file name is the note's name, in lower-case words with hyphens. A decision's file name starts with its date (`{KIT_ISO}-...`), apart from a project's running `answers.md`. The body is free: a `# Title`, then dated, sourced writing.
 
 ## The indexes and the scripts
 All in this folder, plain Python 3 with nothing to install:
@@ -104,25 +104,51 @@ Two kinds of hand-off:
 **Without an agent tool,** hand a big piece to a fresh session with a brief, or a task note of its own, to start from, or do the steps yourself and keep long output short: the tail of a log, the screenshots that matter, the part of a file you need.
 
 ## Saving knowledge
-- **The test:** would an agent starting cold next month need this, and would it be hard to get again? If yes, save it.
-- **Don't save** what's already in code or git history, what a quick search would find again, or chatter.
-- **Update before you add.** Check the shelf's index first (or `library.py find`). If a card already covers it, update that note.
-- **One note per thing:** one person, one decision, one project.
-- **When:** save the owner's decisions straight away, so a dropped session can't lose them. Save everything else when a task closes, and whenever the owner says "remember this".
-- **A decision** gets its own note: its card, then "**Decided** <date>, by <who, where>", the decision with the owner's words in quotes, and what it means in practice. When it changes, write the new note and mark the old one `status: superseded` with a line linking the new one. Never delete a decision. A rule every agent must follow also gets one line in the core.
+The brain is the only memory agents share. A chat ends, a task closes, and next month a fresh agent starts cold: it reads the core, the indexes, and the few notes their cards point it to. What isn't where it looks doesn't exist for it, and what it finds, it acts on, so a stale note does more harm than a missing one. So each thing is kept once, in the note whose job it is, and that note says what's true now.
+
+**What goes wrong, and what to do instead.** Each of these has happened in brains a few weeks old.
+- **Research left in a task.** An agent compares five suppliers and writes it into the task's Progress. The task closes and moves to `history/`, and the next job that needs a supplier never sees it and pays for the research again. *Instead:* the comparison becomes a note on the project's shelf (or in `subjects/` if any project could use it) the day it's done, and the task links it in a line.
+- **The owner's answer left in a task.** Mid-build the owner says "one-off price, no subscriptions", and it goes under the task's Decisions. The next agent to price something checks the decisions shelf, finds nothing, and proposes a subscription. *Instead:* it goes on the decisions shelf straight away, in the owner's words: a line in the project's running decisions note, or a note of its own for a big choice (below). The task links it.
+- **A lesson left in Watch-outs.** "The export times out past 500 rows: split the file first" sits in a task's Watch-outs. The next export, for another project, reads the skill, not a closed task, and hits the same wall. *Instead:* a lesson about how to do a kind of job goes in that skill's `LESSONS.md` ([below](#how-skills-learn)). Only what's about this one job stays in Watch-outs.
+- **Status stacked, or copied.** Each chat writes a new "where it stands" above the last and leaves the old ones, and another copies it into the project's note too. A month on, the task is 100 KB of old next steps that all read as current, every pick-up starts with a long read, and the copies disagree. *Instead:* status is rewritten in place, in one note: the task's while the job runs. The project's "Where it stands" gives the state in a few lines and links the task.
+- **A replaced plan still reading as current.** The owner changes the order of work and a new decision says so, but the project's strategy note and the idea it grew from still give the old order, and the next agent builds to it. *Instead:* replacing anything includes searching for what cites it (its file name, the old rule's key words) and fixing each hit. A graduated idea becomes a short pointer to its project.
+- **A project's code, site or media in the brain.** A website, the script that runs the business, a folder of video go into `knowledge/`. The repo swells (every session clones its whole history, and deleting a file later doesn't shrink it), the code is out of sight of skills and gets written again, and the site's deploy key sits beside the owner's private notes. *Instead:* a project with code gets its own repo ([below](#a-project-with-code-gets-its-own-repo)). The brain keeps what the project is, where it stands and what the owner decided, and links the repo.
+
+**The test:** would an agent starting cold next month need this, and would it be hard to get again? Then save it where that agent will look. Don't save what's in code or git history, what a quick search finds again, or chatter.
+
+| It's | It goes |
+|---|---|
+| Research, findings, numbers, how something works | A note on the project's shelf, or `subjects/`, as soon as it's found |
+| The owner's answer or choice | The decisions shelf, straight away, in their words |
+| How to do a kind of job better | The skill's `LESSONS.md` |
+| Something that slowed you down | The [friction log](../../knowledge/ideas/friction-log.md); friction with a project's own code goes in its repo's `CLAUDE.md` |
+| Where a job stands | Its task note, rewritten in place |
+| Code, a site, media | The project's own repo, or the PC |
+
+- **Update before you add.** Check the shelf's index (or `library.py find`) first; if a card covers it, update that note. One note per thing: one person, one project, one subject.
+- **The owner's answers** go in the project's running decisions note, `knowledge/decisions/<project>/answers.md` (`the-brain/answers.md` for the brain itself), as they're given: one dated line each, "**{KIT_DATE}:** "their words" (where it was said)", and what it means if that isn't plain. Make the note the first time; its card says it's the project's running answers. An answer that changes keeps its line, marked "replaced" with a link to the new one; once the note passes about 10 KB, the weekly tidy-up moves replaced lines to the folder's `history/`. A task's Decisions part links the lines, never holds them.
+- **A big choice,** one other notes will cite on its own (a standing rule, a change of direction, a spend), gets a note of its own, named for its date (`{KIT_ISO}-...`): its card, then "**Decided** <date>, by <who, where>", the owner's words in quotes, and what it means in practice. A line in `answers.md` that turns out to be one is promoted: the note is made and the line links it. A rule every agent must follow also gets one line in the core.
+- **When a decision changes,** write the new one and mark the old note `superseded`, or `partly-superseded` with a line saying which part still stands, with a link to the new one. Then search the brain for the old note's file name and the old rule's words, and fix each note that still gives it. Never delete a decision.
 - **A rule that limits what agents can do** (a "never", an "only", an "asks first"), anywhere outside the core: write it where it does its job, add a row to [the rules table](../../knowledge/decisions/rules.md) marked "not checked yet". No need to mention it then: the monthly deep audit asks about it. It's kept only once they confirm it: then the row says so with their words, and "(confirmed: the rules table)" goes beside the rule. The monthly deep audit asks them about any still unchecked, so an agent's guess never stands as a rule.
-- **An idea** gets its own note: what it is, why it might be worth it and what it would take, its status and where it came from.
-- **A blocker that slowed you down** is one row in the [friction log](../../knowledge/ideas/friction-log.md).
+- **An idea** gets its own note: what it is, why it might be worth it and what it would take, its status and where it came from. When it graduates, its detail moves into the project's notes and the idea is cut to a few lines and a link, marked `graduated`.
+- **When:** the owner's answers and choices straight away, so a dropped session can't lose them; findings and lessons as they're found, not when the task closes; anything else when the owner says "remember this".
+
+### A project with code gets its own repo
+A website, an app, a game, scripts that run the business, a data pipeline: once a project has code, it gets a repo of its own, private by default, made by the owner at [github.com/new](https://github.com/new) or by an agent that can make repos.
+- **The project's repo holds** the code, its build and deploy workflows (with that repo's own secrets), its media if it needs them to run, and a `CLAUDE.md` saying how the code works, how to build, run and test it, and what to watch for with its tools.
+- **The brain keeps** the project's note (what it is, the goal in the owner's words, where it stands, and a link to the repo), the owner's decisions, its tasks, people and research. A session that works on the code has both repos attached.
+- **Big media** that isn't the project's own (raw footage, recordings, exports) goes on the PC under `C:\AI-Brain-Link\`, with a line in the note saying where.
+- **Moving a project out** of the brain: copy its folder to the new repo, check it builds there, delete it from the brain and fix the links (`move.py` lists the paths in plain text). The old files stay in the brain's git history; dropping them needs a rewrite and a force push, which is the owner's call.
 
 ## Writing notes
 - **Date every fact and say where it came from:** who said it and when, or which file. Mark guesses as guesses. Dates are written like "{KIT_DATE}".
-- **When something changes,** update the note and mark the old entry superseded rather than deleting it.
+- **When something changes,** update the note: rewrite what's now wrong, keeping a dated line of what it said if the change matters, and fix the notes that repeat it.
 - **Plain English,** short full sentences. Use the owner's own words for what they want.
 - **Link notes with relative Markdown links,** like the ones in this note, so they work for agents, on GitHub and in Obsidian's graph. To link a section, use `note.md#heading`, in lower case with hyphens for spaces. Renaming a heading breaks those links, so search for the old anchor first; `check_links.py` reports any left.
 - **Whatever a note points to, any agent can get:** save it in this repo, a project's repo or on the PC under `C:\AI-Brain-Link\`, and say where. Never make a Claude artifact, a preview that lives only in the chat, or anything else only one AI app's account or one chat can open ([the starting rules](../../knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)): another agent, or the owner's next chat, can't reach it, and the work is lost. A page for the owner is an HTML file saved in one of those places. **The one in-chat use** is handing the owner a copy of a file already saved in one of them, as a download in the chat (next line); the chat's copy is never the only one.
 - **Hand the owner a file in the chat.** When a job ends with a file for the owner (one you made, found or saved), send it with your app's tool for sending files, so it shows as a download in the chat (in Claude Code, `SendUserFile`), and where the brain is on their PC, give its path there too (`C:\AI-Brain-Link\...`). Never a GitHub link instead: it opens a page of code, not the file, and is no use on a phone or to someone new to GitHub; give one only if they ask. The file is still kept where any agent can get it, as above: the download is how it's handed over, not where it's kept. The app can send only files on the session's own computer, so a file on the owner's PC comes over through the runner first (the `artifact` input, [my-pc](../my-pc/SKILL.md)). If it's too big to send, or the app has no tool for it, give the path and say why.
 - **Big or binary files** (images, PDFs, video, zips) don't go in the brain: keep them on the PC under `C:\AI-Brain-Link\`, and say in the note where they are, since git keeps every version of a file and the brain would grow slow to sync. One exception: a file the owner sends to the [upload point](../upload-point/SKILL.md) that becomes a note, up to about 25 MB, stays next to its note as the raw original, so what the note came from is kept. Keys go in neither.
-- **Code** for a project lives in the project's own repo, with its own `CLAUDE.md`.
+- **Code** for a project lives in the project's own repo, with its own `CLAUDE.md` ([above](#a-project-with-code-gets-its-own-repo)).
 
 ## A skill
 - **Look for one before writing one:** [find-skills](../find-skills/SKILL.md) says where, and how to copy one in.

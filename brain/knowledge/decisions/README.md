@@ -4,7 +4,12 @@ updated: {KIT_DATE}
 ---
 # Decisions
 
-One note per decision, named for its date. Each sits on the sub-shelf of the project or area it mainly belongs to, with tags for any others. When a decision changes, the old note gets `status: superseded` and a link to the new one. Never delete a decision. Save the owner's decisions straight away, so a dropped session can't lose them.
+What the owner decided, on a sub-shelf per project or area, with tags for any others. Save the owner's answers straight away, so a dropped session can't lose them: agents check this shelf before acting, and an answer left in a task isn't found.
+- **The owner's answers** as they're given go in the sub-shelf's running note, `answers.md`: one dated line each, in their words. A changed answer keeps its line, marked replaced with a link to the new one.
+- **A big choice** that other notes will cite on its own gets a note of its own, named for its date.
+- **When a decision changes,** the old note gets `status: superseded` (or `partly-superseded`, saying which part still stands) and a link to the new one, and the notes that still give the old rule are fixed. Never delete a decision.
+
+How, with examples: [the brain spec](../../skills/brain-spec/SKILL.md#saving-knowledge).
 
 <!-- index:start -->
 - [the-brain/](the-brain/README.md): Brain-wide decisions: the owner's rules and defaults for every agent, and how the brain runs. Read before changing how the brain works or setting a rule for everyone. [the-brain]
