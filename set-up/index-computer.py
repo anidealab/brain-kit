@@ -13,6 +13,9 @@ Out, and only counted, never listed by name: photos, video, audio, archives, app
 anything whose name looks like passwords or keys (passwords.xlsx, recovery codes, .env, .pem, .kdbx); a
 document whose text looks like it holds them (a private key, an API key, a list of passwords) is dropped
 after it's read; the brain's own folder, the runner's, browsers' and the system's folders.
+It also writes map.md, a map of the computer from the same walk, for the brain's note on it: each drive's space, the
+folders searched and the ones inside them two deep, with what's in each (documents, photos, video, code) and when it
+last changed, whatever its age; the programs' and games' folders; the code projects; the cloud drives not searched.
 Nothing on the computer is changed, moved or copied: only the work folder is written.
 
     python index-computer.py --work <work folder> [--intake <intake.py>] [--months 12] [folders...]
@@ -28,6 +31,7 @@ import importlib.util
 import os
 import platform
 import re
+import shutil
 import string
 import sys
 import time
@@ -37,7 +41,7 @@ LEAVE_RICH = {".html", ".htm", ".ipynb"}                     # saved web pages a
 MAX_CHARS = 200_000                                          # one document's text past this is cut, with a line saying so
 
 # Home folders that are never the owner's documents, or are photos, music and video.
-HOME_SKIP = {"appdata", "library", "pictures", "music", "videos", "movies", "applications", "public", "saved games",
+HOME_SKIP = {"appdata", "library", "applications", "public", "saved games",
              "contacts", "favorites", "links", "searches", "3d objects", "ai-brain-link", "actions-runner",
              "anaconda3", "miniconda3", "go", "scoop", "ansel", "intelgraphicsprofiles", "creative cloud files",
              # cloud drives' own folders: a later step of their own (reading them downloads every file)
@@ -219,6 +223,59 @@ def tidy(tops, never):
     return out
 
 
+KIND_WORDS = {"document": "documents", "image": "photos and pictures", "video": "videos", "audio": "audio",
+              "code": "code files", "archive": "archives", "other": "other files"}
+
+
+def write_map(work, tops, fmap, programs, repos, clouds, today):
+    """map.md: where things are on the computer, from the walk."""
+    def size(b):
+        for unit, step in (("TB", 1 << 40), ("GB", 1 << 30), ("MB", 1 << 20), ("KB", 1 << 10)):
+            if b >= step:
+                return f"{b / step:.1f} {unit}"
+        return f"{b} bytes"
+
+    def line(st):
+        kinds = ", ".join(f"{n:,} {KIND_WORDS.get(k, k)}" for k, n in st["kinds"].most_common() if n)
+        newest = datetime.date.fromtimestamp(st["newest"]).isoformat() if st["newest"] else "never"
+        return f"{sum(st['kinds'].values()):,} files, {size(st['bytes'])}: {kinds or 'empty'}; last changed {newest}"
+
+    out = [f"# Map of {os.environ.get('COMPUTERNAME') or platform.node()}, {today}", "",
+           "Where things are on this computer, from the index's walk: every file counted, whatever its age (the index",
+           "itself only read the documents of the past year). Hidden folders, apps' and the system's folders aren't in it.", "", "## Drives"]
+    drives = windows_drives() + ([os.environ.get("SystemDrive", "C:") + "\\"] if os.name == "nt" else ["/"])
+    for d in sorted(set(drives)):
+        try:
+            u = shutil.disk_usage(d)
+            out.append(f"- `{d}`: {size(u.free)} free of {size(u.total)}")
+        except OSError:
+            pass
+    out += ["", "## Folders", "Each folder searched, then the biggest folders inside it, two deep."]
+    for top in tops:
+        mine = {k: v for k, v in fmap.items() if k[0] == top}
+        if not mine:
+            continue
+        total = {"kinds": collections.Counter(), "bytes": 0, "newest": 0}
+        for st in mine.values():
+            total["kinds"].update(st["kinds"]); total["bytes"] += st["bytes"]; total["newest"] = max(total["newest"], st["newest"])
+        out += ["", f"### `{top}`", line(total)]
+        subs = sorted(((k[1], v) for k, v in mine.items() if k[1]), key=lambda kv: -kv[1]["bytes"])
+        for sub, st in subs[:25]:
+            out.append(f"- `{sub}`: {line(st)}")
+        if len(subs) > 25:
+            out.append(f"- ...and {len(subs) - 25} more folders")
+    if repos:
+        out += ["", "## Code projects (folders with .git)"] + [f"- `{r}`" for r in sorted(repos)]
+    if programs:
+        out += ["", "## Programs and games (left out of the index)"] + [f"- `{p}`" for p in sorted(programs)[:80]]
+        if len(programs) > 80:
+            out.append(f"- ...and {len(programs) - 80} more")
+    if clouds:
+        out += ["", "## Cloud drives found, not searched"] + [f"- `{c}`" for c in sorted(clouds)]
+    with open(os.path.join(work, "map.md"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(out) + "\n")
+
+
 def main():
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -296,6 +353,18 @@ def main():
         return True
 
     skip_dirs = set(intake.SKIP_DIRS) | DEEP_SKIP | GAME_DIRS
+    fmap = collections.defaultdict(lambda: {"kinds": collections.Counter(), "bytes": 0, "newest": 0})
+    programs, repos = [], []
+    clouds = [os.path.join(home, n) for n in (os.listdir(home) if os.path.isdir(home) else [])
+              if n.lower() in {"dropbox", "google drive", "my drive", "icloud drive", "iclouddrive", "box", "box sync", "mega", "pcloud drive"}]
+
+    def mapped(top, folder, kind, st):
+        rel = os.path.relpath(folder, top)
+        parts = [] if rel == "." else rel.split(os.sep)
+        st_ = fmap[(top, os.sep.join(parts[:2]))]
+        st_["kinds"][kind] += 1
+        st_["bytes"] += st.st_size
+        st_["newest"] = max(st_["newest"], st.st_mtime)
 
     def walk(top):
         """intake.walk's way (a folder with .git is one row), plus a whole computer's rules: hidden folders and
@@ -314,11 +383,13 @@ def main():
             except OSError:
                 continue
             if any(e.name == ".git" for e in entries):
+                repos.append(folder)
                 if keep("repo", folder):
                     yield "repo", folder
                 continue
             if depth > 0 and any(os.path.splitext(e.name)[1].lower() in PROGRAM_EXT for e in entries):
                 left["programs' and games' folders (left out whole)"] += 1
+                programs.append(folder)
                 continue
             for e in entries:
                 try:
@@ -327,8 +398,11 @@ def main():
                     if e.is_dir():
                         if e.name.lower() not in skip_dirs:
                             todo.append((e.path, depth + 1))
+                        elif e.name.lower() in GAME_DIRS:
+                            programs.append(e.path)
                     elif e.is_file() and e.name.lower() not in intake.SKIP_FILES and not e.name.startswith("~$"):
                         kind = intake.kind_of(e.name)
+                        mapped(top, folder, kind, e.stat())
                         if keep(kind, e.path):
                             yield kind, e.path
                 except OSError:
@@ -403,6 +477,8 @@ def main():
     out += ["", "## Left out (counted, not listed)"] + [f"- {n:,} {why}" for why, n in left.most_common()]
     out += ["", "Every document in is in `files.txt`, with its text in `text/`; `survey.md` has them by folder and kind.",
             "Next: the file-intake skill, from its step 2, with this work folder."]
+    out += ["", "`map.md` is a map of the computer from the same walk, for the brain's note on it."]
+    write_map(work, tops, fmap, programs, repos, clouds, intake.today())
     with open(os.path.join(work, "index.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(out) + "\n")
     print("\n".join(out))
