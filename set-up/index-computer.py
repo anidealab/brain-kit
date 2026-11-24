@@ -232,6 +232,11 @@ def main():
     ap.add_argument("--months", type=int, default=12)
     args = ap.parse_args()
     started = time.time()
+    # PDF readers' notes ("should not allow text extraction", font warnings) would fill the window: errors only.
+    import logging
+    import warnings
+    logging.disable(logging.WARNING)
+    warnings.filterwarnings("ignore")
     intake = load_intake(args.intake)
     home = os.path.expanduser("~")
     since = time.time() - args.months * 30.44 * 86400
