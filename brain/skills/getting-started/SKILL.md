@@ -45,7 +45,7 @@ Don't ask their Claude plan (Claude Code needs Pro or above, so it's at least th
 **A brain from the template** has nothing on their computer yet. **Don't offer the extras here:** go on to step 5, and offer them once the brain is set up (step 8), as the first small job. Come back to this step then, or whenever they ask, or whenever a job needs their computer and [devices](../../knowledge/systems/devices.md) has no computer of theirs (the [my-pc skill](../my-pc/SKILL.md#not-set-up-yet)).
 
 When it's time, ask, in one message, whether they'd like either extra, and which computer it would go on: a Windows PC, a Mac, or Linux. Take their answer the first time. You can't see their computer from a cloud session (its start line says it's a cloud session), so ask rather than guess.
-- **Their computer** (the runner): from any chat, even on their phone, they can have you do things on their PC or Mac: make a video, sort out a folder, set up a program. Each job shows in a jobs window on their computer while it runs. It suits a computer that's usually on.
+- **Their computer** (the runner): from any chat, even on their phone, they can have you do things on their PC or Mac: make a video, sort out a folder, set up a program. Each job shows in a jobs window on their computer while it runs. It works best on a computer that's usually on, but it doesn't have to be: a job asked for while it's off waits, and runs once it's back on and signed in (within a day).
 - **Obsidian:** a free app that shows the brain as a map on their computer, where they can read and edit their notes.
 - **How it goes,** in a line: one command to paste and a few yes or no questions, then it sets itself up, once. Don't give a time.
 

@@ -9,7 +9,9 @@ is ignored), or `cloud` for a cloud session (Claude Code on the web sets CLAUDE_
 
   python3 skills/brain-spec/devices.py here      which computer this is (the session-start
                                                  script prints it, in one line)
-  python3 skills/brain-spec/devices.py status    which computers are on now: about a minute
+  python3 skills/brain-spec/devices.py status    which computers are on now: about a minute,
+                                                 seconds when none is set up
+                                                 (--ping: ping my-pc and my-mac anyway)
   python3 skills/brain-spec/devices.py list      the table as this script reads it
 
 How "status" works, with no key of its own: it starts the "Which devices are on" workflow
@@ -21,6 +23,13 @@ name, from the jobs GitHub lists as in progress. Outside GitHub it calls GitHub 
 gh command line; inside a GitHub Actions job (the workflow's "check" mode, for an agent with
 only a run-workflow tool) through the job's own GITHUB_TOKEN. The self-hosted jobs cost no
 Actions minutes; the check mode costs one or two of GitHub's minutes each time.
+
+Before pinging, it asks GitHub which runners the repo has (one quick call, with the owner's own gh
+sign-in). A label no runner has can't answer, so it isn't pinged: a brain with no runner at all gets
+its answer in a second or two instead of a minute, and a row whose runner is gone shows as not set up.
+Where GitHub won't list them (a job's token, or a cloud session, whose proxy refuses the call),
+it pings as before, unless nothing points to a computer at all: no row in devices.md with a runner,
+and no installer's commit in git log. Then it says none is set up, at once. --ping pings anyway.
 
 A runner that works but has no row (the owner ran an install command and no session recorded it)
 would otherwise look like no runner at all. So "status" also pings the kit's own labels, my-pc and
@@ -345,7 +354,20 @@ def registered(gh):
     return out
 
 
-def status(wait=60, ref="main"):
+INSTALLER_COMMITS = ("runner is set up", "Added the Mac parts", "Setup report for AnIdeaLab")
+
+
+def installer_commits():
+    """True if git log has a commit an installer makes when it sets up a computer (or git can't say)."""
+    try:
+        out = subprocess.run(["git", "log", "--oneline", "-500"] + [f"--grep={g}" for g in INSTALLER_COMMITS],
+                             capture_output=True, text=True, timeout=10, cwd=str(ROOT))
+    except (OSError, subprocess.SubprocessError):
+        return True
+    return out.returncode != 0 or bool(out.stdout.strip())
+
+
+def status(wait=60, ref="main", ping=False):
     rows = read_devices()
     if rows is None:
         print(f"No {NOTE_REL} in this brain, so there are no computers to check.")
@@ -358,17 +380,36 @@ def status(wait=60, ref="main"):
     gh = GitHub(repo)
     listed = {label for _, label in targets}
     known = registered(gh)
-    extras = [l for l in KIT_LABELS if l not in listed]
-    extras += [l for l in (known or {}) if l not in listed and l not in extras]
+    unset = []
+    if known is not None:
+        # GitHub listed every runner the repo has, so a label none of them has can't take a ping:
+        # say so at once rather than wait a minute for nothing (a brand-new brain has none at all).
+        unset = [(n, l) for n, l in targets if l not in known]
+        targets = [(n, l) for n, l in targets if l in known]
+        extras = [l for l in known if l not in listed]
+    else:
+        extras = [l for l in KIT_LABELS if l not in listed]
     targets += [(None, label) for label in extras]
-    busy = jobs_now(gh)
+    if known == {} and not unset:
+        print(f"No runner is set up for this brain: GitHub lists none for {repo}, and {NOTE_REL} has no computer "
+              f"with one. So none of the owner's computers is connected yet. A cloud session is always on.")
+        return 0
+    if not listed and not known and not ping and not os.environ.get("GITHUB_ACTIONS") and not installer_commits():
+        # A cloud session can't list runners (its proxy refuses), so without this a brand-new brain waits
+        # a minute on pings nobody can answer. The installers commit when they set a computer up.
+        print(f"No computer is set up for this brain yet: {NOTE_REL} has none with a runner, and git log has no "
+              f"installer's commit ({', '.join(INSTALLER_COMMITS)}). Tell the owner now; a cloud session is always on. "
+              f"If they say they've run the install command, check again with: devices.py status --ping (up to a minute).")
+        return 0
+    busy = jobs_now(gh) if targets else {}
     started = datetime.now(timezone.utc).replace(microsecond=0)
     for _, label in targets:
         gh.call("POST", f"actions/workflows/{WORKFLOW}/dispatches", {"ref": ref, "inputs": {"label": label}})
-    print(f"Pinging {', '.join(l for _, l in targets)}; waiting up to {wait} s for each to answer...", flush=True)
+    if targets:
+        print(f"Pinging {', '.join(l for _, l in targets)}; waiting up to {wait} s for each to answer...", flush=True)
     found = {}
     deadline = time.time() + wait
-    while True:
+    while targets:
         runs = gh.call("GET", f"actions/workflows/{WORKFLOW}/runs?event=workflow_dispatch&per_page=50").get("workflow_runs", [])
         for _, label in targets:
             for run in runs:  # newest first
@@ -438,6 +479,9 @@ def status(wait=60, ref="main"):
                 if waiting:
                     now += f"; {len(waiting)} job(s) waiting for it"
         lines.append(f"| {name} | `{label}` | {now} | {details.replace('|', '/')} |")
+    for name, label in unset:
+        lines.append(f"| {name} | `{label}` | **not set up**: GitHub lists no runner with this label for this brain "
+                     f"(never installed, or removed) | |")
     if len(lines) == 2:
         print(f"No computer in {NOTE_REL} has a runner, and no runner labelled {' or '.join(KIT_LABELS)} answered, "
               f"so none is set up or on. A cloud session is always on.")
@@ -474,7 +518,7 @@ def main(argv):
             wait = int(args[args.index("--wait") + 1])
         ref = args[args.index("--ref") + 1] if "--ref" in args else "main"
         try:
-            return status(wait, ref)
+            return status(wait, ref, ping="--ping" in args)
         except RuntimeError as e:
             print(f"The check couldn't talk to GitHub: {e}\nInstead, start the workflow \"Which devices are on\" "
                   f"({WORKFLOW}) on main with the label left empty, and read its log.")
