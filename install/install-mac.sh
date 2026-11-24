@@ -522,7 +522,7 @@ log "== The installer started, from $brain (${macos:+macOS $macos}${macos:-$(una
 if [ -z "$check" ] && [ -n "$macos" ] && older_than "$macos" "$macos_min"; then
   die "This Mac has macOS $macos, and the setup needs macOS $macos_min (Monterey) or newer: GitHub's command line doesn't run on older ones. Update macOS (Apple menu, System Preferences, Software Update), then paste the same command again. Your brain still works in the browser without this Mac."
 fi
-say 'Setting up your second brain. It takes about 10 minutes, mostly installing. Questions show in yellow.'
+say "Connecting this Mac to your brain: the runner and Obsidian, if you'd like them. Questions show in yellow."
 
 # AnIdeaLab's terms of use, before anything is installed or made. No default: Enter alone asks again, V opens
 # the terms in the browser, and anything else but Y stops here.

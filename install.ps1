@@ -13,7 +13,7 @@
   $zip = Join-Path $env:TEMP 'brain-kit-download.zip'
   $kit = Join-Path $env:TEMP 'brain-kit-download'
   Write-Host ''
-  Write-Host "Downloading the AnIdeaLab brain kit..." -ForegroundColor Cyan
+  Write-Host "Getting the setup for your brain's extras: the runner and Obsidian..." -ForegroundColor Cyan
   try {
     if (Test-Path -LiteralPath $kit) { Remove-Item -LiteralPath $kit -Recurse -Force -ErrorAction SilentlyContinue }
     if (Test-Path -LiteralPath $kit) { $kit = $kit + '-' + (Get-Random) }

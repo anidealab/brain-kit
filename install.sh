@@ -15,7 +15,7 @@ main() {
   local tmp="${TMPDIR:-/tmp}"
   local tgz="${tmp%/}/brain-kit-download.tar.gz"
   local kit="${tmp%/}/brain-kit-download"
-  printf '\n\033[36m%s\033[0m\n' "Downloading the AnIdeaLab brain kit..."
+  printf '\n\033[36m%s\033[0m\n' "Getting the setup for your brain's extras: the runner and Obsidian..."
   rm -rf "$kit" 2>/dev/null
   if [ -e "$kit" ]; then kit="$kit-$$"; fi
   local installer=""
