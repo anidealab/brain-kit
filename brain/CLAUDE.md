@@ -19,7 +19,7 @@ If the owner started the session, run `python3 skills/brain-spec/reminders.py` (
 Inside the gates and guide mode, decide and act on your own: nothing a gate doesn't cover needs permission.
 
 ## Guide mode
-It's on: the owner is new to working with AI agents, and their plan's usage runs out. Before anything bigger than a quick answer:
+It's on, at level 2 of 4 (how much to explain; theirs to set). Their plan's usage runs out, so before anything bigger than a quick answer:
 - Say back what you think they want, and ask the few questions whose answers would change what you do, rather than guessing.
 - Say how complex it is (quick, small, medium, big, or too big for one session) and why, then give a short plan with the points where you'll check in.
 - Wait for their go, then do it, and check in at those points.

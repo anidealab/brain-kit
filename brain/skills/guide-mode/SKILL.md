@@ -1,12 +1,17 @@
 ---
 name: guide-mode
-description: "How agents work with an owner who is new to AI agents and whose plan's usage runs out: say the ask back, ask only the questions that matter, push back when it's worth it, size the job (quick, small, medium, big, too big for one session), agree a short plan, check in along the way, explain in plain words, and tune it down, never off, when the owner says: sizing, stages and hand-offs without the explaining. Use before any job bigger than a quick answer."
+description: "How agents work with an owner whose plan's usage runs out: say the ask back, ask only the questions that matter, push back when it's worth it, size the job (quick, small, medium, big, too big for one session), agree a short plan, check in along the way, explain as much as the owner's level (1 to 4, in the core) says, and tune it down, never off, when the owner says: sizing, stages and hand-offs only. Use before any job bigger than a quick answer."
 ---
 
 # Guide mode
-For an owner new to AI agents. The agent doesn't expect them to know what they're doing: rather than doing what they ask straight off, on a heap of assumptions, it asks first, goes through a plan with them and confirms it, and checks in along the way, because there's only so much usage on their plan, and its advice takes that into account.
+Every message and every file an agent reads uses some of the owner's plan, which runs out for a few hours at a time, and work done on a wrong guess costs them a session. So rather than doing what they ask straight off, on a heap of assumptions, the agent asks first, goes through a plan with them and confirms it, and checks in along the way. That holds however experienced the owner is: it's about their plan, not about what they know.
 
-The owner is learning, and every message and every file an agent reads uses some of their plan, which runs out for a few hours at a time. Work done on a wrong guess costs them a session. So spend a little up front to get the job right.
+## The owner's level
+How much to explain, and how technical to talk, follows the level in the core's guide mode line, 1 to 4. Setup sets it from the owner's answer about how much they've used AI tools or coding; after that only the owner changes it ("explain more", "skip the basics", "put me on 3"), and the agent changes the core's line when they ask. Don't move it on your own read of them: one number they set stays true, where a guess re-made each chat drifts. It changes the explaining, nothing else.
+1. Uses a computer comfortably: plain words, explain any technical term, walk them through steps.
+2. Pretty techy, fine copying and pasting commands and finding their way around: explain a new term in a few words.
+3. Builds things (founders, online sellers, web developers, coders): technical words are fine; explain only the unusual.
+4. Expert (data engineers, AI engineers and scientists): talk shop.
 
 ## Quick answers stay quick
 A question, an explanation or one small edit: just answer or do it. No plan, no size, no questions you don't need. Guide mode is for jobs that take real work.
@@ -20,7 +25,7 @@ A question, an explanation or one small edit: just answer or do it. No plan, no 
 6. **Wait for their go.** Then work without asking again until the next check-in, under the core's defaults.
 
 ## Sizing a job
-Say how complex the job is, not how many tokens it will take. How much a job uses swings too much with what the agent ends up reading for a number to mean anything, and the owner can't see a meter anyway; they learn over time what makes a good request, and what's too much for one session.
+Say how complex the job is, not how many tokens it will take. How much a job uses swings too much with what the agent ends up reading for a number to mean anything, and the owner can't see a meter anyway; they get a feel over time for what makes a good request, and what's too much for one session.
 
 | Size | What it looks like | How to run it |
 |---|---|---|
@@ -46,7 +51,7 @@ Ways to keep a job smaller, worth telling the owner when they fit:
 - When a session is getting long, or the size nudge comes, finish the step you're on and hand off the way the [handoff skill](../handoff/SKILL.md) says: save what's lasting, bring the job's task note up to date, and give the owner its path to paste into a fresh chat for the next stage.
 
 ## Explaining
-- Plain words. Explain a technical term the first time you use it, in a few words.
+- As much as their level says (above): at 1, plain words and every technical term explained; at 4, none.
 - Say what you did and where they can see it: the note in Obsidian, the page's address, the run in GitHub's Actions list.
 - When something has to happen on their PC, do it through the runner if you can; otherwise give one command to paste into PowerShell (the core's "give the owner a command"). Say in a line if it will ask for admin rights.
 - When they want to learn how to do something themselves, teach it ([mattpocock-teach](../mattpocock-teach/SKILL.md), [learn](../learn/SKILL.md)). For steps only they can do, like signing in to a website, walk them through one at a time ([mattpocock-wizard](../mattpocock-wizard/SKILL.md)). [academy-guide](../academy-guide/SKILL.md) points them to a free Anthropic course on using Claude.
@@ -55,7 +60,7 @@ Ways to keep a job smaller, worth telling the owner when they fit:
 If it turned out much bigger or smaller than you said, add a dated line to [job sizes](../../knowledge/areas/the-brain/job-sizes.md): the job, the size you gave, what it really was, and why. Read its newest lines before sizing a job, so the sizes get closer to the truth for this owner.
 
 ## Tuned down
-When the owner has found their feet and wants less guiding, guide mode tunes down rather than turning off, like a tutorial stepping back: keep what saves their usage and keeps big jobs on track, sizing jobs properly and handing off at the end of each stage, and drop the rest.
+When the owner wants less guiding, guide mode tunes down rather than turning off: keep what saves their usage and keeps big jobs on track, sizing jobs properly and handing off at the end of each stage, and drop the rest.
 
 What stays:
 - **Sizing:** size every job bigger than a quick answer, as the table says, and give the size and why in a line.
@@ -65,12 +70,12 @@ What stays:
 - **More than two agents at once** still needs their yes.
 - **Job sizes,** as in "After a job".
 
-What goes: saying the ask back, questions they don't need, waiting for a go on small and medium jobs, check-ins in the middle of a stage, and the explaining (terms in plain words, walking through steps, teaching), unless they ask for it.
+What goes: saying the ask back, questions they don't need, waiting for a go on small and medium jobs, check-ins in the middle of a stage, and teaching or walking through steps unless they ask; the explaining still follows their level.
 
 ## Turning it down
-When the owner says something like "just do these without asking" or "you don't need a plan for small stuff", save it as a decision note in their words ([brain spec](../brain-spec/SKILL.md#saving-knowledge)) and follow it from then on. When they say to turn guide mode off, or that they don't need the tutorial, tune it down instead: tell them in a line what stays and why, save the decision, and change the core's guide mode section to:
+When the owner says something like "just do these without asking" or "you don't need a plan for small stuff", save it as a decision note in their words ([brain spec](../brain-spec/SKILL.md#saving-knowledge)) and follow it from then on. When they say to turn guide mode off, tune it down instead: tell them in a line what stays and why, save the decision, and change the core's guide mode section to:
 ```
 ## Guide mode
-It's tuned down (the owner's ask, <the date>): before anything bigger than a quick answer, size it and say why; split a big job into stages, agree them, and hand off at the end of each (how: the [guide-mode skill](skills/guide-mode/SKILL.md#tuned-down)). For a brain update from AnIdeaLab, read the owner its summary and apply it only if they say go ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
+It's tuned down (the owner's ask, <the date>), at level <their level> of 4 (how much to explain; theirs to set): before anything bigger than a quick answer, size it and say why; split a big job into stages, agree them, and hand off at the end of each (how: the [guide-mode skill](skills/guide-mode/SKILL.md#tuned-down)). For a brain update from AnIdeaLab, read the owner its summary and apply it only if they say go ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
 ```
 To turn it back up, put the kit's section back. Nothing else is restricted: the gates in the core are all the rules there are, and an agent's own judgement does the rest.

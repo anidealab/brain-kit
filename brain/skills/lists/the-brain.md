@@ -4,7 +4,7 @@ The brain's own skills for running this brain: its first session, how to work wi
 
 ## The brain's own
 - [getting-started](../getting-started/SKILL.md): the first session in a new brain: who the owner is, their first notes, testing the PC runner, and a tour.
-- [guide-mode](../guide-mode/SKILL.md): how to work with an owner new to AI agents: say the ask back, size it, agree a plan, check in.
+- [guide-mode](../guide-mode/SKILL.md): how agents work with the owner: say the ask back, size it, agree a plan, check in, explain to their level.
 - [brain-spec](../brain-spec/SKILL.md): where each kind of thing goes in the brain and what shape it takes, and how to apply a brain update from AnIdeaLab.
 - [handoff](../handoff/SKILL.md): hand work on three ways: the job's task note, kept up to date, to a fresh chat (at the end of a stage or when the size nudge says the chat is long), a brief to an agent, a report back; the hand-offs shelf, starting from a task note, and the nudge's settings.
 - [brain-audit](../brain-audit/SKILL.md): the weekly tidy-up, and the monthly deep audit in it, when the owner says yes to them.

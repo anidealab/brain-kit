@@ -6,7 +6,7 @@ How to do things. Every skill, the brain's own and copied, has a line in a list 
 
 ## The main ones
 - [brain-spec](brain-spec/SKILL.md): where each kind of thing goes in the brain and what shape it takes, and how to apply a brain update from AnIdeaLab.
-- [guide-mode](guide-mode/SKILL.md): how to work with an owner new to AI agents: say the ask back, size it, agree a plan, check in.
+- [guide-mode](guide-mode/SKILL.md): how agents work with the owner: say the ask back, size it, agree a plan, check in, explain to their level.
 - [handoff](handoff/SKILL.md): hand work on to a fresh chat or an agent, and what to do when the size nudge says a chat is long.
 - [my-pc](my-pc/SKILL.md): run commands and jobs on the owner's PC through the `my-pc` runner, and check or fix its setup.
 - [find-skills](find-skills/SKILL.md): find a good skill from outside the brain, copy it in, and keep copied skills up to date.
