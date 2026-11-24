@@ -230,7 +230,7 @@ $fromFolder = (Get-Item -LiteralPath $Brain).PSIsContainer
 if ($fromFolder -and -not (Test-Path -LiteralPath (Join-Path $Brain 'CLAUDE.md'))) { throw "$Brain isn't a brain: it has no CLAUDE.md." }
 try { New-Item -ItemType Directory -Force -Path (Split-Path $logFile -Parent) | Out-Null } catch { }
 Log "== The installer started, from $Brain (Windows PowerShell $($PSVersionTable.PSVersion))"
-Say 'Setting up your second brain. It takes about 10 minutes, mostly installing. Questions show in yellow.'
+Say 'Connecting this PC to your brain: the runner and Obsidian, if you''d like them. Questions show in yellow.'
 
 # AnIdeaLab's terms of use, before anything is installed or made. No default: Enter alone asks again, V opens
 # the terms in the browser, and anything else but Y stops here. Asked before QuickEdit goes off, so the link
