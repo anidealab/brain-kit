@@ -683,6 +683,7 @@ MAX_PROGRESS = 10        # Progress lines before all but the last KEEP_PROGRESS 
 KEEP_PROGRESS = 5        # moving at 10 down to 5 means a move every few stages, not every chat
 BIG_IDEA = 2 * 1024      # a graduated idea past this is still a full plan
 BIG_LOG = 10 * 1024      # a log or a running answers.md past this sheds its old entries to history
+BIG_DECISION = 10 * 1024  # a decision note past this is carrying the work's log, which the deep audit then has to read
 STATUS_PARTS = ("Where it stands", "Next", "Waiting on", "Where everything is")
 # Not .html (a page for the owner is an HTML file) or .ps1 (a command for the owner to paste)
 CODE = {".py", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".css", ".sql", ".sh", ".bat", ".php", ".rb",
@@ -726,7 +727,7 @@ def slipped(lib, since, finished=()):
     """The lists of what slipped through, as [(title, what to do, [lines])], for the weekly tidy-up.
     `finished` is the rel paths of tasks finished since `since` (from audit())."""
     today = date.today()
-    big, answers, decided, watch, clash, cites, graduated, dated, stray = ([] for _ in range(9))
+    big, answers, bulky, decided, watch, clash, cites, graduated, dated, stray = ([] for _ in range(10))
     current = {}
     texts = {}
     checked = set()
@@ -777,6 +778,8 @@ def slipped(lib, since, finished=()):
             big.append(f"{rel}: {progress} Progress lines")
         if (name == "answers.md" or "log" in name) and size > BIG_LOG:
             answers.append(f"{rel}: {kb(size)}")
+        elif top == "decisions" and name != "README.md" and size > BIG_DECISION:
+            bulky.append(f"{rel}: {kb(size)}")
         # The owner's answers left in a task
         if top == "tasks":
             lines = [b for b in bullets(parts.get("Decisions", "")) if not AGENTS_CALL.search(b)]
@@ -850,6 +853,7 @@ def slipped(lib, since, finished=()):
     return [
         ("Status swollen or stacked", f"rewrite the status in place; move research out to its own note; past {MAX_PROGRESS} Progress lines, first put what's still true in them into the status, Watch-outs or Decisions, then move all but the last {KEEP_PROGRESS} to the project's history/ with a pointer line at the top of Progress", big),
         ("Logs and answers.md past 10 KB", "move old or replaced entries to the shelf's history/, saying where", answers),
+        ("Decision notes past 10 KB", "keep the decision and every word of the owner's; move the agents' working notes to the project's shelf, linked", bulky),
         ("The owner's answers left in tasks", "move each to the project's decisions answers.md (or a note of its own), and link it from the task", decided),
         ("Watch-outs in tasks finished since then", "a lesson about a kind of job goes to that skill's LESSONS.md; the rest stays", watch),
         ("Current decisions that say they replace another current one", f"mark the older superseded or partly-superseded and fix what cites it; a pair that's only a reference goes in {CHECKED_LINKS}", clash),

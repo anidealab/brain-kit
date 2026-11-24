@@ -235,6 +235,7 @@ class LibraryTest(unittest.TestCase):
         write("knowledge/tasks/old-job.md", note("An old job.", status="done", holder="open") + "## Watch-outs\n- one.\n- two.\n")
         write("knowledge/decisions/2026-10-18-newer.md", note("A newer one.", status="current")
               + "This replaces [the older](2026-10-17-older.md).\n")
+        write("knowledge/decisions/2026-10-19-long-one.md", note("A long one.", status="current") + "A take's notes.\n" * 800)
         write("knowledge/areas/money.md", note("The money picture.") + "See [gone](../decisions/2026-10-01-gone.md).\n")
         write("knowledge/ideas/shop.md", note("A shop.", status="graduated") + "x" * 3000)
         write("knowledge/ventures/plumbing.md", note("The plumbing venture, until 1 Jan 2020."))
@@ -248,6 +249,7 @@ class LibraryTest(unittest.TestCase):
         self.assertEqual(lists["Watch-outs in tasks finished since then"], ["knowledge/tasks/old-job.md: 2 watch-outs"])
         self.assertEqual(lists["Current decisions that say they replace another current one"],
                          ["knowledge/decisions/2026-10-18-newer.md -> knowledge/decisions/2026-10-17-older.md"])
+        self.assertEqual(lists["Decision notes past 10 KB"], ["knowledge/decisions/2026-10-19-long-one.md: 13 KB"])
         self.assertEqual(lists["Notes citing a superseded decision"],
                          ["knowledge/areas/money.md cites knowledge/decisions/2026-10-01-gone.md"])
         self.assertEqual(lists["Graduated ideas still a full plan"], ["knowledge/ideas/shop.md: 3 KB"])

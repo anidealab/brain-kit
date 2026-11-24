@@ -1,13 +1,13 @@
 # The monthly deep audit
 
-The brain has two levels of audit. The [weekly tidy-up](SKILL.md) is cheap: scripts and cards, not notes. This monthly one reads notes in full, to catch what only reading does: rules that clash without linking, a removed rule surviving in other words, and cards that no longer say what's in their note. It uses more of the owner's plan, so it comes once a month.
+The brain has two levels of audit. The [weekly tidy-up](SKILL.md) is cheap: scripts and cards, not notes. This monthly one reads notes in full, to catch what only reading does: rules that clash without linking, and a removed rule surviving in other words. It uses more of the owner's plan, so it comes once a month.
 
-**When:** the first Saturday of each month, as a reminder, like the tidy-up: nothing runs until the owner says yes in a session ([routines](../../knowledge/systems/routines.md)). Do the weekly tidy-up first if it's due the same morning.
+**When:** the first Saturday of each month, as a reminder, like the tidy-up: nothing runs until the owner says yes in a session ([routines](../../knowledge/systems/routines.md)). **If no tidy-up has run in the last week** (the [audit log](../../knowledge/areas/the-brain/audit-log.md)'s newest heading), do one first: the reading here counts on the cheap fixes being done, and the tidy-up's lists already mark the replaced decisions that link what replaced them.
 
-**Budget:** more of the owner's plan than the tidy-up, on purpose, but keep it in proportion. A young brain's decisions read in a few minutes; once they pass about 100 KB, read a shelf at a time and save as you go, so a usage limit doesn't lose the work. One or two agents at once, as the core says.
+**Budget:** more of the owner's plan than the tidy-up, on purpose, but in proportion. Most decisions stay true, so the current ones only pile up; reading all of them each month would cost more every month whatever else is done. So each month reads in full only that month's new decisions, and the cost follows how much was decided, not how much ever was. Past about 100 KB, read a shelf at a time and save as you go, so a usage limit doesn't lose the work. One or two agents at once, as the core says.
 
 ## 1. The clash sweep
-1. **Read the core and every current decision in full,** a shelf at a time (`python3 skills/brain-spec/library.py find --shelf knowledge/decisions`). For each, ask:
+1. **Read the core, and every current decision new or changed since the last deep audit, in full** (the deep audit log's newest heading gives its date; `git log --since=<that date> --name-only --format= -- knowledge/decisions` lists them). Read each against the decisions shelf's index, which has every current decision's card, and open an older one in full only where its card looks close. The older ones were read against each other at earlier deep audits, and a new clash needs a new or changed note. The brain's first deep audit (an empty log) reads every current decision. For each one you read, ask:
    - Does a later decision change, narrow or remove it, without this one saying so?
    - Does another current note say the opposite?
    - Does the core still say what the decisions say?
@@ -22,10 +22,7 @@ Agents write rules as they go, and a guess written as a rule fences in every age
 3. **Ask the owner in one list:** each rule, where it lives, who wrote it and when, a short line on what keeping it costs (what it stops agents doing, where it could get in the way), a few words on what it protects if that isn't obvious, and your recommendation (keep or cut). Keep each one short: they already know why a rule was made. Leave every rule as it is until they answer.
 4. **Do what they say.** Kept: its row says "Confirmed <date>" with their words (a new row if it wasn't listed), and "(confirmed: the rules table)" goes beside the rule where it lives. Cut: delete the rule from where it lives, and its row if it had one.
 
-## 3. Cards that drifted
-The tidy-up rechecks the cards of notes that changed. Here, open 10 current notes that haven't changed in a while (the 5 most linked-to and 5 at random), and fix any card that doesn't say what its note holds.
-
-## 4. Log it and tell the owner
+## 3. Log it and tell the owner
 - Add a heading to the top of [the deep audit log](../../knowledge/areas/the-brain/deep-audit-log.md), with today's UTC date, like `## 7 Nov 2026: deep audit`, and two or three lines under it: what was fixed, and what waits on the owner. That heading turns the reminder off until next month.
 - Commit in small commits with plain messages, and push.
 - Tell the owner the short version in the thread.
