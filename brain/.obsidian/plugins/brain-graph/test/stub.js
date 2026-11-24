@@ -23,5 +23,12 @@
     return child;
   }
   window.process = { platform: 'linux', env: {} };
-  window.require = (m) => (m === 'obsidian' ? { Plugin, ItemView, Notice, TFile } : m === 'child_process' ? { spawn } : null);
+  // The saved history file goes to the test's out folder (run.mjs's __fs).
+  const fs = { promises: {
+    readFile: async (p) => { const r = await window.__fs('read', p); if (r == null) throw new Error('ENOENT'); return r; },
+    writeFile: (p, d) => window.__fs('write', p, d),
+    rename: (a, b) => window.__fs('rename', a, b),
+    unlink: (p) => window.__fs('unlink', p),
+  } };
+  window.require = (m) => (m === 'obsidian' ? { Plugin, ItemView, Notice, TFile } : m === 'child_process' ? { spawn } : m === 'fs' ? fs : null);
 })();

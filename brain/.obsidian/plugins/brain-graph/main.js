@@ -178,8 +178,9 @@ function buildNameIndex(live) {
   return idx;
 }
 
-// The live file a link points at, or null if it points outside the repo or nowhere.
-function resolveLink(fromPath, spec, live, nameIndex) {
+// What a link asks for: { p } for a Markdown link's path from the vault root, { name, key } for a
+// wikilink (key is the name the name index files it under), or null for a link outside the repo.
+function linkAsk(fromPath, spec) {
   if (spec.startsWith('md:')) {
     let t = spec.slice(3);
     if (/^[a-z][a-z0-9+.-]*:/i.test(t) || t.startsWith('#')) return null;
@@ -187,15 +188,41 @@ function resolveLink(fromPath, spec, live, nameIndex) {
     if (!t) return null;
     try { t = decodeURIComponent(t); } catch { /* keep it as written */ }
     const p = joinPath(fromPath, t);
-    if (p == null) return null;
-    return live.get(p) || live.get(p + '.md') || null;
+    return p == null ? null : { p };
   }
-  // Wikilink: a path from the vault root, or a note name found anywhere (nearest first).
   const name = spec.slice(5);
+  return { name, key: name.slice(name.lastIndexOf('/') + 1).toLowerCase() };
+}
+
+// The keys a link's answer depends on: the paths it could land on ('P:') and, for a wikilink,
+// every file filed under its name ('N:'). A commit that adds, removes or moves a file at one of
+// them is the only thing besides an edit to the note itself that can change where the link goes.
+function linkDeps(a) {
+  if (!a) return [];
+  if (a.p != null) return ['P:' + a.p, 'P:' + a.p + '.md'];
+  return ['P:' + a.name, 'P:' + a.name + '.md', 'N:' + a.key];
+}
+
+// The name index keys a path is filed under (the same ones buildNameIndex uses).
+function nameKeys(path) {
+  const base = path.slice(path.lastIndexOf('/') + 1).toLowerCase();
+  const bare = base.replace(/\.md$/, '');
+  return bare === base ? [base] : [base, bare];
+}
+
+// The live file a link points at, or null if it points outside the repo or nowhere.
+function resolveLink(fromPath, spec, live, nameIndex) {
+  return resolveAsk(fromPath, linkAsk(fromPath, spec), live, nameIndex);
+}
+
+function resolveAsk(fromPath, a, live, nameIndex) {
+  if (!a) return null;
+  if (a.p != null) return live.get(a.p) || live.get(a.p + '.md') || null;
+  // Wikilink: a path from the vault root, or a note name found anywhere (nearest first).
+  const name = a.name;
   const direct = live.get(name) || live.get(name + '.md');
   if (direct) return direct;
-  const key = name.slice(name.lastIndexOf('/') + 1).toLowerCase();
-  const hits = (nameIndex().get(key) || []).filter((p) => p.toLowerCase().endsWith(name.toLowerCase()) || p.toLowerCase().endsWith(name.toLowerCase() + '.md'));
+  const hits = [...(nameIndex().get(a.key) || [])].filter((p) => p.toLowerCase().endsWith(name.toLowerCase()) || p.toLowerCase().endsWith(name.toLowerCase() + '.md'));
   if (!hits.length) return null;
   const dir = fromPath.slice(0, fromPath.lastIndexOf('/') + 1);
   hits.sort((a, b) => (b.startsWith(dir) - a.startsWith(dir)) || a.length - b.length || (a < b ? -1 : 1));
@@ -305,19 +332,279 @@ async function readBlobs(git, shas) {
   return out;
 }
 
-async function readModel(git) {
+/* ---------- the saved history ---------- */
+
+// Reading every commit and every version of every note takes most of a minute once a brain has a
+// few thousand commits, so what git said is saved in a file in the repo's .git
+// folder, which is never committed or synced. Everything in it is filed under git's own hashes: a
+// commit's hash names exactly that commit and what it changed, a blob's hash exactly that content.
+// So a saved entry can't go out of date; the file only saves asking git again, and the replay is
+// built fresh from it every time. It's set aside and read again from git if it can't be read, if
+// it came from another version of the code that reads git (CACHE_VERSION changes by itself when
+// that code does), or with the "Rebuild brain graph from scratch" command.
+const CACHE_FILE = 'brain-graph-cache.json';
+const LOG_ARGS = [
+  '-c', 'core.quotepath=false', 'log', '--diff-merges=first-parent',
+  '-M', '--raw', '--numstat', '-z', '--no-abbrev', '--format=%x1e%H%x1f%P%x1f%ct%x1f%an%x1f%s',
+];
+
+let cacheVersionMemo = null;
+function cacheVersion() {
+  if (cacheVersionMemo) return cacheVersionMemo;
+  const src = [LOG_ARGS.join(' '), [...CODE_EXT].join(','), parseLog, extractLinks, countLines, kindOf].map(String).join('\n');
+  let h = 2166136261;
+  for (let i = 0; i < src.length; i++) { h ^= src.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (cacheVersionMemo = 'brain-graph-1-' + (h >>> 0).toString(36));
+}
+
+const goodCommit = (c, sha) => !!c && c.sha === sha && Array.isArray(c.parents) && Array.isArray(c.raw) && Array.isArray(c.num) && typeof c.t === 'number';
+const goodFact = (f) => Array.isArray(f) && typeof f[0] === 'number' && (f[1] === null || Array.isArray(f[1]));
+
+// The saved history file: null where there's no file system (the test page).
+function historyFile(file) {
+  let fs = null;
+  try { fs = require('fs'); } catch { fs = null; }
+  if (!fs || !fs.promises) return null;
+  return {
+    async load() { try { return JSON.parse(await fs.promises.readFile(file, 'utf8')); } catch { return null; } },
+    // Written next to it and swapped in, so a crash mid-write leaves the old file or none.
+    async save(obj) { const tmp = file + '.tmp'; await fs.promises.writeFile(tmp, JSON.stringify(obj)); await fs.promises.rename(tmp, file); },
+    async clear() { try { await fs.promises.unlink(file); } catch { /* none there */ } },
+  };
+}
+
+// The order of the commits comes from git every time (it's quick); only commits and note
+// versions the saved file doesn't have are read. Returns the model, and how it was built.
+async function readModel(git, store) {
   const head = (await git.text(['rev-parse', 'HEAD'])).trim();
-  const log = await git.run([
-    '-c', 'core.quotepath=false', 'log', '--reverse', '--date-order', '--diff-merges=first-parent',
-    '-M', '--raw', '--numstat', '-z', '--no-abbrev', '--format=%x1e%H%x1f%P%x1f%ct%x1f%an%x1f%s', head,
-  ]);
-  const commits = parseLog(decoder.decode(log));
-  const want = new Set();
-  for (const c of commits) {
-    for (const e of c.raw) if (e.status !== 'D' && e.mode !== '160000' && countsLines(kindOf(e.path))) want.add(e.sha);
+  const v = cacheVersion();
+  let saved = null;
+  if (store) { try { saved = await store.load(); } catch { saved = null; } }
+  const fromFile = !!saved && saved.v === v && !!saved.commits && typeof saved.commits === 'object' && !!saved.facts && typeof saved.facts === 'object';
+  if (!fromFile) saved = { commits: {}, facts: {} };
+
+  const order = (await git.text(['rev-list', '--reverse', '--date-order', head])).split('\n').map((x) => x.trim()).filter(Boolean);
+  const missing = order.filter((sha) => !goodCommit(saved.commits[sha], sha));
+  const fresh = new Map();
+  for (let i = 0; i < missing.length; i += 2000) {
+    const bytes = await git.run([...LOG_ARGS, '--no-walk=unsorted', '--stdin'], missing.slice(i, i + 2000).join('\n') + '\n');
+    for (const c of parseLog(decoder.decode(bytes))) fresh.set(c.sha, c);
   }
-  const blobs = await readBlobs(git, [...want]);
-  return assemble(head, commits, blobs, null); // the whole history (5 Nov 2026), never from a fresh start
+  const commits = order.map((sha) => fresh.get(sha) || saved.commits[sha]);
+  if (commits.some((c, i) => !goodCommit(c, order[i]))) throw new Error('git didn’t describe every commit.');
+
+  // Facts about each version of a file: [lines, links] (links only for versions that were a note).
+  const needLinks = new Set(), need = new Set();
+  for (const c of commits) {
+    for (const e of c.raw) {
+      if (e.status === 'D' || e.mode === '160000') continue;
+      const k = kindOf(e.path);
+      if (!countsLines(k)) continue;
+      need.add(e.sha);
+      if (k === 'note') needLinks.add(e.sha);
+    }
+  }
+  const facts = new Map(), toRead = [];
+  for (const sha of need) {
+    const f = saved.facts[sha];
+    if (goodFact(f) && (f[1] || !needLinks.has(sha))) facts.set(sha, f); else toRead.push(sha);
+  }
+  const blobs = await readBlobs(git, toRead);
+  for (const sha of toRead) {
+    const b = blobs.get(sha);
+    if (b) facts.set(sha, [countLines(b), needLinks.has(sha) ? extractLinks(decoder.decode(b)) : null]);
+  }
+
+  // The whole history (5 Nov 2026), never from a fresh start. If the quick way of working out
+  // the links ever disagrees with the full way, it's built again the full way.
+  let model = assemble(head, commits, facts, null);
+  let how = 'quick';
+  if (!model) {
+    console.warn('Brain graph: the quick link check disagreed with the full one, so the replay was built the slow way.');
+    model = assemble(head, commits, facts, null, true);
+    how = 'full';
+  }
+  if (store && (!fromFile || missing.length || toRead.length || Object.keys(saved.commits).length !== commits.length)) {
+    const out = { v, head, commits: {}, facts: {} };
+    for (const c of commits) out.commits[c.sha] = c;
+    for (const [sha, f] of facts) out.facts[sha] = f;
+    try { await store.save(out); } catch (e) { console.warn('Brain graph: couldn’t save the history file.', e); }
+  }
+  model.how = { links: how, saved: fromFile, newCommits: missing.length, newVersions: toRead.length };
+  return model;
+}
+
+/* ---------- which notes link to which ---------- */
+
+const LINK_CHECK_EVERY = 500; // commits between checks of the quick way against the full way
+
+// The links between files as the replay goes, kept up to date commit by commit. Working out every
+// link in every note again after every commit takes nearly all of the brain graph's start-up once
+// a brain has a few thousand notes, so only the links a commit could
+// have changed are: those in the notes it wrote, moved or removed, and those that point at a path
+// it added, removed or moved (a wikilink by name points at every file of that name). The result
+// is meant to be exactly what the full way gives, link for link and in the same order;
+// matchesFull() checks it, and endCommitFull() is the full way, kept for that check and as
+// the fallback.
+class LinkBook {
+  constructor(live) {
+    this.live = live;
+    this.seq = new Map();   // path -> its place in live's order (the order the full way reads notes in)
+    this.seqN = 0;
+    this.names = new Map(); // name index key -> Set of live paths
+    this.deps = new Map();  // 'P:path' or 'N:name' -> Set of notes whose links depend on it
+    this.out = new Map();   // note -> { pairs: Map(pair key -> first link's index), deps: [...] }
+    this.pairs = new Map(); // pair key -> Set of notes with a link making it
+    this.current = new Map(); // pair key -> true: the links standing after the last commit
+    this.index = () => this.names;
+  }
+
+  startCommit() { this.before = new Map(); this.dirty = new Set(); }
+
+  note(path) { if (!this.before.has(path)) this.before.set(path, this.live.get(path) || null); }
+
+  put(path, r) {
+    this.note(path);
+    if (!this.live.has(path)) {
+      this.seq.set(path, ++this.seqN);
+      for (const k of nameKeys(path)) {
+        if (!this.names.has(k)) this.names.set(k, new Set());
+        this.names.get(k).add(path);
+      }
+    }
+    this.live.set(path, r);
+  }
+
+  remove(path) {
+    this.note(path);
+    if (!this.live.has(path)) return;
+    this.live.delete(path);
+    this.seq.delete(path);
+    for (const k of nameKeys(path)) {
+      const set = this.names.get(k);
+      if (set) { set.delete(path); if (!set.size) this.names.delete(k); }
+    }
+  }
+
+  touch(r) { this.dirty.add(r); }
+
+  // The links that appeared ([pair key, the note that made it]) and went (pair keys) in the commit.
+  endCommit() {
+    const dirty = this.dirty, changedPairs = new Set();
+    for (const [path, was] of this.before) {
+      const now = this.live.get(path) || null;
+      if (was) dirty.add(was);
+      if (now) dirty.add(now);
+      if (was === now) continue;
+      for (const k of ['P:' + path, ...nameKeys(path).map((n) => 'N:' + n)]) {
+        const set = this.deps.get(k);
+        if (set) for (const r of set) dirty.add(r);
+      }
+    }
+    for (const r of dirty) { this.drop(r, changedPairs); this.read(r, changedPairs); }
+    const added = [], removed = [];
+    for (const key of changedPairs) {
+      const has = this.pairs.has(key);
+      if (has && !this.current.has(key)) {
+        let best = null, bs = 0, bi = 0;
+        for (const r of this.pairs.get(key)) {
+          const s = this.seq.get(r.path), i = this.out.get(r).pairs.get(key);
+          if (!best || s < bs || (s === bs && i < bi)) { best = r; bs = s; bi = i; }
+        }
+        added.push([key, best, bs, bi]);
+      } else if (!has && this.current.has(key)) removed.push(key);
+    }
+    added.sort((x, y) => x[2] - y[2] || x[3] - y[3]);
+    for (const [key] of added) this.current.set(key, true);
+    for (const key of removed) this.current.delete(key);
+    return { added: added.map((x) => [x[0], x[1]]), removed };
+  }
+
+  drop(r, changedPairs) {
+    const o = this.out.get(r);
+    if (!o) return;
+    for (const key of o.pairs.keys()) {
+      const set = this.pairs.get(key);
+      set.delete(r);
+      if (!set.size) this.pairs.delete(key);
+      changedPairs.add(key);
+    }
+    this.out.delete(r);
+  }
+
+  // Files the notes whose links depend on each path or name, changed only when a note's list does.
+  depend(r, list) {
+    if ((r.depsOn || null) === list) return;
+    for (const k of r.depsOn || []) {
+      const set = this.deps.get(k);
+      if (set) { set.delete(r); if (!set.size) this.deps.delete(k); }
+    }
+    for (const k of list || []) {
+      if (!this.deps.has(k)) this.deps.set(k, new Set());
+      this.deps.get(k).add(r);
+    }
+    r.depsOn = list;
+  }
+
+  read(r, changedPairs) {
+    if (r.kind !== 'note' || this.live.get(r.path) !== r || !r.links.length) { this.depend(r, null); return; }
+    // What each link asks for, and what that depends on, change only when the note is
+    // edited or moved, so they're kept on the note between reads.
+    if (r.asksFor !== r.links || r.asksPath !== r.path) {
+      r.asks = r.links.map((spec) => linkAsk(r.path, spec));
+      const d = new Set();
+      for (const a of r.asks) for (const k of linkDeps(a)) d.add(k);
+      r.askDeps = [...d];
+      r.asksFor = r.links;
+      r.asksPath = r.path;
+    }
+    this.depend(r, r.askDeps);
+    const pairs = new Map();
+    r.asks.forEach((a, i) => {
+      const t = resolveAsk(r.path, a, this.live, this.index);
+      if (!t || t === r) return;
+      const key = r.id < t.id ? r.id + ':' + t.id : t.id + ':' + r.id;
+      if (!pairs.has(key)) pairs.set(key, i);
+    });
+    for (const key of pairs.keys()) {
+      if (!this.pairs.has(key)) this.pairs.set(key, new Set());
+      this.pairs.get(key).add(r);
+      changedPairs.add(key);
+    }
+    this.out.set(r, { pairs });
+  }
+
+  // The full way: every link in every live note, in live's order.
+  fullPairs() {
+    let nameIndex = null;
+    const index = () => nameIndex || (nameIndex = buildNameIndex(this.live));
+    const next = new Map();
+    for (const r of this.live.values()) {
+      if (r.kind !== 'note') continue;
+      for (const spec of r.links) {
+        const t = resolveLink(r.path, spec, this.live, index);
+        if (!t || t === r) continue;
+        const key = r.id < t.id ? r.id + ':' + t.id : t.id + ':' + r.id;
+        if (!next.has(key)) next.set(key, r);
+      }
+    }
+    return next;
+  }
+
+  endCommitFull() {
+    const next = this.fullPairs(), added = [], removed = [];
+    for (const [key, src] of next) if (!this.current.has(key)) added.push([key, src]);
+    for (const key of this.current.keys()) if (!next.has(key)) removed.push(key);
+    this.current = new Map([...next.keys()].map((k) => [k, true]));
+    return { added, removed };
+  }
+
+  matchesFull() {
+    const next = this.fullPairs();
+    if (next.size !== this.current.size) return false;
+    for (const key of next.keys()) if (!this.current.has(key)) return false;
+    return true;
+  }
 }
 
 /* ---------- from commits to a replay ---------- */
@@ -331,18 +618,18 @@ async function readModel(git) {
 // From a fresh start, the commits before it are the starting picture: they happen
 // well before the replay's zero, so their notes and links are already settled
 // there, and the timeline begins with the fresh start commit.
-function assemble(head, commits, blobs, startSha) {
+function assemble(head, commits, facts, startSha, fullLinks) {
   const startAt = startSha ? commits.findIndex((c) => c.sha === startSha) : -1;
   const recs = [];
   const live = new Map();
   const deadByPath = new Map();
   const edgeRecs = new Map();
-  let current = new Map();
-  let nameIndex = null;
   const totals = { note: 0, code: 0 };
   const steps = [];
+  const L = new LinkBook(live);
 
-  commits.forEach((c, ci) => {
+  for (let ci = 0; ci < commits.length; ci++) {
+    const c = commits[ci];
     const step = {
       sha: c.sha, t: c.t, author: c.author, subject: c.subject, merge: c.parents.length > 1,
       before: ci < startAt, start: ci === startAt,
@@ -351,23 +638,21 @@ function assemble(head, commits, blobs, startSha) {
     };
     const bornSet = new Set();
     const edited = new Set();
-    let filesChanged = false, linksChanged = false;
+    L.startCommit();
 
     for (const e of c.raw) {
       if (e.mode === '160000') continue;
       if (e.status === 'D') {
         const r = live.get(e.path);
         if (!r) continue;
-        live.delete(e.path);
+        L.remove(e.path);
         deadByPath.set(e.path, r);
         if (countsLines(r.kind)) totals[r.kind] -= r.lines;
-        if (r.links.length) linksChanged = true;
         step.died.push(r);
-        filesChanged = true;
         continue;
       }
       let r = null;
-      if (e.status === 'R' && live.has(e.src)) { r = live.get(e.src); live.delete(e.src); }
+      if (e.status === 'R' && live.has(e.src)) { r = live.get(e.src); L.remove(e.src); }
       if (!r) r = live.get(e.path) || null;
       if (!r) {
         r = deadByPath.get(e.path) || null;
@@ -378,25 +663,23 @@ function assemble(head, commits, blobs, startSha) {
         }
         step.born.push(r);
         bornSet.add(r);
-        filesChanged = true;
       }
       if (r.path !== e.path || !r.paths.length) {
         if (r.paths.length) edited.add(r); // moved
         r.path = e.path;
         r.paths.push(e.path);
-        filesChanged = true;
       }
-      live.set(e.path, r);
+      L.put(e.path, r);
       const kind = kindOf(e.path);
       if (r.sha !== e.sha || r.kind !== kind) {
         if (countsLines(r.kind)) totals[r.kind] -= r.lines;
         r.kind = kind;
-        r.lines = countsLines(kind) ? countLines(blobs.get(e.sha)) : 0;
+        const f = facts.get(e.sha);
+        r.lines = countsLines(kind) && f ? f[0] : 0;
         if (countsLines(kind)) totals[kind] += r.lines;
-        const links = kind === 'note' && blobs.has(e.sha) ? extractLinks(decoder.decode(blobs.get(e.sha))) : [];
-        if (links.length || r.links.length) linksChanged = true;
-        r.links = links;
+        r.links = kind === 'note' && f && f[1] ? f[1] : [];
         r.sha = e.sha;
+        L.touch(r);
         edited.add(r);
       }
     }
@@ -409,35 +692,23 @@ function assemble(head, commits, blobs, startSha) {
       }
     }
 
-    if (filesChanged || linksChanged) {
-      if (filesChanged) nameIndex = null;
-      const index = () => nameIndex || (nameIndex = buildNameIndex(live));
-      const next = new Map();
-      for (const r of live.values()) {
-        if (r.kind !== 'note') continue;
-        for (const spec of r.links) {
-          const t = resolveLink(r.path, spec, live, index);
-          if (!t || t === r) continue;
-          const key = r.id < t.id ? r.id + ':' + t.id : t.id + ':' + r.id;
-          if (!next.has(key)) next.set(key, r);
-        }
+    const { added, removed } = fullLinks ? L.endCommitFull() : L.endCommit();
+    for (const [key, src] of added) {
+      let er = edgeRecs.get(key);
+      if (!er) {
+        const [a, b] = key.split(':').map(Number);
+        er = { a: recs[a], b: recs[b], spans: [], key };
+        edgeRecs.set(key, er);
       }
-      for (const [key, src] of next) {
-        if (current.has(key)) continue;
-        let er = edgeRecs.get(key);
-        if (!er) {
-          const [a, b] = key.split(':').map(Number);
-          er = { a: recs[a], b: recs[b], spans: [], key };
-          edgeRecs.set(key, er);
-        }
-        step.linkAdd.push({ er, src });
-      }
-      for (const key of current.keys()) if (!next.has(key)) step.linkDel.push(edgeRecs.get(key));
-      current = next;
+      step.linkAdd.push({ er, src });
     }
+    for (const key of removed) step.linkDel.push(edgeRecs.get(key));
+    // The check: every so often, and at the end, every link is worked out again the full way. If
+    // the two ever disagree, the caller builds the whole replay again the full way.
+    if (!fullLinks && (ci === commits.length - 1 || (ci + 1) % LINK_CHECK_EVERY === 0) && !L.matchesFull()) return null;
     step.totals = { note: totals.note, code: totals.code };
     steps.push(step);
-  });
+  }
 
   // Pass 2. The dots: every note. Files that notes link to (scripts and other code) aren't drawn
   // since the Graph view went, but a commit that only changed one keeps its place on the timeline.
@@ -1024,10 +1295,14 @@ class BrainView extends ItemView {
         if (!adapter || typeof adapter.getBasePath !== 'function') throw new Error('The brain graph needs Obsidian on a computer.');
         this.git = await Git.open(adapter.getBasePath());
         this.prefix = (await this.git.text(['rev-parse', '--show-prefix'])).trim();
+        try { this.store = historyFile((await this.git.text(['rev-parse', '--absolute-git-dir'])).trim() + '/' + CACHE_FILE); } catch { this.store = null; }
       }
+      const rebuild = this.plugin.rebuildNext;
+      if (rebuild) { this.plugin.rebuildNext = false; if (this.store) await this.store.clear(); this.setStatus('Reading the brain’s history again from git…'); }
       const prev = this.model, prevSim = this.sim;
       this.excluded = await this.readExcluded();
-      const model = await readModel(this.git);
+      const model = await readModel(this.git, this.store);
+      if (rebuild) new Notice('Brain graph rebuilt from git.');
       if (this.closed) return;
       const wasAtEnd = prev && this.tau >= prev.endBeat - 0.01;
       this.model = model;
@@ -2353,6 +2628,15 @@ class BrainGraphPlugin extends Plugin {
     this.registerView(VIEW_TYPE, (leaf) => new BrainView(leaf, this));
     this.addRibbonIcon('brain-circuit', 'Open brain graph', () => this.openView());
     this.addCommand({ id: 'open', name: 'Open brain graph', callback: () => this.openView() });
+    // The failsafe: forget the saved history file and read everything from git again.
+    this.addCommand({ id: 'rebuild', name: 'Rebuild brain graph from scratch', callback: () => this.rebuild() });
+  }
+
+  async rebuild() {
+    this.rebuildNext = true;
+    const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
+    if (leaf && leaf.view && typeof leaf.view.load === 'function') await leaf.view.load(false);
+    else await this.openView();
   }
 
   async saveSettings() { await this.saveData(this.settings); }

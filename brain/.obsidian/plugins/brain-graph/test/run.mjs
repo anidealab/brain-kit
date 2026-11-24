@@ -32,6 +32,16 @@ await page.exposeFunction('__git', (args, input) => {
   return { code: r.status, out: r.stdout.toString('base64'), err: r.stderr.toString() };
 });
 await page.exposeFunction('__readFile', (p) => fs.readFileSync(repo + '/' + p, 'utf8'));
+// The plugin's saved history file, kept in the out folder (not the repo's .git) so each test
+// starts without one; the second scenario in a run reads the one the first saved.
+const inOut = (p) => out + '/' + p.slice(p.lastIndexOf('/') + 1);
+await page.exposeFunction('__fs', (op, a, b) => {
+  if (op === 'read') return fs.existsSync(inOut(a)) ? fs.readFileSync(inOut(a), 'utf8') : null;
+  if (op === 'write') return fs.writeFileSync(inOut(a), b);
+  if (op === 'rename') return fs.renameSync(inOut(a), inOut(b));
+  if (op === 'unlink') return fs.existsSync(inOut(a)) && fs.unlinkSync(inOut(a));
+});
+for (const f of fs.readdirSync(out)) if (f.startsWith('brain-graph-cache')) fs.unlinkSync(out + '/' + f);
 await page.setContent(`<html><head><style>${css} html,body{margin:0;height:100%;background:#09090b} .view-content{position:fixed;inset:0}</style></head><body class="theme-dark"></body></html>`);
 await page.addScriptTag({ path: dir + 'stub.js' });
 await page.addScriptTag({ content: `window.__appjson = ${JSON.stringify(appjson)}; const module = { exports: {} }; (function (require, module, exports) {\n${src}\n})(window.require, module, module.exports); window.BrainGraphPlugin = module.exports;` });
@@ -57,7 +67,7 @@ for (const sc of scenarios) {
     }
     view.requestFrame();
     const m = view.model;
-    return { loadMs: Math.round(loadMs), nodes: m.nodes.length, edges: m.edges.length, hub: m.edges.filter((e) => e.hub && !e.business).length, business: m.edges.filter((e) => e.business).length, hidden: view.focus ? [...view.focus.hidden].filter(Boolean).length : null, steps: m.steps.length, quietEdits: m.nodes.reduce((t, nd) => t + nd.eflags.filter((f) => f & 2).length, 0), mattEdits: m.nodes.reduce((t, nd) => t + nd.eflags.filter((f) => f & 1).length, 0), faded: view.es ? [...view.es.m].filter((v, j) => view.es.p[j] > 0 && v < 0.99 && !view.model.edges[j].hub).length : null };
+    return { loadMs: Math.round(loadMs), how: view.model.how, nodes: m.nodes.length, edges: m.edges.length, hub: m.edges.filter((e) => e.hub && !e.business).length, business: m.edges.filter((e) => e.business).length, hidden: view.focus ? [...view.focus.hidden].filter(Boolean).length : null, steps: m.steps.length, quietEdits: m.nodes.reduce((t, nd) => t + nd.eflags.filter((f) => f & 2).length, 0), mattEdits: m.nodes.reduce((t, nd) => t + nd.eflags.filter((f) => f & 1).length, 0), faded: view.es ? [...view.es.m].filter((v, j) => view.es.p[j] > 0 && v < 0.99 && !view.model.edges[j].hub).length : null };
   }, { settings: Object.assign({}, base, extra.settings || {}), tauSubject: extra.at, tauAfter: extra.after });
   await page.waitForTimeout(extra.wait || 4500);
   if (extra.then) { await page.evaluate(extra.then); await page.waitForTimeout(2500); }
