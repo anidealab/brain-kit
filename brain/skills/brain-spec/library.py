@@ -195,8 +195,6 @@ def line_for(lib, shelf, path, card, is_shelf=False):
     extra = ""
     status = card.get("status", "")
     if lib.top(path) == "tasks" and not is_shelf:
-        if len(about) > MAX_ABOUT:  # the check flags these; until they're fixed, the board stays cheap to read
-            about = about[:MAX_ABOUT].rsplit(" ", 1)[0].rstrip(",;:.") + "…"
         if card.get("due"):
             extra += f" Due {card['due']}."
     elif lib.top(path) == "handoffs" and not is_shelf:

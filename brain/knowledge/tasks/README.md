@@ -9,7 +9,7 @@ The "now" page: one note per piece of work that outlives a session, waits on som
 - **Whoever hands a task out makes its note** and closes it when the work comes back. An agent working alone is its own parent.
 - **Holders:** `owner`, `open`, or the session link of the agent holding it.
 - **Finished tasks stay here for two weeks,** counted rather than listed, then the weekly tidy-up moves them to `history/`. It also closes tasks that have gone stale. Anything learned in them goes to the library when they close.
-- **The board stays short:** an about line past 250 characters is cut, and an owner's task nobody has touched for a month is listed by name only, until the tidy-up asks them to keep or drop it.
+- **The board stays short:** an owner's task nobody has touched for a month is listed by name only, until the tidy-up asks them to keep or drop it.
 
 Everything the owner holds: `python3 skills/brain-spec/library.py find --shelf tasks --holder owner`.
 
