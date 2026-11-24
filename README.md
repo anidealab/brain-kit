@@ -25,7 +25,7 @@ What those steps do:
 
 ## On your computer, if you like
 A brain works with nothing on your computer. There are two extras, a few minutes each, and your first chat offers both:
-- **Your computer:** then you can ask your agent to do things on your PC or Mac from any chat, even from your phone: make a video, sort out a folder, set up a program. It only does what you ask, and you can watch each one as it happens. It suits a computer that's usually on.
+- **Your computer:** then you can ask your agent to do things on your PC or Mac from any chat, even from your phone: make a video, sort out a folder, set up a program. It only does what you ask, and you can watch each one as it happens. It works best on a computer that's usually on, but it doesn't have to be: a job asked for while it's off runs once it's back on.
 - **Obsidian:** a free app that shows your brain as a map on your computer, where you can read and edit your notes.
 
 Both come from one command, below, which your first chat gives you along with what to answer. Every brain is called `my-brain-ail` (the name in step 2's link), so there's no name to type: the command finds your brain, puts a copy of it on your computer and adds what you chose. The command also makes a brain by itself, for anyone who'd rather start from their computer: if you have no `my-brain-ail` yet, it makes one. A brain made before 22 Nov 2026, or one you renamed, has its own name, so your first chat gives you the command with that name in it, `$env:BRAIN_KIT_NAME='<your brain>';` in front on a PC, `BRAIN_KIT_NAME=<your brain>` in front on a Mac:
