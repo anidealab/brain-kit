@@ -287,24 +287,12 @@ Step 'Signed in to GitHub' 'started'
 if ($check) { $owner = 'example' } else {
   $status = Native { & $gh auth status --hostname github.com 2>&1 } | Out-String
   if ($LASTEXITCODE -ne 0) {
-    # An older gh has no --clipboard; then the code is shown to copy by hand, as before.
-    $clip = (Native { & $gh auth login --help 2>&1 } | Out-String) -match '--clipboard'
-    if ($clip) {
-      Say 'Signing in to GitHub. Your one-time code is copied for you: press Enter, and in the page that opens in your browser, press Ctrl+V to paste it. No GitHub account yet? Make one on that page first (it''s free).'
-      Native { & $gh auth login --hostname github.com --git-protocol https --web --scopes workflow --clipboard }
-    } else {
-      Say 'Signing in to GitHub. Copy the code shown below, press Enter, and paste it into the page that opens in your browser. No GitHub account yet? Make one on that page first (it''s free).'
-      Native { & $gh auth login --hostname github.com --git-protocol https --web --scopes workflow }
-    }
+    Say 'Signing in to GitHub. Your one-time code is copied for you: press Enter, and in the page that opens in your browser, press Ctrl+V to paste it. No GitHub account yet? Make one on that page first (it''s free).'
+    Native { & $gh auth login --hostname github.com --git-protocol https --web --scopes workflow --clipboard }
     if ($LASTEXITCODE -ne 0) { throw "GitHub sign-in didn't finish. Paste the same command again to retry." }
   } elseif ($status -notmatch 'workflow') {
-    if ((Native { & $gh auth refresh --help 2>&1 } | Out-String) -match '--clipboard') {
-      Say 'GitHub needs one more permission (to add the PC workflow). Your code is copied for you: press Enter, and press Ctrl+V in the page that opens.'
-      Native { & $gh auth refresh --hostname github.com --scopes workflow --clipboard }
-    } else {
-      Say 'GitHub needs one more permission (to add the PC workflow). Copy the code, press Enter, and paste it in your browser.'
-      Native { & $gh auth refresh --hostname github.com --scopes workflow }
-    }
+    Say 'GitHub needs one more permission (to add the PC workflow). Your code is copied for you: press Enter, and press Ctrl+V in the page that opens.'
+    Native { & $gh auth refresh --hostname github.com --scopes workflow --clipboard }
   }
   Native { & $gh auth setup-git --hostname github.com } | Out-Null
   $owner = "$(Native { & $gh api user --jq .login })".Trim()

@@ -599,22 +599,11 @@ step "$tools_step" 'done'
 step 'Signed in to GitHub' started
 if [ -n "$check" ]; then owner=example; else
   if ! "$gh" auth status --hostname github.com >/dev/null 2>&1; then
-    # An older gh has no --clipboard; then the code is shown to copy by hand, as before.
-    if "$gh" auth login --help 2>&1 | grep -q -- '--clipboard'; then
-      say "Signing in to GitHub. Your one-time code is copied for you: press Enter, and in the page that opens in your browser, press Command+V to paste it. No GitHub account yet? Make one on that page first (it's free)."
-      "$gh" auth login --hostname github.com --git-protocol https --web --scopes workflow --clipboard || die "GitHub sign-in didn't finish. Paste the same command again to retry."
-    else
-      say "Signing in to GitHub. Copy the code shown below, press Enter, and paste it into the page that opens in your browser. No GitHub account yet? Make one on that page first (it's free)."
-      "$gh" auth login --hostname github.com --git-protocol https --web --scopes workflow || die "GitHub sign-in didn't finish. Paste the same command again to retry."
-    fi
+    say "Signing in to GitHub. Your one-time code is copied for you: press Enter, and in the page that opens in your browser, press Command+V to paste it. No GitHub account yet? Make one on that page first (it's free)."
+    "$gh" auth login --hostname github.com --git-protocol https --web --scopes workflow --clipboard || die "GitHub sign-in didn't finish. Paste the same command again to retry."
   elif ! "$gh" auth status --hostname github.com 2>&1 | grep -q workflow; then
-    if "$gh" auth refresh --help 2>&1 | grep -q -- '--clipboard'; then
-      say 'GitHub needs one more permission (to add the Mac workflow). Your code is copied for you: press Enter, and press Command+V in the page that opens.'
-      "$gh" auth refresh --hostname github.com --scopes workflow --clipboard
-    else
-      say 'GitHub needs one more permission (to add the Mac workflow). Copy the code, press Enter, and paste it in your browser.'
-      "$gh" auth refresh --hostname github.com --scopes workflow
-    fi
+    say 'GitHub needs one more permission (to add the Mac workflow). Your code is copied for you: press Enter, and press Command+V in the page that opens.'
+    "$gh" auth refresh --hostname github.com --scopes workflow --clipboard
   fi
   "$gh" auth setup-git --hostname github.com >/dev/null 2>&1
   owner=$("$gh" api user --jq .login 2>/dev/null)
