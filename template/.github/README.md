@@ -7,7 +7,13 @@ Three steps, and a phone will do.
 
 1. **Get a Claude Pro plan,** or above: [claude.com/pricing](https://claude.com/pricing). Your agent is Claude, and working in a brain needs a paid plan. If you have one already, go on to step 2.
 2. **[Make your brain](https://github.com/new?template_owner=AnIdeaLab&template_name=second-brain&name=my-brain-ail&visibility=private).** Sign in to GitHub, or make a free account, then press "Create repository". Leave it set to Private. The green "Use this template" button on this page does the same; choose Private there.
-3. **Send your first message.** Open [claude.ai/code](https://claude.ai/code). If it asks, connect GitHub and let it see `my-brain-ail`. Start a session with `my-brain-ail` selected, and send this:
+3. **Send your first message.** Open [claude.ai/code](https://claude.ai/code). The first time, Claude needs GitHub connected, in four clicks:
+   1. Press "Connect GitHub" and allow it.
+   2. Back in Claude, the repo list still says there are none. That's normal.
+   3. Press "Install the Claude GitHub App", leave All repositories on, and press Install & Authorize.
+   4. Back in Claude, `my-brain-ail` is in the list. Pick it.
+
+   Then send this:
 
    ```
    This is my new second brain. Read CLAUDE.md and get me set up.
