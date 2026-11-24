@@ -59,6 +59,7 @@ TAG_SHELVES = ("ventures", "areas", "subjects")
 MACHINERY = {"brain-spec", "brain-audit", "getting-started", "guide-mode", "handoff", "my-pc", "upload-point", "add-a-key"}  # skills that run the brain's own machinery, so may link into notes
 TASK_GROUPS = [("Waiting on the owner", None), ("Doing", "doing"), ("Waiting", "waiting"), ("Open", "open")]
 MAX_ABOUT = 250
+OLD_OWNER_TASK = 30   # days untouched before an owner's task is listed by name only on the board
 MAX_INDEX = 60   # entries in an index
 MAX_CORE = 8 * 1024  # CLAUDE.md, which every agent reads first: 8 KB since 31 Oct 2026, and the kit's own stays under 6 KB, leaving owners 2 KB
 MAX_SKILLS_LIST = 6 * 1024  # skills/README.md, which agents read next: past this, move skills into topic lists (26 Oct 2026)
@@ -194,6 +195,8 @@ def line_for(lib, shelf, path, card, is_shelf=False):
     extra = ""
     status = card.get("status", "")
     if lib.top(path) == "tasks" and not is_shelf:
+        if len(about) > MAX_ABOUT:  # the check flags these; until they're fixed, the board stays cheap to read
+            about = about[:MAX_ABOUT].rsplit(" ", 1)[0].rstrip(",;:.") + "…"
         if card.get("due"):
             extra += f" Due {card['due']}."
     elif lib.top(path) == "handoffs" and not is_shelf:
@@ -218,12 +221,20 @@ def index_for(lib, shelf):
     if subs:
         lines += subs
     if top == "tasks":
+        def old(c):  # an owner's task nobody has touched for a month, with no date coming
+            u = to_date(c.get("updated"))
+            return (c.get("holder") == "owner" and not c.get("due") and u is not None
+                    and (date.today() - u).days > OLD_OWNER_TASK)
         for title, status in TASK_GROUPS:
             group = [(n, c) for n, c in live if (c.get("holder") == "owner") == (status is None)
-                     and (status is None or c.get("status") == status)]
+                     and (status is None or c.get("status") == status) and not old(c)]
             group.sort(key=lambda nc: (to_date(nc[1].get("due")) or date.max, nc[0]))
             if group:
                 lines += ["", f"### {title}"] + [line_for(lib, shelf, n, c) for n, c in group]
+        stale = sorted(n for n, c in live if old(c))
+        if stale:
+            lines += ["", f"### Waiting on the owner, untouched for a month", "Names only; the tidy-up asks the owner to keep or drop them."]
+            lines += [f"- [{os.path.basename(n)[:-3]}]({os.path.relpath(n, shelf).replace(os.sep, '/')})" for n in stale]
         if not live and not subs:
             lines.append("*No open tasks.*")
     elif top == "handoffs":
@@ -668,9 +679,10 @@ def audit(lib, since):
 # and code and media in knowledge/. Each list is for the tidy-up's agent to read and judge;
 # the brain spec's "Saving knowledge" says where each thing belongs.
 
-BIG_TASK = 15 * 1024     # a task note past this is carrying more than its status
+BIG_TASK = 10 * 1024     # a task note past this is carrying more than its status
 BIG_PART = 3 * 1024      # one status part (Where it stands, Next...) past this is stacked, not rewritten
-MAX_PROGRESS = 20        # Progress lines before the older ones go to history
+MAX_PROGRESS = 10        # Progress lines before all but the last KEEP_PROGRESS go to history
+KEEP_PROGRESS = 5        # moving at 10 down to 5 means a move every few stages, not every chat
 BIG_IDEA = 2 * 1024      # a graduated idea past this is still a full plan
 BIG_LOG = 10 * 1024      # a log or a running answers.md past this sheds its old entries to history
 STATUS_PARTS = ("Where it stands", "Next", "Waiting on", "Where everything is")
@@ -838,7 +850,7 @@ def slipped(lib, since, finished=()):
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
                 branches.append(b)
     return [
-        ("Status swollen or stacked", "rewrite the status in place; move old Progress lines to the project's history/; move research out to its own note", big),
+        ("Status swollen or stacked", f"rewrite the status in place; move research out to its own note; past {MAX_PROGRESS} Progress lines, first put what's still true in them into the status, Watch-outs or Decisions, then move all but the last {KEEP_PROGRESS} to the project's history/ with a pointer line at the top of Progress", big),
         ("Logs and answers.md past 10 KB", "move old or replaced entries to the shelf's history/, saying where", answers),
         ("The owner's answers left in tasks", "move each to the project's decisions answers.md (or a note of its own), and link it from the task", decided),
         ("Watch-outs in tasks finished since then", "a lesson about a kind of job goes to that skill's LESSONS.md; the rest stays", watch),

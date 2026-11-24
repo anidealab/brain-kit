@@ -20,7 +20,7 @@ It's plain Markdown and git, so any agent can follow it. The nudge is a Claude C
 | A report | An agent back to its coordinator | The hand-offs shelf, `kind: report` |
 
 ## The task note
-Its shape, when to update it, and how two chats share one are on the tasks shelf's page: [a task note is the job's live status](../../knowledge/tasks/README.md#a-task-note-is-the-jobs-live-status). In short:
+Its shape is on the tasks shelf's page ([a task note is the job's live status](../../knowledge/tasks/README.md#a-task-note-is-the-jobs-live-status)); when to update it and how two chats share one are [below](#when-to-update-a-task-note). In short:
 - **Check the board before making one:** if a task already covers the job or something like it, fit the job into that one ([how](../../knowledge/tasks/README.md#before-you-make-one)).
 - **The status is rewritten, never stacked:** Where it stands, Next, Waiting on and Where everything is always say what's true now.
 - **The record only grows:** the ask in the owner's words, decisions, watch-outs, and a dated Progress line per stage or chat.
@@ -30,6 +30,26 @@ Its shape, when to update it, and how two chats share one are on the tasks shelf
 No task note is needed for a job finished in one go with nothing left for anyone (git has the change), or for a quick search or read whose answer goes straight into your work.
 
 There's no length limit and no checker: some jobs need more written down than others, and the agent is trusted to judge. Decide what each job needs, and skip a part that has nothing in it.
+
+## When to update a task note
+- **When the job starts,** if it will outlive the chat, wait on someone or be handed on: check the board first ([how](../../knowledge/tasks/README.md#before-you-make-one)), then make the note, with the ask and the plan as Next. Set `holder` to your session link and push that first, so the board shows the job is taken.
+- **When a stage or a piece that works is finished:** rewrite Where it stands and Next, and add one Progress line, in the same push as the work.
+- **When the owner decides something or changes the ask:** their words go in then, not at the end.
+- **When something starts waiting,** on the owner, an agent or a timer, or stops waiting.
+- **Before you stop, whatever the reason:** the end of the chat, the size nudge, the owner's plan running out, the owner leaving. Add The last messages if the talk is mid-way.
+- **When it's done or dropped:** the status, a last Progress line, and what was learned saved to the library.
+- **Not** after every reply or tool call. A job finished in one go needs no task note at all.
+
+Each update also changes the card: `status`, `holder`, `updated`, and `about` when where it stands has moved. When Progress passes 10 lines, save what's still true in the old ones, then move all but the last 5 ([how](../../knowledge/tasks/README.md#its-shape)).
+
+### Two chats, one note
+There's no lock and nothing in the middle keeping order: git is the only thing every chat shares, so these rules are what keep two chats from writing over each other.
+- **One holder writes the status.** Only the chat named in `holder` rewrites the top four parts and Where everything is. To take a job, set `holder` to yourself and push that alone before you start. If the push is refused because another chat just took it, it's theirs.
+- **Everyone else only adds.** A chat that isn't the holder adds one line at the end of Progress (or under The ask, if the owner said it to them), and touches nothing else.
+- **A second chat on the same job gets a piece, with a note of its own.** The holder lists the piece under Next with a link; the other chat holds that note, and the holder folds it in when the piece is done. Two chats never share one status.
+- **Pull, edit, push, in one go.** `git pull --rebase` right before you edit the note, commit only that file (`git commit -- <path>`), and push at once. Never leave it edited and unpushed while you work.
+- **If the rebase clashes:** keep both sides' Progress lines, in time order. In the status the holder's text stands, and the other side's facts become a Progress line. Nothing either side wrote is dropped.
+- **A holder that's gone quiet:** if the holder is a chat and the note hasn't changed for two days (`git log -1 --format=%cs -- <path>`), take it over and say so in Progress.
 
 ## Save what's lasting first
 Before you bring the task note up to date, or write a brief or a report, put what should outlive the job where it belongs, as the [brain spec](../brain-spec/SKILL.md#saving-knowledge) says: the owner's answers on the decisions shelf (a line in the project's `answers.md`, or a note of its own for a big choice), research and facts in their notes, lessons about a kind of job in its skill's `LESSONS.md`, friction in the friction log, and jobs still to do as tasks of their own (the owner's with `holder: owner`). The task note links to them rather than copying them. So it stays short, the brain stays the memory, and a later chat finds a fact on its shelf, not buried in a finished task.

@@ -19,6 +19,6 @@ What the brain knows, as plain Markdown notes. How to do things is the other lib
 - [people/](people/README.md): The owner, customers, suppliers and contacts, one note per person. Read before working with or writing to someone.
 - [subjects/](subjects/README.md): The open library, one note or folder per field of knowledge, kept when facts took effort to get. Read when a job needs facts about a field rather than about the owner's own work.
 - [systems/](systems/README.md): The machinery the brain runs on: the owner's PC and its runner, accounts and keys, routines, Obsidian and the brain graph. Read before using an account, the PC or a routine.
-- [tasks/](tasks/README.md): What's in flight: open tasks, who holds them, and what waits on the owner; and a task note's shape, when to update it, and how two chats share one. Read to see what needs doing now, or before you make, update or carry on a task.
+- [tasks/](tasks/README.md): What's in flight: open tasks, who holds them, and what waits on the owner; and a task note's shape and how to check for one first. Read to see what needs doing now, or before you make a task.
 - [ventures/](ventures/README.md): Things with a goal: the owner's projects, businesses and client work, one note or folder each. Read before any work on a project, for what it is, its goal, its code and its look.
 <!-- index:end -->

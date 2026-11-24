@@ -210,6 +210,23 @@ class LibraryTest(unittest.TestCase):
         for fine in ("2026-10-31-second", "2026-11-01-third", "2026-11-01-brief", "2026-11-01-report", "history/2026-10-30"):
             self.assertNotIn(fine, problems)
 
+    def test_board_stays_short(self):
+        def write(rel, text):
+            with open(os.path.join(self.tmp.name, rel), "w", encoding="utf-8") as fh:
+                fh.write(text)
+        write("knowledge/tasks/long-card.md", note("A job " + "and more " * 35 + "in the end.", status="doing", holder="open",
+                                                    updated=date.today().strftime("%d %b %Y")))
+        write("knowledge/tasks/old-ask.md", note("The owner picks a colour.", status="open", holder="owner", updated="1 Sep 2026"))
+        library.build(self.lib, quiet=True)
+        tasks = self.read("knowledge/tasks/README.md")
+        line = next(l for l in tasks.split("\n") if "[long-card]" in l)
+        self.assertTrue(line.endswith("…"), line)
+        self.assertLessEqual(len(line.split("): ", 1)[1]), library.MAX_ABOUT + 1)
+        self.assertIn("### Waiting on the owner, untouched for a month", tasks)
+        self.assertIn("- [old-ask](old-ask.md)\n", tasks, "an old owner's task is listed by name only")
+        self.assertNotIn("The owner picks a colour.", tasks)
+        self.assertIn("[send-pack](send-pack.md): The owner sends the pack.", tasks, "one with a date coming stays in full")
+
     def test_slipped(self):
         def write(rel, text):
             path = os.path.join(self.tmp.name, rel)
