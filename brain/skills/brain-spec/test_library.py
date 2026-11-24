@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 import unittest
+from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import library  # noqa: E402
@@ -208,6 +209,40 @@ class LibraryTest(unittest.TestCase):
         self.assertIn('knowledge/handoffs/2026-11-01-odd.md: before "2026-09-01-lost.md" isn\'t a hand-off', problems)
         for fine in ("2026-10-31-second", "2026-11-01-third", "2026-11-01-brief", "2026-11-01-report", "history/2026-10-30"):
             self.assertNotIn(fine, problems)
+
+    def test_slipped(self):
+        def write(rel, text):
+            path = os.path.join(self.tmp.name, rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        write("knowledge/tasks/build-site.md", note("Build the site.", status="doing", holder="open")
+              + "## Where it stands\n" + "Still going.\n" * 400
+              + "## Decisions\n- Owner: \"no subscriptions\".\n- Owner: [blue](../decisions/bakery/answers.md).\n"
+              + "- Agent's call: plain CSS.\n## Progress\n" + "- a day.\n" * 21)
+        write("knowledge/tasks/old-job.md", note("An old job.", status="done", holder="open") + "## Watch-outs\n- one.\n- two.\n")
+        write("knowledge/decisions/2026-10-18-newer.md", note("A newer one.", status="current")
+              + "This replaces [the older](2026-10-17-older.md).\n")
+        write("knowledge/areas/money.md", note("The money picture.") + "See [gone](../decisions/2026-10-01-gone.md).\n")
+        write("knowledge/ideas/shop.md", note("A shop.", status="graduated") + "x" * 3000)
+        write("knowledge/ventures/plumbing.md", note("The plumbing venture, until 1 Jan 2020."))
+        write("knowledge/ventures/bakery/till.py", "print(1)\n")
+        write("Untitled.md", "")
+        lists = {title: lines for title, _, lines in library.slipped(self.lib, date(2026, 10, 1), ["knowledge/tasks/old-job.md"])}
+        big = lists["Status swollen or stacked"]
+        self.assertTrue(any('"Where it stands"' in l for l in big) and any("21 Progress lines" in l for l in big), big)
+        self.assertEqual(lists["The owner's answers left in tasks"],
+                         ["knowledge/tasks/build-site.md: 1 of 2 decision lines link nothing on the decisions shelf"])
+        self.assertEqual(lists["Watch-outs in tasks finished since then"], ["knowledge/tasks/old-job.md: 2 watch-outs"])
+        self.assertEqual(lists["Current decisions that say they replace another current one"],
+                         ["knowledge/decisions/2026-10-18-newer.md -> knowledge/decisions/2026-10-17-older.md"])
+        self.assertEqual(lists["Notes citing a superseded decision"],
+                         ["knowledge/areas/money.md cites knowledge/decisions/2026-10-01-gone.md"])
+        self.assertEqual(lists["Graduated ideas still a full plan"], ["knowledge/ideas/shop.md: 3 KB"])
+        self.assertTrue(any("send-pack.md: due" in l for l in lists["Notes whose date has passed"]))
+        self.assertTrue(any("plumbing.md" in l for l in lists["Notes whose date has passed"]))
+        self.assertEqual(lists["Code files in knowledge/"], ["knowledge/ventures/bakery/: till.py"])
+        self.assertIn("Untitled.md", lists["Stray files"])
 
     def test_one_way_decisions(self):
         def write(rel, text):

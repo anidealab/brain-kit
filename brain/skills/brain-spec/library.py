@@ -24,7 +24,10 @@ Usage: python3 skills/brain-spec/library.py COMMAND [options]
   audit --since DATE        notes changed a lot since their card was checked, tasks
                             finished since DATE, every skill with a LESSONS.md, and
                             later decisions pointing at an earlier one that doesn't
-                            point back (for the weekly audit)
+                            point back, and what slipped through: swollen status,
+                            answers and lessons left in tasks, replaced decisions still
+                            standing or cited, old plans, code and media in knowledge/,
+                            stray files and merged branches (for the weekly audit)
 Any command takes --root PATH to work on another copy of the repo (the tests do).
 
 It uses Python 3.8 or later and the standard library only, so it runs anywhere.
@@ -659,6 +662,197 @@ def audit(lib, since):
     return changed, finished, note
 
 
+# What slips (for the weekly tidy-up) -------------------------------------------
+# Added after a health check of brains a few weeks old: status stacked in tasks, the owner's
+# answers and research kept in tasks, lessons left in Watch-outs, replaced plans still current,
+# and code and media in knowledge/. Each list is for the tidy-up's agent to read and judge;
+# the brain spec's "Saving knowledge" says where each thing belongs.
+
+BIG_TASK = 15 * 1024     # a task note past this is carrying more than its status
+BIG_PART = 3 * 1024      # one status part (Where it stands, Next...) past this is stacked, not rewritten
+MAX_PROGRESS = 20        # Progress lines before the older ones go to history
+BIG_IDEA = 2 * 1024      # a graduated idea past this is still a full plan
+BIG_LOG = 10 * 1024      # a log or a running answers.md past this sheds its old entries to history
+STATUS_PARTS = ("Where it stands", "Next", "Waiting on", "Where everything is")
+# Not .html (a page for the owner is an HTML file) or .ps1 (a command for the owner to paste)
+CODE = {".py", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".css", ".sql", ".sh", ".bat", ".php", ".rb",
+        ".go", ".rs", ".java", ".c", ".cpp", ".json", ".yml", ".yaml", ".toml", ".csv", ".ipynb"}
+MEDIA = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".pdf", ".mp4", ".mov", ".webm", ".mkv", ".mp3", ".wav",
+         ".m4a", ".zip", ".7z", ".rar", ".glb", ".gltf", ".fbx", ".obj", ".psd", ".blend", ".bin", ".onnx", ".pt"}
+TOP_LEVEL = {"CLAUDE.md", "README.md", "skills", "knowledge", ".github", ".obsidian", ".claude", ".git", ".gitignore",
+             ".gitattributes", "LICENSE", "AGENTS.md"}
+REPLACES = re.compile(r"\b(replaces|replaced|supersedes|superseded|overrides|overridden|overturns)\b", re.I)
+A_DATE = re.compile(r"\b(\d{1,2} [A-Z][a-z]{2,8} \d{4})\b")
+TIMED = re.compile(r"\b(until|till|by|before|ahead of|due|next)\s+(?:the\s+)?(\d{1,2} [A-Z][a-z]{2,8} \d{4})")
+AGENTS_CALL = re.compile(r"agent'?s (own )?call|agent's own", re.I)
+
+
+def sections(text):
+    """{heading: body} for each `## ` part of a note."""
+    out, name = {}, None
+    for line in FENCE.sub("", text).split("\n"):
+        m = re.match(r"^## +(.+?)\s*$", line)
+        if m:
+            name = m.group(1)
+            out[name] = []
+        elif name:
+            out[name].append(line)
+    return {k: "\n".join(v).strip("\n") for k, v in out.items()}
+
+
+def bullets(body):
+    return [l for l in body.split("\n") if re.match(r"^\s{0,1}[-*] ", l)]
+
+
+def live(lib, path, card):
+    return "history" not in lib.rel(path).split("/")[:-1] and card.get("status") not in FINISHED
+
+
+def kb(n):
+    return f"{n / 1024:.0f} KB"
+
+
+def slipped(lib, since, finished=()):
+    """The lists of what slipped through, as [(title, what to do, [lines])], for the weekly tidy-up.
+    `finished` is the rel paths of tasks finished since `since` (from audit())."""
+    today = date.today()
+    big, answers, decided, watch, clash, cites, graduated, dated, stray = ([] for _ in range(9))
+    current = {}
+    texts = {}
+    checked = set()
+    listed = os.path.join(lib.root, CHECKED_LINKS)
+    if os.path.exists(listed):
+        with open(listed, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.split("#")[0].strip()
+                if " -> " in line:
+                    checked.add(tuple(part.strip() for part in line.split(" -> ", 1)))
+    for path, card in lib.all_notes():
+        rel = lib.rel(path)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                texts[rel] = fh.read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        if lib.top(path) == "decisions" and card.get("status") in ("current", "partly-superseded"):
+            current[os.path.normpath(path)] = card
+    superseded = {os.path.normpath(p) for p, c in lib.all_notes() if lib.top(p) == "decisions" and c.get("status") == "superseded"}
+    for path, card in lib.all_notes():
+        rel = lib.rel(path)
+        text = texts.get(rel)
+        if text is None:
+            continue
+        top, name, size = lib.top(path), os.path.basename(path), len(text.encode("utf-8"))
+        if name == "README.md" and top == "tasks":
+            continue  # the shelf's page and index, not a task
+        parts = sections(text)
+        if rel in finished and top == "tasks":
+            n = len(bullets(parts.get("Watch-outs", "")))
+            if n:
+                watch.append(f"{rel}: {n} watch-out{'s' if n != 1 else ''}")
+        in_history = "history" in rel.split("/")[:-1]
+        if top == "ideas" and card.get("status") == "graduated" and size > BIG_IDEA and not in_history:
+            graduated.append(f"{rel}: {kb(size)}")  # graduated counts as finished, but an old plan still reads as current
+        if not live(lib, path, card):
+            continue
+        # Status stacked or swollen
+        if top == "tasks" and size > BIG_TASK:
+            big.append(f"{rel}: {kb(size)} in all")
+        for part in STATUS_PARTS if top == "tasks" else ("Where it stands",):
+            body = parts.get(part, "")
+            if len(body.encode("utf-8")) > BIG_PART:
+                big.append(f"{rel}: its \"{part}\" is {kb(len(body.encode('utf-8')))}")
+        progress = len(bullets(parts.get("Progress", "")))
+        if progress > MAX_PROGRESS:
+            big.append(f"{rel}: {progress} Progress lines")
+        if (name == "answers.md" or "log" in name) and size > BIG_LOG:
+            answers.append(f"{rel}: {kb(size)}")
+        # The owner's answers left in a task
+        if top == "tasks":
+            lines = [b for b in bullets(parts.get("Decisions", "")) if not AGENTS_CALL.search(b)]
+            loose = [b for b in lines if "decisions/" not in b]
+            if loose:
+                decided.append(f"{rel}: {len(loose)} of {len(lines)} decision line{'s' if len(lines) != 1 else ''} link nothing on the decisions shelf")
+        # Replaced decisions still standing, or still cited
+        links = {os.path.normpath(os.path.join(os.path.dirname(path), t.split("#")[0]))
+                 for t in LINK.findall(FENCE.sub("", text)) if not re.match(r"^[a-z][a-z0-9+.-]*:", t, re.I)}
+        if os.path.normpath(path) in current:
+            for line in FENCE.sub("", text).split("\n"):
+                if REPLACES.search(line):
+                    for t in LINK.findall(line):
+                        dest = os.path.normpath(os.path.join(os.path.dirname(path), t.split("#")[0]))
+                        pair = f"{rel} -> {lib.rel(dest)}"
+                        if (dest in current and dest != os.path.normpath(path) and current[dest].get("status") == "current"
+                                and pair not in clash and (rel, lib.rel(dest)) not in checked):
+                            clash.append(pair)
+        elif top != "decisions" and not DATED.match(name):  # a dated note is a record of its day
+            for dest in sorted(links & superseded):
+                cites.append(f"{rel} cites {lib.rel(dest)}")
+        # Old plans and dates still reading as current
+        due = to_date(card.get("due"))
+        if top == "decisions":
+            pass  # a decision's dates are when it was made
+        elif due and due < today:
+            dated.append(f"{rel}: due {card.get('due')}")
+        else:
+            for m in TIMED.finditer(card.get("about", "") or ""):
+                d = to_date(m.group(2))
+                if d and d < today:
+                    dated.append(f"{rel}: its card says \"{m.group(1)} {m.group(2)}\"")
+                    break
+    # Code and media in knowledge/, and anything else at the top level
+    added = set(git(lib, "log", "--diff-filter=A", "--name-only", "--format=", f"--since={since.isoformat()}T00:00:00Z", "--", "knowledge").split())
+    code, media = {}, {}
+    for dirpath, dirnames, files in os.walk(lib.know):
+        dirnames[:] = [d for d in dirnames if not d.startswith(".") and d != "history"]
+        for f in files:
+            full = os.path.join(dirpath, f)
+            rel, ext = lib.rel(full), os.path.splitext(f)[1].lower()
+            if ext in CODE:
+                code.setdefault(lib.rel(dirpath) + "/", []).append(f)
+            elif (ext in MEDIA or os.path.getsize(full) > 1024 * 1024) and rel in added:
+                media.setdefault(lib.rel(dirpath) + "/", []).append(os.path.getsize(full))
+    media = [f"{d}: {len(ns)} file{'s' if len(ns) != 1 else ''}, {sum(ns) / 1048576:.1f} MB" for d, ns in sorted(media.items())]
+    code = [f"{d}: {', '.join(sorted(fs)) if len(fs) <= 3 else f'{len(fs)} code files'}" for d, fs in sorted(code.items())]
+    for f in sorted(os.listdir(lib.root)):
+        if f not in TOP_LEVEL:
+            stray.append(f"{f}{'/' if os.path.isdir(os.path.join(lib.root, f)) else ''}: not one of the brain's top-level parts")
+    for dirpath, dirnames, files in os.walk(lib.root):
+        dirnames[:] = [d for d in dirnames if d != ".git"]
+        for f in files:
+            if f.startswith("Untitled"):
+                stray.append(lib.rel(os.path.join(dirpath, f)))
+    # Session branches already merged into main
+    branches = []
+    if git(lib, "rev-parse", "--is-shallow-repository").strip() == "true":
+        branches.append("This clone is shallow, so merged branches can't be told: `git fetch --unshallow origin main` first.")
+    else:
+        for ref in git(lib, "for-each-ref", "--format=%(refname:short)", "refs/remotes/origin/").split():
+            b = ref.split("/", 1)[1] if "/" in ref else ref
+            if b in ("main", "HEAD", "origin") or ref == "origin":
+                continue
+            last = to_date(git(lib, "log", "-1", "--format=%cs", ref).strip())
+            if last and (today - last).days < 2:
+                continue  # its session may still be going
+            if subprocess.call(["git", "-C", lib.root, "merge-base", "--is-ancestor", ref, "origin/main"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+                branches.append(b)
+    return [
+        ("Status swollen or stacked", "rewrite the status in place; move old Progress lines to the project's history/; move research out to its own note", big),
+        ("Logs and answers.md past 10 KB", "move old or replaced entries to the shelf's history/, saying where", answers),
+        ("The owner's answers left in tasks", "move each to the project's decisions answers.md (or a note of its own), and link it from the task", decided),
+        ("Watch-outs in tasks finished since then", "a lesson about a kind of job goes to that skill's LESSONS.md; the rest stays", watch),
+        ("Current decisions that say they replace another current one", f"mark the older superseded or partly-superseded and fix what cites it; a pair that's only a reference goes in {CHECKED_LINKS}", clash),
+        ("Notes citing a superseded decision", "point them at the decision that replaced it, or reword", cites),
+        ("Graduated ideas still a full plan", "move the detail to its project, cut the idea to a pointer", graduated),
+        ("Notes whose date has passed", "update, close or mark done", dated),
+        ("Code files in knowledge/", "move to the project's own repo (brain spec: a project with code gets its own repo), or the PC", code),
+        ("Big or media files added to knowledge/ since then", "move to the project's repo or the PC, unless it's an upload point original", media),
+        ("Stray files", "move into a shelf, or delete if empty", stray),
+        ("Branches already merged into main, untouched for two days", "delete them: `git push origin --delete <branch>`", branches),
+    ]
+
+
 # The command line -------------------------------------------------------------
 
 def main(argv=None):
@@ -714,6 +908,11 @@ def main(argv=None):
             print(f"  {later} -> {earlier}")
         if pairs:
             print(f"  If the later one changes or adds to the earlier, say so in the earlier; if it only refers to it, add the pair to {CHECKED_LINKS}.")
+        print("\nWhat slipped through (read each, and judge):")
+        for title, todo, lines in slipped(lib, since, [f_.split(":", 1)[0] for f_ in finished]):
+            print(f"{title}: {len(lines)}" + (f" ({todo})" if lines else ""))
+            for line in lines:
+                print("  " + line)
     return 0
 
 
