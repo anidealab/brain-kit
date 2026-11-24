@@ -21,8 +21,6 @@ Three steps, and a phone will do.
 
 It asks you a few questions and sets everything up from there. Every chat after that starts the same way: a new session with `my-brain-ail` selected.
 
-Don't see `my-brain-ail` in the list? That happens if you'd connected GitHub before. Press "Repo not showing up?" under the list, install the Claude app for GitHub on `my-brain-ail`, and come back.
-
 The same steps, with tutorials for your first days, are at [anidealab.com/second-brain](https://anidealab.com/second-brain), where you can also have AnIdeaLab set your brain up for you.
 
 ## What you get
