@@ -1,27 +1,40 @@
 #!/usr/bin/env python3
 """Index my computer: the documents someone worked on in the last year, found on their own computer and turned
-into text, for an agent to write up as notes in their brain. AnIdeaLab's set-up (the brain set up for you) runs
-it as a job on the buyer's runner; it isn't part of a brain. README.md in this folder says how it's started.
+into text, for an agent to write up as notes in their brain. AnIdeaLab's set-up (the brain set up for you) uses it
+in two stages (25 Nov 2026): the installer maps the computer, an agent picks what to read from the map and the
+buyer's answers, and a job on the buyer's runner reads just that. It isn't part of a brain. README.md says more.
 
 It reuses the brain's file-intake tool (brain/skills/file-intake/intake.py): its survey and its text, with this
-choosing what goes in. In:
+choosing what goes in. Searched, unless a plan says otherwise:
   - the usual folders: Desktop, Documents, Downloads and every OneDrive folder, and project folders: the other
     folders in the home folder and, on Windows, the other fixed drives' folders (the system's and apps' left out);
   - documents only (PDF, Word, Excel, PowerPoint, email, plain text, notes), changed in the last 12 months;
   - a code project (a folder with .git) as one row: where it is, never its files.
 Out, and only counted, never listed by name: photos, video, audio, archives, apps' and the system's files;
-anything whose name looks like passwords or keys (passwords.xlsx, recovery codes, .env, .pem, .kdbx); a
-document whose text looks like it holds them (a private key, an API key, a list of passwords) is dropped
-after it's read; the brain's own folder, the runner's, browsers' and the system's folders.
-It also writes map.md, a map of the computer from the same walk, for the brain's note on it: each drive's space, the
-folders searched and the ones inside them two deep, with what's in each (documents, photos, video, code) and when it
-last changed, whatever its age; the programs' and games' folders; the code projects; the cloud drives not searched.
+anything whose name looks like passwords or keys (passwords.xlsx, Rosie Keys.txt, recovery codes, .env, .pem,
+.kdbx), and folders named that way; wallets' folders; backups (a folder or drive named like one, which holds
+copies of what's searched anyway) and copies of a brain; apps' caches; the brain's own folder, the runner's,
+browsers' and the system's folders. After reading, a document whose text looks like it holds passwords or keys is
+dropped, and so is one that's mostly numbers (a data file saved as text).
+Every mode writes map.md, a map of the computer from the same walk, for the brain's note on it: each drive's space,
+the folders searched and the ones inside them two deep, with what's in each and when it last changed, whatever its
+age; the programs' and games' folders; the code projects; backups and cloud drives not searched.
 Nothing on the computer is changed, moved or copied: only the work folder is written.
 
-    python index-computer.py --work <work folder> [--intake <intake.py>] [--months 12] [folders...]
+    python index-computer.py --work <work folder> --map              # stage 1: the map, nothing read
+    python index-computer.py --work <work folder> --plan <plan.txt>  # stage 2: read what the plan picks
+    python index-computer.py --work <work folder> --more [--minutes N]  # read what a time limit left
+    python index-computer.py --work <work folder> [--months 12] [folders...]  # map and read it all, as before
 
-With folders given, only those are searched. Writes the work folder as intake.py does (files.txt, survey.md,
-text/<id>.md) and index.md: what was searched, what went in and what was left out, by reason.
+--map writes files.txt (the candidate documents, none read), folders.md (them by folder, for picking) and index.md.
+A plan is plain text, a line each, # for notes:
+    read: <folder>      search this folder (as many as wanted; none means the usual folders)
+    skip: <folder>      leave this folder out, wherever it is
+    file: <file>        read this file, whatever its age
+    months: 12          how far back a document's last change can be
+    minutes: 45         stop reading after this long, newest first; what's left waits for --more
+With a plan, files.txt, survey.md and text/<id>.md are as intake.py makes them, and index.md says what was searched,
+what went in and what was left out, by reason.
 Python 3.8+; MarkItDown for PDF and Office files (the job runs it with uv, so nothing is installed for good).
 """
 import argparse
@@ -56,11 +69,19 @@ DRIVE_SKIP = {"windows", "program files", "program files (x86)", "programdata", 
 DEEP_SKIP = {"site-packages", "lib", "libs", "bin", "obj", "target", "vendor", "bower_components",
              "cache", "caches", "temp", "tmp", "logs", "_runner", "_work", "_intake", "steamapps",
              "env", ".env", "venv", ".venv", "conda", "envs", "pkgs", "installers", "drivers", "fonts",
-             "models", "checkpoints", "lora", "loras", "datasets", "dataset", "renders", "frames", "footage", "proxies"}
+             "models", "checkpoints", "lora", "loras", "datasets", "dataset", "renders", "frames", "footage", "proxies",
+             # tried 25 Nov 2026: DaVinci Resolve's cache, a copy of a brain, a wallet's folder
+             "cacheclip", "cache clip", "proxy media", "optimized media", "render cache", "ai-brain-link",
+             "monero", "bitcoin", "electrum", "exodus", "wallet", "wallets", "ledger live"}
+# A folder or drive named like a backup: copies of what's searched anyway (tried 25 Nov 2026: a backup drive's copy of
+# a brain was 61% of a PC's text). Left out whole, and listed in the map.
+BACKUP = re.compile(r"back\s*-?ups?\b|\bbackup|time\s*machine", re.I)
+NOT_READ = "not read yet: time ran out"
 
 SECRET_NAME = re.compile(
     r"pass\s*words?|passwd|\bpwds?\b|credential|\bcreds\b|secret|recovery[\s._-]*(code|key|phrase)|backup[\s._-]*codes?|"
-    r"\b2fa\b|\bmfa\b|seed[\s._-]*phrase|private[\s._-]*key|api[\s._-]*keys?|access[\s._-]*tokens?|wallet|\blogins\b|\bpin\s*(code|number)s?\b",
+    r"\b2fa\b|\bmfa\b|seed[\s._-]*phrase|private[\s._-]*key|api[\s._-]*keys?|access[\s._-]*tokens?|wallet|\blogins\b|\bpin\s*(code|number)s?\b|"
+    r"\bkeys\b|^akeys$",
     re.I)
 SECRET_EXT = {".env", ".pem", ".key", ".ppk", ".pfx", ".p12", ".kdbx", ".kdb", ".1pif", ".agilekeychain", ".keychain",
               ".gpg", ".asc", ".ovpn", ".crt", ".cer", ".jks", ".keystore"}
@@ -86,6 +107,7 @@ GAME_DIRS = {"games", "my games", "saved games", "curseforge", "epic", "battlest
 # Programs' own papers, not the owner's.
 PROGRAM_PAPERS = re.compile(r"^(read\s*me|licen[cs]e|eula|change\s*log|changes|copying|notice|third[\s_-]*party|"
                             r"thirdpartynotices|authors|credits|contributing|patents|history|news|install|todo|code_of_conduct)\b", re.I)
+BACKUPS = []   # backup folders and drives found, for the map
 HIDDEN = 0x2 | 0x4 | 0x400   # Windows' hidden, system and reparse point (a junction, like "Application Data")
 
 
@@ -160,6 +182,9 @@ def windows_drives():
             ctypes.windll.kernel32.GetVolumeInformationW(root, label, 261, None, None, None, fs, 261)
             if re.search(r"google|drive file stream|dropbox|box|icloud", label.value, re.I):
                 continue   # a cloud drive that looks like a disk: a later step of its own
+            if BACKUP.search(label.value):
+                BACKUPS.append(f"{root} ({label.value})")
+                continue   # a backup drive: copies
             out.append(root)
         return out
     except Exception:
@@ -200,19 +225,23 @@ def default_folders(home):
     return tops
 
 
-def tidy(tops, never):
-    """Real folders only, each once, none inside another (Documents inside OneDrive is searched with OneDrive)."""
+def tidy(tops, never, chosen=False):
+    """Real folders only, each once, none inside another (Documents inside OneDrive is searched with OneDrive).
+    Folders a plan chose are taken as they are, whatever their names."""
     seen, out = set(), []
     for t in tops:
         if not t or not os.path.isdir(t) or os.path.islink(t):
             continue
         name = os.path.basename(os.path.normpath(t)).lower()
         try:
-            if getattr(os.stat(t, follow_symlinks=False), "st_file_attributes", 0) & HIDDEN:
+            if not chosen and getattr(os.stat(t, follow_symlinks=False), "st_file_attributes", 0) & HIDDEN:
                 continue   # "Application Data", "Local Settings": junctions into AppData
         except OSError:
             continue
-        if name in GAME_DIRS or name in DEEP_SKIP or name in {"node_modules", "appdata"}:
+        if not chosen and (name in GAME_DIRS or name in DEEP_SKIP or name in {"node_modules", "appdata"}):
+            continue
+        if not chosen and BACKUP.search(name):
+            BACKUPS.append(t)
             continue
         real = norm(os.path.realpath(t))
         if real in seen or any(real == n or real.startswith(n + os.sep) for n in never):
@@ -272,7 +301,134 @@ def write_map(work, tops, fmap, programs, repos, clouds, today):
             out.append(f"- ...and {len(programs) - 80} more")
     if clouds:
         out += ["", "## Cloud drives found, not searched"] + [f"- `{c}`" for c in sorted(clouds)]
+    if BACKUPS:
+        out += ["", "## Backups found, not searched (copies of what's searched anyway)"] + [f"- `{b}`" for b in sorted(set(BACKUPS))]
     with open(os.path.join(work, "map.md"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(out) + "\n")
+
+
+def read_plan(path):
+    """A plan's lines: read:, skip:, file:, months:, minutes:. Anything else is a note."""
+    plan = {"read": [], "skip": [], "file": [], "months": None, "minutes": None}
+    with open(path, encoding="utf-8-sig") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            key, _, val = line.partition(":")
+            key, val = key.strip().lower(), val.strip().strip('"').strip("'")
+            if key in ("read", "skip", "file") and val:
+                plan[key].append(os.path.expanduser(val))
+            elif key in ("months", "minutes") and val:
+                try:
+                    plan[key] = float(val)
+                except ValueError:
+                    pass
+    return plan
+
+
+def read_one(md, r, intake):
+    """One document's text, the way intake.py's convert reads it; None when there's nothing to keep."""
+    ext = os.path.splitext(r["path"])[1].lower()
+    try:
+        if int(r["bytes"] or 0) > intake.MAX_CONVERT:
+            r["text"] = "too big: listed, not read"
+            return None
+        if ext in intake.PLAIN:
+            with open(r["path"], "rb") as fh:
+                raw = fh.read()
+            r["text"] = "plain"
+            return raw.decode("utf-8-sig", errors="replace") if b"\x00" not in raw[:2000] else raw.decode("utf-16", errors="replace")
+        if ext in intake.OLD:
+            r["text"] = "old format: open it on the computer and save it as a newer one, or read it there"
+            return None
+        if md is None:
+            r["text"] = "needs markitdown"
+            return None
+        body = md.convert(r["path"]).text_content or ""
+        r["text"] = "ok"
+        if len(body.strip()) < 80 and ext == ".pdf":
+            r["text"] = "no text: likely a scan"
+        return body
+    except Exception as e:   # one bad file mustn't stop the pile
+        r["text"] = "failed: " + re.sub(r"\s+", " ", str(e))[:120]
+        return None
+
+
+def read_docs(work, intake, bar, left, deadline, only_unread, first=()):
+    """Read the documents in files.txt, newest first (the plan's own files before them), until the deadline.
+    What's left is marked NOT_READ for --more. Drops a text that holds passwords or keys, or is mostly numbers."""
+    rows = intake.read_rows(work)
+    text_dir = os.path.join(work, "text")
+    os.makedirs(text_dir, exist_ok=True)
+    try:
+        from markitdown import MarkItDown
+        md = MarkItDown()
+    except Exception:
+        md = None
+    first = {norm(f) for f in first}
+    todo = [r for r in rows if r["kind"] == "document" and not r["dup_of"] and r["outcome"] != "skipped"
+            and (r["text"] == NOT_READ if only_unread else r["text"] in ("", NOT_READ))]
+    todo.sort(key=lambda r: (norm(r["path"]) in first, r["modified"]), reverse=True)
+    started = time.time()
+    done = 0
+    for i, r in enumerate(todo):
+        if deadline and time.time() > deadline:
+            for rest in todo[i:]:
+                rest["text"] = NOT_READ
+            break
+        body = read_one(md, r, intake)
+        done += 1
+        if body is not None:
+            sample = body[:20000]
+            letters = sum(c.isalpha() for c in sample)
+            if any(rx.search(body) for rx in SECRET_TEXT) or len(PASSWORD_LINE.findall(body)) >= 2:
+                r.update(text="", chars="", outcome="skipped", where="its text looks like it holds passwords or keys, so it wasn't kept")
+                left["held passwords or keys inside"] += 1
+            elif len(body) > 2000 and letters < 0.3 * len(sample):
+                r.update(text="", chars="", outcome="skipped", where="its text is mostly numbers: a data file, not a document")
+                left["mostly numbers (data saved as text)"] += 1
+            else:
+                if len(body) > MAX_CHARS:
+                    body = body[:MAX_CHARS] + f"\n\n<!-- cut at {MAX_CHARS:,} characters of {len(body):,}: the rest is in the file -->\n"
+                r["chars"] = min(len(body), MAX_CHARS)
+                with open(os.path.join(text_dir, f"{r['id']}.md"), "w", encoding="utf-8", newline="\n") as fh:
+                    fh.write(f"<!-- file {r['id']}: {r['path']} -->\n{body}")
+        per = (time.time() - started) / done
+        mins = per * (len(todo) - done) / 60
+        if deadline:
+            mins = min(mins, max(0, (deadline - time.time()) / 60))
+        left_text = "under a minute left" if mins < 1 else f"about {mins:.0f} minute{'s' if mins >= 1.5 else ''} left"
+        bar.show("Reading your documents", f"Reading your documents: {done:,} of {len(todo):,}, {left_text}", 100 * done / max(1, len(todo)))
+        if done % 50 == 0:
+            intake.write_rows(work, rows)
+    bar.show("Reading your documents", f"Read {done:,} documents.", 100, force=True)
+    bar.end()
+    intake.write_rows(work, rows)
+    intake.write_survey(work, rows)
+    return rows
+
+
+def write_folders(work, rows, since):
+    """folders.md: the candidate documents by folder, for the agent picking what to read."""
+    docs = [r for r in rows if r["kind"] == "document" and not r["dup_of"] and r["outcome"] != "skipped"]
+    by = collections.defaultdict(list)
+    for r in docs:
+        by[os.path.dirname(r["path"])].append(r)
+    out = ["# Documents by folder, for picking what to read", "",
+           f"{len(docs):,} documents changed since {datetime.date.fromtimestamp(since).isoformat()}, none read yet, in "
+           f"{len(by):,} folders (exact copies not counted). Each line: the folder, its documents, their size, the newest "
+           "change, the kinds and a few names, newest first. Every one is in `files.txt`.", ""]
+
+    def size(b):
+        return f"{b / (1 << 20):.1f} MB" if b >= 1 << 20 else f"{b / 1024:.0f} KB"
+    for folder in sorted(by, key=str.lower):
+        rs = sorted(by[folder], key=lambda r: r["modified"], reverse=True)
+        kinds = collections.Counter(os.path.splitext(r["path"])[1].lower().lstrip(".") or "none" for r in rs)
+        names = "; ".join(os.path.basename(r["path"])[:60] for r in rs[:4]) + ("; ..." if len(rs) > 4 else "")
+        out.append(f"- `{folder}`: {len(rs)} document{'s' if len(rs) != 1 else ''}, {size(sum(int(r['bytes'] or 0) for r in rs))}, "
+                   f"newest {rs[0]['modified']} ({', '.join(f'{k} {n}' for k, n in kinds.most_common())}): {names}")
+    with open(os.path.join(work, "folders.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(out) + "\n")
 
 
@@ -282,11 +438,15 @@ def main():
             stream.reconfigure(encoding="utf-8", errors="replace")
         except Exception:
             pass
-    ap = argparse.ArgumentParser(description="Index my computer: a year of documents, as text for the brain's agent.")
+    ap = argparse.ArgumentParser(description="Index my computer: map it, then read what a plan picks, as text for the brain's agent.")
     ap.add_argument("folders", nargs="*")
     ap.add_argument("--work", required=True)
     ap.add_argument("--intake", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "intake.py"))
-    ap.add_argument("--months", type=int, default=12)
+    ap.add_argument("--months", type=float, default=12)
+    ap.add_argument("--map", action="store_true", help="stage 1: map the computer and list the candidates; read nothing")
+    ap.add_argument("--plan", help="stage 2: read what this plan picks")
+    ap.add_argument("--more", action="store_true", help="read what a time limit left, in the same work folder")
+    ap.add_argument("--minutes", type=float, help="stop reading after this long (a plan's minutes: line otherwise)")
     args = ap.parse_args()
     started = time.time()
     # PDF readers' notes ("should not allow text extraction", font warnings) would fill the window: errors only.
@@ -295,26 +455,51 @@ def main():
     logging.disable(logging.WARNING)
     warnings.filterwarnings("ignore")
     intake = load_intake(args.intake)
+    intake.print = lambda *a, **k: None   # intake's own reports would flood the window: the bar instead
     home = os.path.expanduser("~")
-    since = time.time() - args.months * 30.44 * 86400
     work = os.path.abspath(args.work)
+    computer = os.environ.get("COMPUTERNAME") or platform.node()
+    system = {"Darwin": "Mac", "Windows": "Windows PC"}.get(platform.system(), platform.system())
+    bar = Progress()
+    leftfile = os.path.join(work, "left.json")
+    import json
+
+    if args.more:   # the rest of a read a time limit stopped
+        with open(leftfile, encoding="utf-8") as fh:
+            saved = json.load(fh)
+        left = collections.Counter(saved["left"])
+        deadline = started + args.minutes * 60 if args.minutes else 0
+        rows = read_docs(work, intake, bar, left, deadline, only_unread=True)
+        finish(work, rows, left, saved, started, intake)
+        return
+
+    plan = read_plan(args.plan) if args.plan else {"read": [], "skip": [], "file": [], "months": None, "minutes": None}
+    months = plan["months"] or args.months
+    minutes = args.minutes or plan["minutes"] or 0
+    since = time.time() - months * 30.44 * 86400
     never = {norm(work)}
     for root in (os.path.join(home, "AI-Brain-Link"), "C:\\AI-Brain-Link", "D:\\AI-Brain-Link", os.environ.get("RUNNER_WORKSPACE", ""),
                  os.environ.get("INDEX_BRAIN_ROOT", "")):
         if root and os.path.isdir(root):
             never.add(norm(os.path.realpath(root)))
-    tops = tidy(args.folders or default_folders(home), never)
+    skips = {norm(os.path.realpath(s)) for s in plan["skip"]}
+    never |= skips
+    explicit = {norm(os.path.realpath(f)) for f in plan["file"] if os.path.isfile(f)}
+    if plan["read"] or plan["file"]:
+        tops = tidy(plan["read"], never, chosen=True) + [os.path.realpath(f) for f in plan["file"] if os.path.isfile(f)]
+    else:
+        tops = tidy(args.folders or default_folders(home), never)
     left = collections.Counter()
     walked = [0]
     found = [0]
-    bar = Progress()
     where = [0, ""]   # which top folder it's in, for the bar
+    phase = "Mapping your computer" if args.map else "Finding your documents"
 
     def keep(kind, path):
         """A walked row: in, or only counted."""
         walked[0] += 1
         pct = 100 * where[0] / max(1, len(tops))
-        bar.show("Finding your documents", f"Finding your documents: {walked[0]:,} files looked at, {found[0]:,} found so far ({where[1]})", pct)
+        bar.show(phase, f"{phase}: {walked[0]:,} files looked at, {found[0]:,} documents so far ({where[1]})", pct)
         name = os.path.basename(path)
         ext = os.path.splitext(name)[1].lower()
         if kind == "repo":
@@ -333,17 +518,18 @@ def main():
         if ext in SECRET_EXT or SECRET_NAME.search(os.path.splitext(name)[0]):
             left["named like passwords or keys"] += 1
             return False
-        if ext in intake.PLAIN and ext not in KEEP_PLAIN or ext in LEAVE_RICH:
+        mine = norm(path) in explicit
+        if not mine and (ext in intake.PLAIN and ext not in KEEP_PLAIN or ext in LEAVE_RICH):
             left["machine-made text (.json, .log, .xml, web pages)"] += 1
             return False
-        if PROGRAM_PAPERS.match(os.path.splitext(name)[0]):
+        if not mine and PROGRAM_PAPERS.match(os.path.splitext(name)[0]):
             left["programs' readmes, licences and change logs"] += 1
             return False
         try:
             st = os.stat(path)
         except OSError:
             return False
-        if st.st_mtime < since:
+        if st.st_mtime < since and not mine:
             left["not changed in the time"] += 1
             return False
         if st.st_size == 0:
@@ -368,7 +554,8 @@ def main():
 
     def walk(top):
         """intake.walk's way (a folder with .git is one row), plus a whole computer's rules: hidden folders and
-        junctions, programs' and games' folders, and tools' and caches' folders are left out."""
+        junctions, programs' and games' folders, backups, folders named like passwords or keys, the plan's skips,
+        and tools' and caches' folders are left out."""
         if top in tops:
             where[0], where[1] = tops.index(top), top
         if os.path.isfile(top):
@@ -396,9 +583,18 @@ def main():
                     if e.is_symlink() or hidden(e):
                         continue
                     if e.is_dir():
-                        if e.name.lower() not in skip_dirs:
+                        low = e.name.lower()
+                        if norm(e.path) in never:
+                            if norm(e.path) in skips:
+                                left["folders the plan left out"] += 1
+                        elif BACKUP.search(e.name):
+                            BACKUPS.append(e.path)
+                            left["backups' folders (left out whole)"] += 1
+                        elif SECRET_NAME.search(e.name):
+                            left["folders named like passwords or keys (left out whole)"] += 1
+                        elif low not in skip_dirs:
                             todo.append((e.path, depth + 1))
-                        elif e.name.lower() in GAME_DIRS:
+                        elif low in GAME_DIRS:
                             programs.append(e.path)
                     elif e.is_file() and e.name.lower() not in intake.SKIP_FILES and not e.name.startswith("~$"):
                         kind = intake.kind_of(e.name)
@@ -408,77 +604,70 @@ def main():
                 except OSError:
                     continue
 
-    # intake's survey and convert, quietly (their own reports would flood the window), with the bar instead.
     intake.walk = walk
-    intake.print = lambda *a, **k: None
     print("Searching: " + "; ".join(tops), flush=True)
     intake.survey(argparse.Namespace(paths=tops, upload_list=None, work=work))
-    bar.show("Finding your documents", f"Found {found[0]:,} documents in {walked[0]:,} files.", 100, force=True)
+    bar.show(phase, f"Found {found[0]:,} documents in {walked[0]:,} files.", 100, force=True)
     bar.end()
-    rows = intake.read_rows(work)
-    total = sum(1 for r in rows if r["kind"] == "document" and not r["dup_of"])
-    read_so_far = [0]
-    reading_started = time.time()
-    text_dir = os.path.join(work, "text")
-    real_open = open
+    write_map(work, tops, fmap, programs, repos, clouds, intake.today())
+    saved = {"left": {}, "tops": tops, "since": since, "months": months, "computer": computer, "system": system,
+             "walked": walked[0], "mode": "map" if args.map else ("plan" if args.plan else "all"), "plan": plan,
+             "backups": sorted(set(BACKUPS))}
+    if args.map:
+        rows = intake.read_rows(work)
+        write_folders(work, rows, since)
+        saved["left"] = dict(left)
+        with open(leftfile, "w", encoding="utf-8") as fh:
+            json.dump(saved, fh)
+        finish(work, rows, left, saved, started, intake)
+        return
+    deadline = started + minutes * 60 if minutes else 0
+    rows = read_docs(work, intake, bar, left, deadline, only_unread=False, first=plan["file"])
+    saved["left"] = dict(left)
+    with open(leftfile, "w", encoding="utf-8") as fh:
+        json.dump(saved, fh)
+    finish(work, rows, left, saved, started, intake)
 
-    def counting_open(path, mode="r", *a, **k):
-        # convert writes each document's text once: that's one more read
-        if "w" in mode and os.path.dirname(os.path.abspath(str(path))) == os.path.abspath(text_dir):
-            read_so_far[0] += 1
-            n = read_so_far[0]
-            per = (time.time() - reading_started) / n
-            mins = per * (total - n) / 60
-            left_text = "under a minute left" if mins < 1 else f"about {mins:.0f} minute{'s' if mins >= 1.5 else ''} left"
-            bar.show("Reading your documents", f"Reading your documents: {n:,} of {total:,}, {left_text}", 100 * n / max(1, total))
-        return real_open(path, mode, *a, **k)
 
-    intake.open = counting_open
-    intake.convert(argparse.Namespace(work=work))
-    bar.show("Reading your documents", f"Read {read_so_far[0]:,} documents.", 100, force=True)
-    bar.end()
-    del intake.open
-
-    # After reading: drop a document whose text holds passwords or keys, and cut a very long one.
-    rows = intake.read_rows(work)
-    text_dir = os.path.join(work, "text")
-    for r in rows:
-        p = os.path.join(text_dir, f"{r['id']}.md")
-        if not os.path.isfile(p):
-            continue
-        with open(p, encoding="utf-8", errors="replace") as fh:
-            body = fh.read()
-        if any(rx.search(body) for rx in SECRET_TEXT) or len(PASSWORD_LINE.findall(body)) >= 2:
-            os.remove(p)
-            r.update(text="", chars="", outcome="skipped", where="its text looks like it holds passwords or keys, so it wasn't kept")
-            left["held passwords or keys inside"] += 1
-            continue
-        if len(body) > MAX_CHARS:
-            with open(p, "w", encoding="utf-8", newline="\n") as fh:
-                fh.write(body[:MAX_CHARS] + f"\n\n<!-- cut at {MAX_CHARS:,} characters of {len(body):,}: the rest is in the file -->\n")
-            r["chars"] = MAX_CHARS
-    intake.write_rows(work, rows)
-    intake.write_survey(work, rows)
-
+def finish(work, rows, left, saved, started, intake):
+    """index.md: what was searched, what went in and what was left out, by reason."""
     live = [r for r in rows if not r["dup_of"] and r["outcome"] != "skipped"]
     docs = [r for r in live if r["kind"] == "document"]
     read = [r for r in docs if r["text"] in ("ok", "plain")]
+    waiting = [r for r in docs if r["text"] == NOT_READ]
+    mapping = saved["mode"] == "map"
     minutes = (time.time() - started) / 60
-    out = [f"# Index my computer, {intake.today()}", "",
-           f"Documents changed since {datetime.date.fromtimestamp(since).isoformat()} ({args.months} months), on {os.environ.get('COMPUTERNAME') or platform.node()}.",
-           f"Took {minutes:.0f} minutes; {walked[0]:,} files looked at.", "", "## Searched"] + [f"- `{t}`" for t in tops]
-    out += ["", "## In",
-            f"- {len(docs)} documents, {len(read)} of them read into text (about {sum(int(r['chars'] or 0) for r in read) // 4:,} tokens)",
-            f"- {sum(1 for r in live if r['kind'] == 'repo')} code projects, as where they are",
+    out = [f"# Index my computer, {intake.today()}{': the map' if mapping else ''}", "",
+           f"Computer: {saved['computer']}, a {saved['system']}.",
+           f"Documents changed since {datetime.date.fromtimestamp(saved['since']).isoformat()} ({saved['months']:g} months).",
+           f"Took {minutes:.0f} minute{'s' if round(minutes) != 1 else ''}; {saved['walked']:,} files looked at.", "", "## Searched"]
+    out += [f"- `{t}`" for t in saved["tops"]]
+    plan = saved.get("plan") or {}
+    if plan.get("skip"):
+        out += ["", "## Left out by the plan"] + [f"- `{s}`" for s in plan["skip"]]
+    out += ["", "## In"]
+    if mapping:
+        out.append(f"- {len(docs)} documents found, none read yet (`folders.md` has them by folder, `files.txt` each one)")
+    else:
+        out.append(f"- {len(docs)} documents, {len(read)} of them read into text (about {sum(int(r['chars'] or 0) for r in read) // 4:,} tokens)")
+        if waiting:
+            out.append(f"- **{len(waiting)} not read yet: the time limit came first.** Read them with `--more` in this work folder.")
+    out += [f"- {sum(1 for r in live if r['kind'] == 'repo')} code projects, as where they are",
             f"- {len(rows) - len([r for r in rows if not r['dup_of']])} exact copies found and left out"]
-    states = collections.Counter(r["text"].split(":")[0] for r in docs if r["text"] not in ("ok", "plain"))
-    if states:
-        out.append("- Not read: " + ", ".join(f"{n} {s or 'not tried'}" for s, n in states.most_common()))
+    states = collections.Counter(r["text"].split(":")[0] for r in docs if r["text"] not in ("ok", "plain", NOT_READ, ""))
+    if states and not mapping:
+        out.append("- Not read: " + ", ".join(f"{n} {s}" for s, n in states.most_common()))
     out += ["", "## Left out (counted, not listed)"] + [f"- {n:,} {why}" for why, n in left.most_common()]
-    out += ["", "Every document in is in `files.txt`, with its text in `text/`; `survey.md` has them by folder and kind.",
-            "Next: the file-intake skill, from its step 2, with this work folder."]
+    backups = saved.get("backups") or []
+    if backups:
+        out.append(f"- {len(backups)} backup folders or drives, left out whole (listed in `map.md`)")
+    if mapping:
+        out += ["", "Next: an agent picks what to read from `folders.md` and `map.md` with what the owner wants, and writes a plan;",
+                "then this script reads it with `--plan` (a job on the owner's runner)."]
+    else:
+        out += ["", "Every document in is in `files.txt`, with its text in `text/`; `survey.md` has them by folder and kind.",
+                "Next: the file-intake skill, from its step 2, with this work folder."]
     out += ["", "`map.md` is a map of the computer from the same walk, for the brain's note on it."]
-    write_map(work, tops, fmap, programs, repos, clouds, intake.today())
     with open(os.path.join(work, "index.md"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(out) + "\n")
     print("\n".join(out))

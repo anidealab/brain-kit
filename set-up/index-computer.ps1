@@ -1,13 +1,15 @@
-# Index my computer, on Windows. The installer runs it last when BRAIN_KIT_SETUP=1 is set (AnIdeaLab's set-up
-# command), as a file from the kit's folder, with -Root C:\AI-Brain-Link. It also runs on its own, anywhere:
-#   powershell -ExecutionPolicy Bypass -File set-up\index-computer.ps1 -Root C:\AI-Brain-Link
+# Index my computer, on Windows. The installer runs it last with -Map when BRAIN_KIT_SETUP=1 is set (AnIdeaLab's
+# set-up command), as a file from the kit's folder, with -Root C:\AI-Brain-Link: the map, nothing read. Then the
+# set-up's agent runs it as a job on the owner's runner with -Plan (what to read) and -Minutes, and -More for the rest.
+# It also runs on its own, anywhere (no -Map or -Plan: map and read it all):
+#   powershell -ExecutionPolicy Bypass -File set-up\index-computer.ps1 -Root C:\AI-Brain-Link [-Map | -Plan <file> | -More] [-Minutes 45]
 #   (as a runner job: download it to a file first, set $env:INDEX_KIT_REF to the kit commit, and run it with -Root;
 #   away from the kit's folder it downloads its Python files from the kit at that commit.)
 # It gets uv (Astral's, MIT/Apache) into a folder of its own, and uv a Python and MarkItDown (Microsoft's,
 # MIT), then runs index-computer.py with the brain's file-intake tool, and takes uv and the rest off again.
 # The work folder, _intake\computer in the root, holds files.txt, survey.md, index.md and text\. Nothing else on
 # the PC is changed. Exits 0 when the index is made. Works in Windows PowerShell 5.1.
-param([string]$Root = '')
+param([string]$Root = '', [switch]$Map, [string]$Plan = '', [switch]$More, [int]$Minutes = 0)
 & {
   $ErrorActionPreference = 'Stop'
   $ProgressPreference = 'SilentlyContinue'
@@ -19,7 +21,9 @@ param([string]$Root = '')
   $base = if ($Root) { $Root } else { (Get-Location).Path }
   $work = Join-Path $base '_intake\computer'
   $tools = Join-Path $env:LOCALAPPDATA 'AnIdeaLab\index-tools'
-  if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
+  if ($More -and -not (Test-Path -LiteralPath (Join-Path $work 'left.json'))) { Write-Output "No read to carry on in $work."; exit 1 }
+  if ($Plan) { $Plan = (Resolve-Path -LiteralPath $Plan).Path }   # before anything moves
+  if (-not $More -and (Test-Path -LiteralPath $work)) { Remove-Item -LiteralPath $work -Recurse -Force }
   New-Item -ItemType Directory -Force -Path $work, $tools | Out-Null
 
   Write-Output "Getting the tools (uv $uvVersion, then Python and MarkItDown through it)..."
@@ -57,12 +61,18 @@ param([string]$Root = '')
   $env:UV_NO_PROGRESS = '1'
   $env:PYTHONUTF8 = '1'
 
-  Write-Output 'Searching the computer and reading the documents. A big computer takes a while.'
+  $modeArgs = @()
+  if ($Map) { $modeArgs += '--map' } elseif ($More) { $modeArgs += '--more' } elseif ($Plan) { $modeArgs += @('--plan', $Plan) }
+  if ($Minutes -gt 0) { $modeArgs += @('--minutes', "$Minutes") }
+  # The map reads nothing, so it needs no MarkItDown: only uv's Python.
+  $withArgs = if ($Map) { @() } else { @('--with', $markitdown) }
+  if ($Map) { Write-Output 'Mapping the computer: where things are, nothing read. A big computer takes a few minutes.' }
+  else { Write-Output 'Searching the computer and reading the documents. A big computer takes a while.' }
   $ErrorActionPreference = 'Continue'   # uv and Python write their notes to stderr, which 5.1 would treat as errors
   # Its PROGRESS| lines become Windows' own progress bar at the top of the window; the rest is printed as it comes.
   $env:INDEX_PROGRESS = 'ps'
   $ProgressPreference = 'Continue'
-  & $uv run --quiet --no-build --no-project --python 3.12 --with $markitdown python -I $py --work $work --intake $intake 2>&1 | ForEach-Object {
+  & $uv run --quiet --no-build --no-project --python 3.12 @withArgs python -I $py --work $work --intake $intake @modeArgs 2>&1 | ForEach-Object {
     $line = "$_"
     if ($line.StartsWith('PROGRESS|')) {
       $p = $line.Split('|', 4)
@@ -75,7 +85,7 @@ param([string]$Root = '')
     } else { $line }
   }
   $code = $LASTEXITCODE
-  Write-Progress -Activity 'Reading your documents' -Completed
+  Write-Progress -Activity 'Index my computer' -Completed
   $ProgressPreference = 'SilentlyContinue'
   Remove-Item -LiteralPath $tools -Recurse -Force -ErrorAction SilentlyContinue
   if ($code -ne 0) { Write-Output "The index stopped (exit $code). What went wrong is above."; exit $code }
