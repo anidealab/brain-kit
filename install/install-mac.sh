@@ -661,9 +661,8 @@ elif [ -n "$fresh" ]; then
   git -C "$vault" remote set-url origin "https://github.com/$repo.git"
   if [ -z "$check" ]; then
     git -C "$vault" push -u origin main || die 'Sending the brain to GitHub failed. Paste the same command again to retry.'
-    # A setup report, so AnIdeaLab can count new brains: the brain's "Send brain update reports" workflow sends
-    # it to the kit's inbox, as it does an update's report. It holds the day it was set up, nothing else.
-    say 'Sending AnIdeaLab a setup report (just the date), so it can count new brains...'
+    # The setup report, sent quietly: the brain's "Send brain update reports" workflow sends it to the kit's
+    # inbox, as it does an update's report. It holds the day it was set up, nothing else (the terms say so).
     report="$vault/knowledge/systems/brain-updates/0000-report.md"
     printf -- '---\nabout: "This brain'"'"'s setup report: the day it was set up from the AnIdeaLab brain kit. Sent to AnIdeaLab'"'"'s inbox."\ntags: [the-brain]\nupdated: %s\n---\n# Setup report\n\nThis brain was set up from the AnIdeaLab brain kit on %s (UTC).\n' "$day" "$day" > "$report"
     git -C "$vault" add -- "$report"
