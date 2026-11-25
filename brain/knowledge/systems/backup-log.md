@@ -5,4 +5,4 @@ updated: {KIT_DATE}
 ---
 # Backup log
 
-One entry per backup to the owner's cold storage drive, newest first: the date (UTC), whether it was the full backup or the brain alone, the run's link where there is one and its summary's counts, or "skipped" when the owner said no at the weekly tidy-up. How to run one: the [backup skill](../../skills/backup/SKILL.md).
+One entry per backup to the owner's cold storage drive, newest first: the date (UTC), the run's link and its summary's counts, or "skipped" when the owner said no at the weekly tidy-up. How to run one: the [backup skill](../../skills/backup/SKILL.md).
