@@ -154,7 +154,7 @@ EOF
     else
       fix 'No mac-run.yml, so agents have no way to run jobs on the Mac' "Paste the install line from the kit's README again: it adds the brain's Mac parts"
     fi
-    if printf '%s\n' "$workflows" | grep -qx 'library.yml'; then ok 'library.yml rebuilds the knowledge indexes on each push'; else note 'No library.yml, so the knowledge indexes update only when an agent runs library.py build'; fi
+    if printf '%s\n' "$workflows" | grep -qx 'library.yml'; then ok 'library.yml rebuilds the knowledge indexes every 3 hours'; else note 'No library.yml, so the knowledge indexes update only when an agent runs library.py build'; fi
     secrets=$(ghq api "repos/$repo/actions/secrets" --jq '[.secrets[].name] | join(", ")')
     if [ -n "$secrets" ]; then info "Actions secrets, names only: $secrets"; else info 'No Actions secrets yet; keys get added when a job needs one'; fi
   fi
