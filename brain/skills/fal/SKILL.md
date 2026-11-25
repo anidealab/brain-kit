@@ -13,6 +13,8 @@ fal.ai hosts most of the well-known image, video, audio and 3D models (1,475 on 
 ## Money
 The core's money gate: spending needs the owner's go. fal bills the owner's own account for each run.
 - **Before each paid batch,** read its price (free), tell the owner the estimate in US dollars and what it buys ("four pictures, about 2 cents"), and wait for their go. Then send it with `--cap` at that figure. `run_fal.py` sends nothing without `--cap`, and nothing over it.
+- **The estimate runs low,** so leave about 40% room over it when a batch is near the owner's limit or the account's balance, most of all on cheap per-unit models. It's one price per endpoint, so it misses a dearer resolution than the price line's, output bigger than asked (a "480p" video that comes out larger uses more tokens), and price lines that don't say what a unit is; estimates have come in up to a third under the bill. `--cap` holds the estimate, not the bill.
+- **Any paid job, fal or not** (a rented machine, anything billed by the run): when new input lands mid-run, work out what it changes before cancelling, and if its meaning is unclear, ask the owner while the run goes on; a cancel on a misread loses what was spent. After any cancel, run the job's stop and list what's still running: a cancel can kill the script before its clean-up, and rented machines go on billing.
 - **If the owner has set a limit of their own** ("fal is fine under a dollar a job"), a batch under it needs no ask: pass their limit as `--cap`, and say afterwards what it cost. When they give one, save it first as a decision on the decisions shelf, in their words, so every later agent finds it. With no such note, ask each time.
 - **Never split a batch** into small ones to stay under a figure, and never raise `--cap` yourself.
 - **Say what was spent** at the end of a job: the estimate the script printed. It's fal's price times what was asked for, not the bill; `--balance` shows what's left on the account when fal shares it.
@@ -52,7 +54,8 @@ The core's money gate: spending needs the owner's go. fal bills the owner's own 
    ```
    - `name` names the files that come back, and `args` are the model's inputs.
    - `files` are inputs that are files: each is uploaded to fal first, and its link passed under that input's name.
-   - `units` is how many of the price's units the run uses: seconds for most video, images, megapixels, or thousands of characters. Set it to what the run will really use, so the estimate is honest. It's 1 if left out.
+   - `units` is how many of the price's units the run uses: seconds for most video, images, megapixels, or thousands of characters. Set it to what the run will really use, from the docs' rate for the size asked, so the estimate is honest. It's 1 if left out.
+   - **Keep code that spends inside the job's `code`,** as here, or in a subfolder of its own, never as a script at the top of a shared folder like the session's scratchpad: another agent's script run from there can import it by its name (Python looks in the script's own folder first) and spend. Run Python with `-I`, or from a folder of your own.
 4. **Price it.** Start the workflow "AI job" (`ai-job.yml`) on `main` with the GitHub tool's run-workflow method, then read the job's log when the run has finished ([my-pc](../my-pc/SKILL.md) has how runs and logs behave). Its inputs:
    - `label`: what the job is for, shown in the Actions list;
    - `code`: the Python above, ending in `--price`. It prints each model's price, its unit and the batch's estimate, and sends nothing;
