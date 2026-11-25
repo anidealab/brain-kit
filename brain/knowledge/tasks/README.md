@@ -54,7 +54,7 @@ updated: {KIT_DATE}
 | **The last messages** | Only when a chat stops mid-conversation: the last exchanges with the owner, word for word, so "yes, send it" still makes sense | Replaced each time; deleted once they're acted on |
 | **Progress** | One dated line per stage or chat, signed with the session's link, newest last | Grows; past 10 lines, all but the last 5 move to `history/` (below) |
 
-Skip a part with nothing in it. The top four parts are the status, and they stay short: about a screen. They're rewritten, never stacked, so nobody has to read down a pile of old "next steps" to find the true one. The card's `about` is the same: the job and where it stands now, rewritten as it moves, since it's what the board shows. The whole note stays under about 10 KB; the weekly tidy-up lists one past that.
+Skip a part with nothing in it. The top four parts are the status, and they stay short: about a screen. They're rewritten, never stacked, so nobody has to read down a pile of old "next steps" to find the true one. The card's `about` is the same: the job and where it stands now, rewritten as it moves, since it's what the board shows. The whole note stays under about 14 KB; the weekly tidy-up lists one past that.
 
 What's lasting goes on its own shelf first, as it's found, and the task links to it: research and findings to a note on the project's shelf, the owner's answers to the decisions shelf, lessons to the skill. A task holds where the job stands, not what was learned doing it, so nothing is lost when it closes and moves to `history/` ([what goes wrong otherwise](../../skills/brain-spec/SKILL.md#saving-knowledge)). While the job runs, the task is where its status lives; the project's note gives a few lines and links it.
 

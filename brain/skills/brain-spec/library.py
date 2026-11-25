@@ -677,7 +677,7 @@ def audit(lib, since):
 # and code and media in knowledge/. Each list is for the tidy-up's agent to read and judge;
 # the brain spec's "Saving knowledge" says where each thing belongs.
 
-BIG_TASK = 10 * 1024     # a task note past this is carrying more than its status
+BIG_TASK = 14 * 1024     # a task note past this is carrying more than its status
 BIG_PART = 3 * 1024      # one status part (Where it stands, Next...) past this is stacked, not rewritten
 MAX_PROGRESS = 10        # Progress lines before all but the last KEEP_PROGRESS go to history
 KEEP_PROGRESS = 5        # moving at 10 down to 5 means a move every few stages, not every chat
