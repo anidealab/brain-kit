@@ -18,7 +18,7 @@ Everything the owner holds: `python3 skills/brain-spec/library.py find --shelf t
 <!-- index:end -->
 
 ## A task note is the job's live status
-A task note is kept up to date as the work goes, so it always says where the job stands, and a fresh chat can carry on from it alone. It takes the place of the session hand-off: one note that stays true, not a new write-up at each stage that copies the last one's open list. Briefs to agents and their reports stay on the [hand-offs shelf](../handoffs/README.md). To carry a job on in a new chat, the owner pastes its path with "continue": `knowledge/tasks/<task>.md continue`. When to update it, and how two chats share one without writing over each other: the [handoff skill](../../skills/handoff/SKILL.md#when-to-update-a-task-note).
+A task note is kept up to date as the work goes, so it always says where the job stands, and a fresh chat can carry on from it alone. It takes the place of the session hand-off: one note that stays true, not a new write-up at each stage that copies the last one's open list. Briefs to agents and their reports stay on the [hand-offs shelf](../handoffs/README.md). To carry a job on in a new chat, the owner pastes its path with "continue": `knowledge/tasks/<task>.md continue`. Agents give that line as a code block to copy, never a link. When to update it, and how two chats share one without writing over each other: the [handoff skill](../../skills/handoff/SKILL.md#when-to-update-a-task-note).
 
 ### Its shape
 ```

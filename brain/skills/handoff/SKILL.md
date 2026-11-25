@@ -66,11 +66,14 @@ In Claude Code, a hook tells you when the conversation passes 300,000 tokens, an
 1. **Finish what you're doing.** It's a nudge, not a hard stop. Bring the step you're on to a safe point (a change that works, a message sent, an answer the owner is waiting for), but don't start a new piece. When it's urgent, stop at the first safe point.
 2. **Save what's lasting,** and **bring the task note up to date,** with the last messages word for word. If the job has no task note yet, make one now. If the conversation covers more than one job, update each one's note.
 3. **Commit and push** it.
-4. **Tell the owner,** in a few plain lines: where things stand, why a fresh chat helps (it goes further on their plan and keeps the detail), and the task note's path to paste into a new chat with "continue" or whatever they want to say. Give it ready to paste:
+4. **Tell the owner,** in a few plain lines: where things stand, why a fresh chat helps (it goes further on their plan and keeps the detail), and the task note's path to paste into a new chat with "continue" or whatever they want to say. Give it ready to paste, the way "Telling the owner" below says:
    ```
    knowledge/tasks/shop-website.md continue
    ```
 5. **Then it's their call:** start the new chat, or carry on here. If you carry on, keep the task note up to date as usual, and push it at the next nudge and before the chat ends.
+
+### Telling the owner
+Whenever you tell the owner a fresh chat can carry on from a file (at the nudge, at the end of a stage or a job, or a brief they'll run themselves), give the line as a code block on its own, like the one above: the file's path from the brain's top folder as plain text, then "continue". The chat app puts a copy button on a code block, so it pastes straight into a new chat. Never a link, a clickable file reference or a path inside a sentence: a link only opens the file, which doesn't start anything.
 
 The agent never moves the owner to a new chat by itself, and nothing starts up on its own: the owner pastes the path. The pasted path says exactly which job, even with several chats going.
 

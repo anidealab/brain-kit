@@ -48,7 +48,7 @@ Ways to keep a job smaller, worth telling the owner when they fit:
 - Check in at the planned points: what's done, what's next, anything that surprised you. A few lines.
 - If the job turns out bigger than you said, stop at the next sensible point, say so and what it's likely to take, and let the owner choose: carry on, cut it down, or stop here.
 - Don't add things they didn't ask for. Suggest them at the end instead.
-- When a session is getting long, or the size nudge comes, finish the step you're on and hand off the way the [handoff skill](../handoff/SKILL.md) says: save what's lasting, bring the job's task note up to date, and give the owner its path to paste into a fresh chat for the next stage.
+- When a session is getting long, or the size nudge comes, finish the step you're on and hand off the way the [handoff skill](../handoff/SKILL.md) says: save what's lasting, bring the job's task note up to date, and give the owner its path to paste into a fresh chat for the next stage, as a code block to copy (the path, then "continue"), never a link.
 
 ## Explaining
 - As much as their level says (above): at 1, plain words and every technical term explained; at 4, none.
