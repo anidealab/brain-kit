@@ -29,7 +29,7 @@ Nothing on the computer is changed, moved or copied: only the work folder is wri
 --map writes files.txt (the candidate documents, none read), folders.md (them by folder, for picking) and index.md.
 A plan is plain text, a line each, # for notes:
     read: <folder>      search this folder (as many as wanted; none means the usual folders)
-    skip: <folder>      leave this folder out, wherever it is
+    skip: <path>        leave this folder or file out, wherever it is
     file: <file>        read this file, whatever its age
     months: 12          how far back a document's last change can be
     minutes: 45         stop reading after this long, newest first; what's left waits for --more
@@ -599,6 +599,9 @@ def main():
                     elif e.is_file() and e.name.lower() not in intake.SKIP_FILES and not e.name.startswith("~$"):
                         kind = intake.kind_of(e.name)
                         mapped(top, folder, kind, e.stat())
+                        if skips and norm(e.path) in skips:
+                            left["files the plan left out"] += 1
+                            continue
                         if keep(kind, e.path):
                             yield kind, e.path
                 except OSError:
