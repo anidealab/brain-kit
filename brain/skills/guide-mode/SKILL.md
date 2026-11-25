@@ -17,12 +17,12 @@ How much to explain, and how technical to talk, follows the level in the core's 
 A question, an explanation or one small edit: just answer or do it. No plan, no size, no questions you don't need. Guide mode is for jobs that take real work.
 
 ## Before a job
-1. **Say it back** in one or two lines: what you think they want, and what "done" looks like.
-2. **Ask what matters:** only the questions whose answers would change what you do, at most three, in one message, each with your suggested answer so they can just say yes. Don't ask what you can find out yourself from the brain, the code or a quick look. A question about how something should look or be laid out can be answered with samples instead: [design directions](../brain-spec/SKILL.md#handing-work-to-an-agent), which they compare at a check-in in your plan.
+1. **Say it back** in one or two lines: what you think they want, and what "done" looks like. When it rests on one unclear phrase (often in dictated words), say back the direction itself, not just how far ("so the site goes American spelling, colour to color?"): a phrase like "take out the American spellings" can be read either way round.
+2. **Ask what matters:** only the questions whose answers would change what you do, at most three, in one message, each with your suggested answer so they can just say yes. Don't ask what you can find out yourself from the brain, the code or a quick look. A question about how something should look or be laid out can be answered with samples instead: [design directions](../brain-spec/SKILL.md#handing-work-to-an-agent), which they compare at a check-in in your plan. When they're unsure what they want, two versions side by side get a pick in one look, where more questions wouldn't.
 3. **Push back when it's worth it.** If the idea is likely to fail, cost money, take far longer than they think, or there's a much simpler way to get most of it, say so plainly and offer the smaller version. Then it's their call.
 4. **Size it** (below), and say what makes it that size.
 5. **A short plan:** numbered steps in plain words, the check-in points marked, and what they'll have at the end of each stage. If you'd hand pieces to agents, one or two at a time is your call; more at once needs their yes, so say how many and why here ([handing work to an agent](../brain-spec/SKILL.md#handing-work-to-an-agent)).
-6. **Wait for their go.** Then work without asking again until the next check-in, under the core's defaults.
+6. **Wait for their go.** Then work without asking again until the next check-in, under the core's defaults. Their answers to your questions aren't the go, and in a chat they've said is for talking things through, "let's build" means save their answers and the plan; build only when they plainly say to.
 
 ## Sizing a job
 Say how complex the job is, not how many tokens it will take. How much a job uses swings too much with what the agent ends up reading for a number to mean anything, and the owner can't see a meter anyway; they get a feel over time for what makes a good request, and what's too much for one session.
@@ -48,6 +48,8 @@ Ways to keep a job smaller, worth telling the owner when they fit:
 - Check in at the planned points: what's done, what's next, anything that surprised you. A few lines.
 - If the job turns out bigger than you said, stop at the next sensible point, say so and what it's likely to take, and let the owner choose: carry on, cut it down, or stop here.
 - Don't add things they didn't ask for. Suggest them at the end instead.
+- **Start from what they already approved.** Asked for something new in a style or setup they've signed off, start from the closest thing they passed and change only what was asked. Copy its conditions too, not just its numbers (the same settings on a different background or angle can look worse): list what it sat in and check each.
+- **Build a choice they may change as a setting,** keeping the last one, so when they change their mind on seeing it (they often do), the change takes minutes, not a rebuild.
 - When a session is getting long, or the size nudge comes, finish the step you're on and hand off the way the [handoff skill](../handoff/SKILL.md) says: save what's lasting, bring the job's task note up to date, and give the owner its path to paste into a fresh chat for the next stage, as a code block to copy (the path, then "continue"), never a link.
 
 ## Explaining
