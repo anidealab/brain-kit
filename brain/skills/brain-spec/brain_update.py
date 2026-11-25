@@ -122,6 +122,22 @@ AnIdeaLab sends a message to every brain at once only for something everyone sho
 LIBRARY_IN_KIT = "sign-off-links.md"  # the kit repo's copy, outside brain/, so a field can be added without an update
 
 
+NO_SIGN_OFF = re.compile(rb"^- \*\*No sign-off\*\*.*$", re.M)  # the owner dropped the sign-off: the brain spec's fixed line
+KIT_SIGN_OFF = re.compile(rb"^- \*\*The sign-off[.:]\*\*.*$", re.M)  # the kit's line, in the core and the starting rules
+
+
+def keep_no_sign_off(rel, mine, new):
+    """An owner who dropped the sign-off has the fixed "No sign-off" line where the kit has its sign-off line, in the core
+    and the starting rules. A merge that brings the kit's line back gets the brain's line put back in its place. Returns
+    the file and whether it did."""
+    if mine is None or not (rel == "CLAUDE.md" or re.fullmatch(r"knowledge/decisions/the-brain/\d{4}-\d{2}-\d{2}-starting-rules\.md", rel)):
+        return new, False
+    ours = NO_SIGN_OFF.search(mine)
+    if not ours or NO_SIGN_OFF.search(new) or not KIT_SIGN_OFF.search(new):
+        return new, False
+    return KIT_SIGN_OFF.sub(lambda _: ours.group(0), new, count=1), True
+
+
 def owner_setting(rel):
     """Obsidian's settings files, which the owner changes in Obsidian; a plugin's manifest is the plugin's own."""
     return rel.startswith(".obsidian/") and rel.endswith(".json") and not rel.endswith("/manifest.json")
@@ -356,6 +372,7 @@ def do_apply(args):
     start = kit_start()
     changes = git("diff", "--name-status", "--no-renames", base, target, "--", "brain/").splitlines()
     done = {"added": [], "merged": [], "clashed": [], "kept": [], "replaced": [], "restored": [], "deleted": [], "same": []}
+    no_sign_off = []  # files where the owner's "No sign-off" line was put back
     places = []  # (file, how, [(brain's lines, update's lines)])
 
     # The copied skills, by the kit's record before and after the update, and the sources this brain has brought up to date itself.
@@ -408,6 +425,9 @@ def do_apply(args):
             done[("kept" if setting else "clashed") if hunks else "merged"].append(rel)
             if hunks:
                 places.append((rel, "ours" if setting else "theirs", hunks))
+        new, signed = keep_no_sign_off(rel, mine, new)
+        if signed:
+            no_sign_off.append(rel)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         open(dest, "wb").write(new)
 
@@ -454,6 +474,9 @@ def do_apply(args):
     print(("Update" if len(waiting) == 1 else f"Updates {', '.join(map(str, waiting[:-1]))} and") + f" {n} ({day}): {len(done['added'])} added, {len(done['merged'])} merged, {len(done['clashed'])} with the update's lines "
           f"over this brain's, {len(done['kept'])} Obsidian settings kept as this brain had them, {len(done['replaced'])} copied-skill files "
           f"replaced whole, {len(done['restored'])} brought back, {len(done['deleted'])} deleted, {len(done['same'])} already the same.")
+    if no_sign_off:
+        print("\nThe owner dropped the sign-off, so this brain's \"No sign-off\" line was put back where the update brought the kit's "
+              "sign-off line: " + ", ".join(no_sign_off) + ". Nothing to do for it.")
     if done["replaced"]:
         print("\nCopied skills are kept as they came, so the update's copy of each changed file replaced this brain's whole, with no "
               "line-by-line merge. Each one's \"In this brain\" section and LESSONS.md stay.")
