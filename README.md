@@ -50,11 +50,9 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 - installs Git and GitHub's command line if they're missing, and Obsidian if you said yes, and signs you in to GitHub in your browser;
 - uses your brain, `my-brain-ail` (or the name in `BRAIN_KIT_NAME`), if you've made it already; if not, makes it from [brain/](brain/), as of the newest update, with the day you install it as its start, in a new private repo on your GitHub account;
 - invites AnIdeaLab's testing account to that repo, as the terms say;
-- puts your copy in `C:\AI-Brain-Link\<your brain's name>`, set up for Obsidian with your edits syncing to GitHub, if you chose Obsidian;
-- adds the upload point, a Send to entry for giving your brain files with a right-click;
+- puts your copy in `C:\AI-Brain-Link\<your brain's name>`;
 - sets up the PC runner, if you say yes to it, so you can ask your agent to do things on your PC. It needs no password and starts by itself whenever you sign in to Windows, then asks whether to keep the PC awake while it's plugged in, since a sleeping PC can't run jobs;
-- opens your brain in Obsidian, if you chose it, last, so it can't hide a question in the PowerShell window.
-- then opens AnIdeaLab's tutorials page in your browser, for connecting Claude and the rest (anidealab.com/second-brain/tutorials, or the site's preview address until the site moves there).
+- then, if you chose Obsidian, sets it up on your brain, with your edits syncing to GitHub, after the runner so nothing of Obsidian's covers the runner's questions. It doesn't open it: back in your chat, your agent says how to open it, to choose "Trust author and enable plugins", and where the brain graph is.
 
 It's safe to run again: it skips what's already done. Its questions show in yellow, and a click in its window can't pause it. At the end it lists each step and how it went, keeps that in `C:\AI-Brain-Link\_logs\install.log` (which the brain's setup check reads), and says what to send Claude to get started. The steps in plain words, to send someone: [install/START-HERE.txt](install/START-HERE.txt).
 
@@ -69,8 +67,7 @@ It's safe to run again: it skips what's already done. Its questions show in yell
 - Git comes with Apple's command line tools, which macOS offers to install in a window of its own; GitHub's command line and Obsidian come from their own releases on GitHub, each checked against its checksum. There's no Homebrew, and nothing asks for your Mac's password;
 - your copy goes in `~/AI-Brain-Link/<your brain's name>`, and the log in `~/AI-Brain-Link/_logs/install.log`;
 - the brain gets its Mac parts, since [brain/](brain/) is made for a Windows PC: the Mac runner's workflow, skill and note from [install/mac-brain/](install/mac-brain/), and its lines about the PC and PowerShell said for a Mac;
-- the Mac runner runs as a LaunchAgent under your account, so your agent can do what you ask on your Mac while it's on and you're logged in, and it offers to keep the Mac awake on the charger;
-- there's no Send to on a Mac: you put files for your brain in `~/AI-Brain-Link/_upload`.
+- the Mac runner runs as a LaunchAgent under your account, so your agent can do what you ask on your Mac while it's on and you're logged in, and it offers to keep the Mac awake on the charger.
 
 The steps in plain words, to send someone: [install/START-HERE-MAC.txt](install/START-HERE-MAC.txt). GitHub's own Macs try it on each change ([the workflow](.github/workflows/mac-installer.yml)).
 
@@ -81,11 +78,13 @@ AnIdeaLab sends fixes, new rules and new parts to brains made from the kit. A br
 - **[brain/](brain/)**: the kit's brain as a new one gets it, with `{KIT_DATE}` and `{KIT_ISO}` where each brain has its own start date.
 - **[install.ps1](install.ps1), [install.sh](install.sh) and [install/](install/)**: the one command for a brain's extras on a computer, which can also make a brain by itself: its script for Windows and for a Mac, and the installers and START-HEREs they run and point to, with the parts a Mac brain gets in [install/mac-brain/](install/mac-brain/).
 - **[template/](template/)**: what a brain made the no-install way ([Start a brain](#start-a-brain)) has on top of `brain/`: the script that fills in its start date and writes its setup report, the workflow that runs it once, and the template repo's page for visitors (`.github/README.md`, which GitHub shows ahead of the brain's own front door, and which the script takes out when a brain starts). The kit's "Publish the template" workflow puts `brain/` (as it is on the `next` branch) and these in the template repo, [AnIdeaLab/second-brain](https://github.com/AnIdeaLab/second-brain), which an owner makes their brain from with GitHub's "Use this template". `tools/template-setup.ps1` sets that repo up.
+- **[OTHER-AGENTS.md](OTHER-AGENTS.md)**: for an owner whose agent isn't Claude (Codex, Gemini, Cursor, Copilot, ChatGPT and the like): guidelines their agent follows to set the brain up for itself. AnIdeaLab's site points there.
 - **[sign-off-links.md](sign-off-links.md)**: which AnIdeaLab.com page the sign-off links to, by the reader's field. A brain's daily update check takes the newest copy by itself, without asking its owner.
 - **[updates/](updates/)**: one message per update, newest last, each starting with a summary for the owner. The commit that added each one holds `brain/` as of that update, and `brain_update.py` merges the difference into a brain with a three-way merge, so the brain's own changes elsewhere stay.
 - **[inbox/](inbox/)**: after each update, a brain sends a report of how it went to AnIdeaLab's private inbox, so the kit gets better.
 - **[TERMS.md](TERMS.md)**: AnIdeaLab's terms of use for the kit, which the installer asks each owner to accept.
 - **[testing/](testing/)**: AnIdeaLab's scripts for its testing account, which the installer invites to each new brain's repo, as the terms say: `diagnostic-setup.ps1` invites it to a brain made before the installer did, and `copy-brains.ps1` copies the brains it's invited to. `network-check.ps1` is for a PC whose install stops on a download: it changes nothing, and saves and copies a report of the PC's antivirus, proxy, DNS and how GitHub's downloads answer.
+- **[set-up/](set-up/)**: what AnIdeaLab runs for its paid set-up, not part of a brain: "index my computer", which the installer runs last when `BRAIN_KIT_SETUP=1` is set: it reads a set-up buyer's documents from the last year and turns them into text for their brain.
 - **[tools/kit.py](tools/kit.py)**: the kit's build, which checks it after each change (a brain made on a Mac too), and makes the zip a Windows owner can install from instead of the one command. How to work on the kit: [CLAUDE.md](CLAUDE.md).
 - **[.github/workflows/](.github/workflows/)**: the kit's own workflows: one tries the Mac installer on GitHub's Macs, one publishes the template.
 

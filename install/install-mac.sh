@@ -4,10 +4,11 @@
 # browser, to sign in or sign up for a paid plan (S skips it), and asks whether you'd like Obsidian. Then it
 # installs Apple's command line tools (they have Git) and GitHub's command line (gh) if they're missing, and
 # Obsidian if you said yes, signs you in to GitHub, makes your brain's private repo (inviting AnIdeaLab's
-# testing account to it, as the terms say) and puts the brain in it, puts your copy in ~/AI-Brain-Link, with
-# Obsidian's syncing on if you chose Obsidian, sets up the Mac runner if you say yes to it, so AI agents can
-# run jobs on this Mac, and opens Obsidian last. Obsidian and the runner are extras: your brain works without
-# either, and pasting the same command again adds one later. It needs no password: gh and Obsidian come from
+# testing account to it, as the terms say) and puts the brain in it, puts your copy in ~/AI-Brain-Link,
+# sets up the Mac runner if you say yes to it, so AI agents can run jobs on this Mac, then sets Obsidian up on
+# your brain, with its syncing on, if you chose Obsidian. It doesn't open Obsidian: you go back to your chat,
+# and your agent says how to open it. Obsidian and the runner are extras: your brain works without either, and
+# pasting the same command again adds one later. It needs no password: gh and Obsidian come from
 # their own releases on GitHub, each checked against its checksum, not from Homebrew.
 # Safe to run again: it skips what's already done. It ends with a list of which steps finished, and keeps it
 # in ~/AI-Brain-Link/_logs/install.log, which the setup check reads.
@@ -26,6 +27,12 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 check="${BRAIN_KIT_CHECK:-}"
 tools_check="${BRAIN_KIT_CHECK_TOOLS:-}"
 if [ -n "$check" ]; then root="$check"; else root="$HOME/AI-Brain-Link"; fi
+# AnIdeaLab's set-up (the brain set up for you): BRAIN_KIT_SETUP=1, in the command its set-up page gives. It
+# lets AnIdeaLab's set-up account in to the brain even when the brain was made already (from the template),
+# reads the documents of the past year on this Mac last (set-up/index-computer.sh, beside install/) and sends their
+# text to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
+# steps. Anyone can set it; it's off unless they do.
+setup="${BRAIN_KIT_SETUP:-}"
 brain=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -385,21 +392,7 @@ if mode == "new":
     edit("README.md", "- **My PC,**",
          "- **My Mac,** if I've added its runner: agents run jobs on it through a GitHub Actions runner while it's on and I'm logged in ([the Mac](knowledge/systems/my-mac.md)). \"AI Brain Link - live jobs\", in my `~/AI-Brain-Link` folder, shows what's running.")
     edit("README.md", "- **Giving it files:**",
-         "- **Giving it files:** in a chat, I attach them. With the brain on my Mac, I right-click files or folders in Finder and pick Quick Actions, then My brain, and tell the agent what to do with them ([the upload point](knowledge/systems/upload-point.md)).")
-    # The upload point's note: My brain in Finder's Quick Actions, in place of Send to.
-    up = "knowledge/systems/upload-point.md"
-    edit(up, "about: ",
-         "about: \"The upload point: the owner right-clicks files or folders in Finder and picks Quick Actions, My brain, and each path goes on a list on the Mac for an agent to sort into the brain. Read when the owner mentions sending or dropping something.\"")
-    edit(up, "The owner selects files or folders in File Explorer",
-         "The owner selects files or folders in Finder, right-clicks, and picks Quick Actions, then My brain. Each one's path is added to a list on the Mac, and an agent sorts them into the brain when the owner says what to do: the [upload-point skill](../../skills/upload-point/SKILL.md), with the Mac's parts in the [my-mac skill](../../skills/my-mac/SKILL.md).")
-    edit(up, "- **The list** is ",
-         "- **The list** is `~/AI-Brain-Link/_upload/waiting.txt`, a plain text file on the Mac, outside this repo: one line per thing, the time it was sent, a tab, and its path. It isn't in the brain, so nothing here says what's waiting.")
-    edit(up, "- **Reading it:** ",
-         "- **Reading it:** a session on the Mac opens the file; a cloud session runs one job on the Mac, `skills/upload-point/look.py`, which also takes a line off once its thing is sorted (`--done`).")
-    edit(up, "- **A USB stick's files** ",
-         "- **A USB stick's or memory card's files** are copied to `~/AI-Brain-Link/_upload/<date>/` first, and the copy is what's listed.")
-    edit(up, "- **Send to's entry** ",
-         "- **The Quick Action** is `~/Library/Services/My brain.workflow`; `skills/upload-point/setup-upload-point.sh` makes it again.")
+         "- **Giving it files:** in a chat, I attach them, or tell the agent where they are on my Mac.")
     edit("README.md", "- **Extras:**",
          "- **Extras:** Obsidian and the Mac runner are extras, and the brain works without them. To add one, I ask an agent, which gives me one command to paste ([the first session's step 4](skills/getting-started/SKILL.md#4-the-owners-computer)).")
     skills = len([d for d in os.listdir(os.path.join(work, "skills")) if os.path.isfile(os.path.join(work, "skills", d, "SKILL.md"))])
@@ -415,14 +408,6 @@ if mode == "new":
     edit("knowledge/systems/my-pc.md", "# ",
          "\n*This brain was set up on the owner's Mac, so it has no PC runner yet: the Mac is in [my-mac](my-mac.md). The rest of this note is for a Windows PC, if they add one with the kit's Windows installer or `skills/my-pc/setup-runner.ps1`.*",
          how="after")
-
-# The upload point's skill, in any brain whose skill still says it's for Windows only: a Mac has My brain in
-# Finder's Quick Actions.
-up_skill = os.path.join(work, "skills", "upload-point", "SKILL.md")
-if os.path.isfile(up_skill) and "**Windows only: a Mac has no Send to.**" in open(up_skill, encoding="utf-8").read():
-  edit("skills/upload-point/SKILL.md", "A way for the owner to hand the brain files",
-       "On a Mac it's My brain in Finder's right-click menu, under Quick Actions, with `.sh` and `.py` scripts in this folder beside the Windows ones; the [my-mac skill](../my-mac/SKILL.md)'s \"Giving the brain files\" says how they differ, and everything else here holds, with `~/AI-Brain-Link` for `C:\\AI-Brain-Link`.",
-       how="swap", old="**Windows only: a Mac has no Send to.**")
 
 # The skill lists, in any brain.
 edit("skills/lists/the-brain.md", "- [my-pc](../my-pc/SKILL.md)",
@@ -466,7 +451,7 @@ new_brain_repo() {
 # Run again on a brain that has them, it adds only the Mac parts the kit has gained since, and commits only then.
 add_mac_parts() {
   if [ -f "$1/skills/my-mac/SKILL.md" ]; then say 'Bringing the Mac parts in your brain up to the kit...'
-  else say 'Adding the Mac parts to your brain (the Mac runner workflow, its skill, the upload point and a note for this Mac)...'; fi
+  else say 'Adding the Mac parts to your brain (the Mac runner workflow, its skill and a note for this Mac)...'; fi
   mac_brain add "$1" || { warn "Couldn't add the Mac parts. Your brain works without them, but agents can't run jobs on this Mac until it has them: ask Claude to add them from the AnIdeaLab brain kit (install/mac-brain)."; return; }
   git -C "$1" add -A
   if git -C "$1" diff --cached --quiet; then return; fi
@@ -549,7 +534,7 @@ fi
 # already, and a brain made here gets the plan's line in the last step below (22 Nov 2026).
 
 # Obsidian is an extra, so it's asked about, here, before anything is installed: the answer covers the app, its
-# Git plugin, the brain in its list of vaults and opening it at the end, and a no leaves an Obsidian that's
+# Git plugin and the brain in its list of vaults, and a no leaves an Obsidian that's
 # already on the Mac alone. Enter is yes. The kit's check answers yes, so it still tries Obsidian's steps.
 want_obsidian=''
 if yes_to "Would you like Obsidian too? It's a free app that shows your brain as a map on this Mac, where you can read and edit your notes. Your brain works without it, and you can add it later by pasting the same command again."; then want_obsidian=yes; fi
@@ -652,7 +637,7 @@ invite_tester() {
   if "$gh" api -X PUT "repos/$repo/collaborators/$tester" --silent >/dev/null 2>&1; then log 'the testing account was invited'
   else warn "Couldn't invite AnIdeaLab's testing account just now. Your brain doesn't need it; to do it later, paste: gh api -X PUT repos/$repo/collaborators/$tester"; fi
 }
-if [ -n "$fresh" ]; then invite_tester; fi
+if [ -n "$fresh" ] || [ -n "$setup" ]; then invite_tester; fi
 
 # 4. The brain on this Mac, and on GitHub
 step "Your brain on GitHub, and your copy in $vault" started
@@ -695,9 +680,35 @@ else
 fi
 step "Your brain on GitHub, and your copy in $vault" 'done'
 
-# 5. Obsidian, if it's wanted, with the Git plugin that syncs your edits (its code isn't kept in the repo). It
-# opens at the end, so it can't come up in front of this window while a question waits behind it. Without
-# Obsidian, the Mac runner brings this copy up to date at the start of each job (mac-run.yml, in the Mac parts).
+# 5. The Mac runner
+runner_setup="$vault/skills/my-mac/setup-runner.sh"
+runner_ok=yes
+step 'The Mac runner' started
+if [ -z "$check" ]; then
+  if yes_to "Set up the Mac runner now, so you can ask Claude to do things on this Mac from any chat, even your phone? It only does what you ask. It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
+    /bin/bash "$runner_setup" --repo "$repo" --root "$root" || runner_ok=''
+    # "All done" only once GitHub sees the runner online.
+    online=$("$gh" api "repos/$repo/actions/runners" --jq '[.runners[] | select(.status == "online")] | length' 2>/dev/null)
+    if ! [ "${online:-0}" -gt 0 ] 2>/dev/null; then runner_ok=''; fi
+    if [ -n "$runner_ok" ]; then record_mac "$vault"; step 'The Mac runner' 'done'; else step 'The Mac runner' 'not done'; fi
+  else
+    step 'The Mac runner' skipped
+    echo "Skipped. To set it up later, paste: bash \"$runner_setup\""
+  fi
+else
+  if [ -n "$tools_check" ]; then
+    BRAIN_KIT_CHECK="$check" /bin/bash "$runner_setup" --repo "$repo" --root "$root" || die "setup-runner.sh's check of GitHub's runner failed."
+  fi
+  step 'The Mac runner' skipped
+fi
+
+# 6. Obsidian, if it's wanted, with the Git plugin that syncs your edits (its code isn't kept in the repo), after
+# the runner, so nothing of Obsidian's comes up in front of the runner's questions. It isn't opened here: the owner
+# goes back to their chat, and the agent says how to open it, to choose "Trust author and enable plugins" (what
+# Obsidian asks the first time a vault has plugins) and where the brain graph is (the getting-started skill).
+# Without Obsidian, the Mac runner brings this copy up to date at the start of each job (mac-run.yml, in the Mac
+# parts).
+has_obsidian=''
 if [ -z "$want_obsidian" ]; then step 'Obsidian, with syncing on' skipped; else
   step 'Obsidian, with syncing on' started
   # The second try, through gh, if Obsidian didn't come in at the tools step.
@@ -745,62 +756,36 @@ if not any(isinstance(v, dict) and v.get("path") == vault for v in vaults.values
 with open(cfg, "w", encoding="utf-8") as f:
     json.dump(data, f, separators=(",", ":"))
 PY
-  step 'Obsidian, with syncing on' 'done'
-fi
-
-# 5b. The upload point: My brain in Finder's Quick Actions, as Send to, My brain is on Windows. Your brain is
-# fine without it.
-upload_setup="$vault/skills/upload-point/setup-upload-point.sh"
-if [ -f "$upload_setup" ]; then
-  step 'The upload point' started
-  say "Adding the upload point: My brain in Finder's right-click menu (Quick Actions), for giving your brain files..."
-  if [ -z "$check" ]; then
-    if /bin/bash "$upload_setup"; then step 'The upload point' 'done'
-    else
-      warn "The upload point didn't set up; your brain works without it. To try again later, paste: bash \"$upload_setup\""
-      step 'The upload point' 'not done'
-    fi
-  else step 'The upload point' 'done'; fi
-fi
-
-# 6. The Mac runner
-runner_setup="$vault/skills/my-mac/setup-runner.sh"
-runner_ok=yes
-step 'The Mac runner' started
-if [ -z "$check" ]; then
-  if yes_to "Set up the Mac runner now, so you can ask Claude to do things on this Mac from any chat, even your phone? It only does what you ask. It runs while you're logged in and needs no password. macOS then says background items were added: that's the runner."; then
-    /bin/bash "$runner_setup" --repo "$repo" --root "$root" || runner_ok=''
-    # "All done" only once GitHub sees the runner online.
-    online=$("$gh" api "repos/$repo/actions/runners" --jq '[.runners[] | select(.status == "online")] | length' 2>/dev/null)
-    if ! [ "${online:-0}" -gt 0 ] 2>/dev/null; then runner_ok=''; fi
-    if [ -n "$runner_ok" ]; then record_mac "$vault"; step 'The Mac runner' 'done'; else step 'The Mac runner' 'not done'; fi
-  else
-    step 'The Mac runner' skipped
-    echo "Skipped. To set it up later, paste: bash \"$runner_setup\""
-  fi
-else
-  if [ -n "$tools_check" ]; then
-    BRAIN_KIT_CHECK="$check" /bin/bash "$runner_setup" --repo "$repo" --root "$root" || die "setup-runner.sh's check of GitHub's runner failed."
-  fi
-  step 'The Mac runner' skipped
-fi
-
-# 7. Obsidian opens last, so it can't hide a question in this window.
-has_obsidian=''
-if [ -z "$want_obsidian" ]; then step 'Obsidian opened on your brain' skipped; else
-  step 'Obsidian opened on your brain' started
+  # Without the app, it's set up for when it comes: a run again installs it.
   if [ -n "$check" ] || [ -n "$obsidian_app" ] || [ -n "$(find_obsidian)" ]; then has_obsidian=yes; fi
-  if [ -z "$check" ] && [ -n "$has_obsidian" ]; then
-    link=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$vault")
-    open "obsidian://open?path=$link" >/dev/null 2>&1 || open -a "${obsidian_app:-Obsidian}" >/dev/null 2>&1
-    sleep 3
+  if [ -n "$has_obsidian" ]; then step 'Obsidian, with syncing on' 'done'; else step 'Obsidian, with syncing on' 'not done'; fi
+fi
+
+# 7. AnIdeaLab's set-up only: the documents of the past year, read here, as the owner, so no runner is needed. Their
+# text, never the files, goes to the brain's repo as a private draft release (never into the brain's files) for the
+# set-up's agent to write up as notes; the agent deletes it once it has it. The originals stay where they are.
+index_ok=''
+if [ -n "$setup" ] && [ -z "$check" ]; then
+  step 'Your documents, read for your set-up' started
+  say "Last, reading the documents you've worked on this past year, so we can put what's in them into your brain. Photos, and anything that looks like passwords or keys, are left out, and nothing on this Mac is changed or moved. It can take a while: leave this window open."
+  indexer="$here/../set-up/index-computer.sh"
+  index_work="$root/_intake/computer"
+  if [ -f "$indexer" ] && /bin/bash "$indexer" --root "$root" && [ -f "$index_work/index.md" ]; then
+    pack="${TMPDIR:-/tmp}"; pack="${pack%/}/anidealab-set-up-index.zip"
+    rm -f "$pack"
+    if (cd "$index_work" && zip -qr "$pack" .); then
+      "$gh" release delete anidealab-set-up-index --repo "$repo" --yes >/dev/null 2>&1
+      if "$gh" release create anidealab-set-up-index "$pack" --repo "$repo" --draft --title "Your documents, for AnIdeaLab's set-up" \
+        --notes "The text of the documents your set-up read on your computer, for AnIdeaLab to write up as notes in your brain. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer."; then index_ok=yes; fi
+    fi
+    rm -f "$pack"
   fi
-  if [ -n "$has_obsidian" ]; then step 'Obsidian opened on your brain' 'done'; else step 'Obsidian opened on your brain' 'not done'; fi
+  if [ -n "$index_ok" ]; then step 'Your documents, read for your set-up' done; else step 'Your documents, read for your set-up' 'not done'; fi
 fi
 
 show_steps
 if [ -z "$want_obsidian" ]; then say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.'
-elif [ -n "$has_obsidian" ]; then say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.'
+elif [ -n "$has_obsidian" ]; then say 'Obsidian is installed and set up on your brain. Your agent tells you how to open it when you go back to your chat.'
 else
   echo ''
   warn "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again."
@@ -812,10 +797,12 @@ if [ -n "$runner_ok" ]; then say 'All done on this Mac.'; else
   echo 'Or carry on below, and ask Claude to help get the runner working.'
 fi
 echo "Your brain on GitHub: https://github.com/$repo"
-if [ -n "$want_obsidian" ]; then echo "Your copy on this Mac: $vault (open in Obsidian)"; else echo "Your copy on this Mac: $vault"; fi
-echo "Files for your brain: select them in Finder, right-click, then Quick Actions, My brain, and tell Claude."
+echo "Your copy on this Mac: $vault"
 echo ''
-if [ -z "$fresh" ]; then
+if [ -n "$setup" ]; then
+  printf '\033[36m%s\033[0m\n' "That's everything on your side. We'll take it from here, and email you when your brain is ready."
+  if [ -z "$index_ok" ]; then echo "(Your documents didn't get read just now. Nothing to do: we'll sort it with you by email.)"; fi
+elif [ -z "$fresh" ]; then
   # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
   # chat since), or a run again. So the chat is open, and that's where they go back to.
   printf '\033[36m%s\033[0m\n' "Last step: go back to your chat with your brain and say it's finished."
@@ -825,10 +812,5 @@ else
   echo "  2. Start a new session with $repo selected."
   echo '  3. Send this message:'
   printf '\033[32m%s\033[0m\n' '       This is my new second brain. Read CLAUDE.md and get me set up.'
-  # Last, AnIdeaLab's tutorials page opens in the browser: these steps, and the rest, with a video each.
-  tutorials='https://anidealab.com/second-brain/tutorials'
-  echo ''
-  printf '\033[36m%s\033[0m\n' "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials"
-  if [ -z "$check" ]; then open "$tutorials" >/dev/null 2>&1; fi
 fi
 exit 0

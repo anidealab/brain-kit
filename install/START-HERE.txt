@@ -34,8 +34,8 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
      password, and starts by itself whenever you sign in to Windows;
    - say whether to keep the PC awake while it's plugged in, so Claude can do what you ask when
      you're away from it. The screen still turns off;
-   - last, if you chose it, Obsidian opens your brain: choose "Trust author and enable plugins", then come
-     back to the blue window, which lists each step and what to do next.
+   - the window then lists each step and what to do next. If you chose Obsidian, it's
+     installed and set up, but not opened yet: Claude tells you how in the next step.
 
    If it stops partway, paste the same line again: it skips what's already done. What it
    did is kept in C:\AI-Brain-Link\_logs\install.log.
@@ -46,10 +46,8 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 
        This is my new second brain. Read CLAUDE.md and get me set up.
 
-   Claude asks you a few questions, tests the PC runner and shows you around.
-
-   At the end, the setup opens AnIdeaLab's tutorials in your browser: these steps with a
-   video, then your brain in Obsidian and connecting Google.
+   Claude asks you a few questions, tests the PC runner and shows you around, with how
+   to open your brain in Obsidian if you chose it.
 
 Later:
 - Keys for services never go in a chat. Claude tells you the name, and you add the key on

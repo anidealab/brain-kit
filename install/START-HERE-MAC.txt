@@ -37,8 +37,8 @@ You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for install
    - say yes to the Mac runner. macOS then says background items were added: that's the runner;
    - say yes to keeping the Mac awake while it's on the charger. Most people say no here, and
      then your brain can't reach the Mac whenever it has gone to sleep. The screen still turns off;
-   - last, if you chose it, Obsidian opens your brain: choose "Trust author and enable plugins", then come
-     back to Terminal, which lists each step and what to do next.
+   - Terminal then lists each step and what to do next. If you chose Obsidian, it's
+     installed and set up, but not opened yet: Claude tells you how in the next step.
 
    If it stops partway, paste the same line again: it skips what's already done. What it
    did is kept in ~/AI-Brain-Link/_logs/install.log.
@@ -49,16 +49,12 @@ You need: a Mac, a Claude plan, and about 30 minutes, mostly waiting for install
 
        This is my new second brain. Read CLAUDE.md and get me set up.
 
-   Claude asks you a few questions, tests the Mac runner and shows you around.
-
-   At the end, the setup opens AnIdeaLab's tutorials in your browser: these steps with a
-   video, then your brain in Obsidian and connecting Google.
+   Claude asks you a few questions, tests the Mac runner and shows you around, with how
+   to open your brain in Obsidian if you chose it.
 
 Later:
 - Agents can run jobs on your Mac while it's on, awake and you're logged in. Closing the lid
   puts it to sleep, and so does running on battery.
-- To give your brain files, put them in the _upload folder in AI-Brain-Link (in Finder: Go,
-  Home, then AI-Brain-Link), and tell Claude what to do with them.
 - Keys for services never go in a chat. Claude gives you one line to paste into Terminal,
   which opens the page that makes the key and saves it in your brain's GitHub secrets.
 - To check your setup any time, paste this into Terminal. It changes nothing, and copies a
