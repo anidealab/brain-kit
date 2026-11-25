@@ -392,6 +392,9 @@ def backup_folder(root, entry, state, stamp, dry, force, logdir, sometimes):
     if entry.get("sometimes") and not sometimes:
         say(f"{label}: a sometimes folder, left out this time (the owner said yes to it with --sometimes)")
         return
+    if entry.get("once") and os.path.isdir(os.path.join(root, to)) and state.get(to):
+        say(f"{label}: copied once already; left as it is")
+        return
     if not os.path.exists(src):
         warn(f"{label}: {entry['from']} isn't on this computer; nothing copied for it")
         return
@@ -405,9 +408,6 @@ def backup_folder(root, entry, state, stamp, dry, force, logdir, sometimes):
             return
     now = scan(lp(src), set(entry.get("skipNamed", [])), entry.get("skip", []))
     dst = os.path.join(root, to)
-    if entry.get("once") and os.path.isdir(dst) and state.get(to):
-        say(f"{label}: copied once already; left as it is")
-        return
     last = {k: tuple(v) for k, v in state.get(to, {}).items()}
     changed = [k for k in last if k in now and not same(last[k], now[k])]
     vanished = [k for k in last if k not in now]
