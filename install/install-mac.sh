@@ -33,6 +33,10 @@ if [ -n "$check" ]; then root="$check"; else root="$HOME/AI-Brain-Link"; fi
 # text to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
 # steps. Anyone can set it; it's off unless they do.
 setup="${BRAIN_KIT_SETUP:-}"
+# The start page's step 4 (anidealab.com/second-brain, 25 Nov 2026): BRAIN_KIT_FROM_SITE=1, which connect.sh sets.
+# There it runs before the brain's first chat, so it ends by sending them back to that page for their first
+# message, not back to a chat. Otherwise the same.
+from_site="${BRAIN_KIT_FROM_SITE:-}"
 brain=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -783,6 +787,7 @@ fi
 
 show_steps
 if [ -z "$want_obsidian" ]; then say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.'
+elif [ -n "$has_obsidian" ] && [ -n "$from_site" ]; then say 'Obsidian is installed and set up on your brain. Your agent tells you how to open it in your first chat.'
 elif [ -n "$has_obsidian" ]; then say 'Obsidian is installed and set up on your brain. Your agent tells you how to open it when you go back to your chat.'
 else
   echo ''
@@ -800,6 +805,9 @@ echo ''
 if [ -n "$setup" ]; then
   printf '\033[36m%s\033[0m\n' "That's everything on your side. We'll take it from here, and email you when your brain is ready."
   if [ -z "$index_ok" ]; then echo "(Your documents didn't get read just now. Nothing to do: we'll sort it with you by email.)"; fi
+elif [ -n "$from_site" ] && [ -z "$fresh" ]; then
+  # From the start page's step 4, before the first chat: back to the page, whose last part is the first message.
+  printf '\033[36m%s\033[0m\n' "Last step: go back to anidealab.com/second-brain and send your first message."
 elif [ -z "$fresh" ]; then
   # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
   # chat since), or a run again. So the chat is open, and that's where they go back to.

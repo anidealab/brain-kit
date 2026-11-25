@@ -29,6 +29,10 @@ $root = if ($check) { $check } else { 'C:\AI-Brain-Link' }
 # text to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
 # steps. Anyone can set it; it's off unless they do.
 $setup = [bool]$env:BRAIN_KIT_SETUP
+# The start page's step 4 (anidealab.com/second-brain, 25 Nov 2026): BRAIN_KIT_FROM_SITE=1, which connect.ps1 sets.
+# There it runs before the brain's first chat, so it ends by sending them back to that page for their first
+# message, not back to a chat. Otherwise the same.
+$fromSite = [bool]$env:BRAIN_KIT_FROM_SITE
 $noBom = New-Object Text.UTF8Encoding $false # Obsidian can't read JSON that starts with a byte-order mark
 
 function Say($t) { Write-Host ''; Write-Host $t -ForegroundColor Cyan }
@@ -570,6 +574,7 @@ if ($setup -and -not $check) {
 Show-Steps
 if (-not $check) { Set-QuickEdit $true }
 if (-not $wantObsidian) { Say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.' }
+elseif ($hasObsidian -and $fromSite) { Say 'Obsidian is installed and set up on your brain. Your agent tells you how to open it in your first chat.' }
 elseif ($hasObsidian) { Say 'Obsidian is installed and set up on your brain. Your agent tells you how to open it when you go back to your chat.' }
 else {
   Write-Host ''
@@ -587,6 +592,9 @@ Write-Host ''
 if ($setup) {
   Write-Host "That's everything on your side. We'll take it from here, and email you when your brain is ready." -ForegroundColor Cyan
   if (-not $indexOk) { Write-Host "(Your documents didn't get read just now. Nothing to do: we'll sort it with you by email.)" }
+} elseif ($fromSite -and -not $fresh) {
+  # From the start page's step 4, before the first chat: back to the page, whose last part is the first message.
+  Write-Host 'Last step: go back to anidealab.com/second-brain and send your first message.' -ForegroundColor Cyan
 } elseif (-not $fresh) {
   # The brain was on GitHub already: made from AnIdeaLab's template, with this run from its first chat (or any
   # chat since), or a run again. So the chat is open, and that's where they go back to.
