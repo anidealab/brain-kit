@@ -392,7 +392,7 @@ def backup_folder(root, entry, state, stamp, dry, force, logdir, sometimes):
     if entry.get("sometimes") and not sometimes:
         say(f"{label}: a sometimes folder, left out this time (the owner said yes to it with --sometimes)")
         return
-    if entry.get("once") and os.path.isdir(os.path.join(root, to)) and state.get(to):
+    if entry.get("once") and os.path.isdir(os.path.join(root, to)) and (state.get(to) or not os.path.exists(src)):
         say(f"{label}: copied once already; left as it is")
         return
     if not os.path.exists(src):
