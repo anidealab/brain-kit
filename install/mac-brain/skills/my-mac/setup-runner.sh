@@ -158,7 +158,7 @@ PLIST
 
   # 7. Your folders. macOS asks before anything reads Desktop, Documents, Downloads, Pictures, Movies or Music,
   # and it asks for the program doing the reading: the runner, not this Terminal window. A job nobody is watching
-  # can't answer, so without this the runner can't reach the owner's files at all (25 Nov 2026, Matt's Mac: every
+  # can't answer, so without this the runner can't reach the owner's files at all (25 Nov 2026, a tester's Mac: every
   # one of those folders refused until he clicked Allow). So one small job looks into each now, while the owner
   # is here to say yes. It lists nothing and changes nothing.
   if [ -z "$check" ]; then
