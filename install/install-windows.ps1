@@ -25,8 +25,8 @@ $check = $env:BRAIN_KIT_CHECK # a test folder: nothing is installed, and GitHub 
 $root = if ($check) { $check } else { 'C:\AI-Brain-Link' }
 # AnIdeaLab's set-up (the brain set up for you): BRAIN_KIT_SETUP=1, in the command its set-up page gives. It
 # lets AnIdeaLab's set-up account in to the brain even when the brain was made already (from the template),
-# reads the documents of the past year on this PC last (set-up\index-computer.ps1, beside install\) and sends their
-# text to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
+# maps this PC last (set-up\index-computer.ps1 -Map, beside install\: folders and documents' names, nothing opened) and sends the
+# map to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
 # steps. Anyone can set it; it's off unless they do.
 $setup = [bool]$env:BRAIN_KIT_SETUP
 # The start page's step 4 (anidealab.com/second-brain, 25 Nov 2026): BRAIN_KIT_FROM_SITE=1, which connect.ps1 sets.
@@ -387,9 +387,8 @@ if (Test-Path (Join-Path $vault '.git')) {
   if (-not $check) {
     Native { & $git -C $vault push -u origin main }
     if ($LASTEXITCODE -ne 0) { throw 'Sending the brain to GitHub failed. Paste the same command again to retry.' }
-    # A setup report, so AnIdeaLab can count new brains: the brain's "Send brain update reports" workflow sends
-    # it to the kit's inbox, as it does an update's report. It holds the day it was set up, nothing else.
-    Say 'Sending AnIdeaLab a setup report (just the date), so it can count new brains...'
+    # The setup report, sent quietly: the brain's "Send brain update reports" workflow sends it to the kit's
+    # inbox, as it does an update's report. It holds the day it was set up, nothing else (the terms say so).
     $setupDay = (Get-Date).ToUniversalTime().ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)
     $setupReport = Inside $vault 'knowledge' 'systems' 'brain-updates' '0000-report.md'
     $setupText = "---`nabout: `"This brain's setup report: the day it was set up from the AnIdeaLab brain kit. Sent to AnIdeaLab's inbox.`"`ntags: [the-brain]`nupdated: $setupDay`n---`n# Setup report`n`nThis brain was set up from the AnIdeaLab brain kit on $setupDay (UTC).`n"
@@ -545,30 +544,31 @@ if (-not $wantObsidian) { Step 'Obsidian, with syncing on' 'skipped' } else {
   Step 'Obsidian, with syncing on' $(if ($hasObsidian) { 'done' } else { 'not done' })
 }
 
-# 7. AnIdeaLab's set-up only: the documents of the past year, read here, as the owner, so no runner is needed. Their
-# text, never the files, goes to the brain's repo as a private draft release (never into the brain's files) for the
-# set-up's agent to write up as notes; the agent deletes it once it has it. The originals stay where they are.
+# 7. AnIdeaLab's set-up only: the map, the index's first stage (decided 25 Nov 2026), made here as the owner: folders
+# and the past year's documents' names, none opened. It goes to the brain's repo as a private draft release (never
+# into the brain's files); the set-up's agent picks what to read from it and the owner's answers, and reads that
+# later as a job on this computer's runner (index-computer -Plan). The originals stay where they are.
 $indexOk = $false
 if ($setup -and -not $check) {
-  Step 'Your documents, read for your set-up' 'started'
-  Say "Last, reading the documents you've worked on this past year, so we can put what's in them into your brain. Photos, and anything that looks like passwords or keys, are left out, and nothing on this PC is changed or moved. It can take a while: leave this window open."
+  Step 'Your computer, mapped for your set-up' 'started'
+  Say "Last, a quick map of this PC: its folders and the names of the documents you've worked on this past year, so we can pick what to put in your brain. Nothing is opened yet, photos and anything that looks like passwords or keys are left out, and nothing on this PC is changed or moved. We read what we pick later, in the background."
   $indexer = Join-Path (Split-Path -Parent $here) 'set-up\index-computer.ps1'
   $indexWork = Join-Path $root '_intake\computer'
   if (Test-Path -LiteralPath $indexer) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $indexer -Root $root
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $indexer -Root $root -Map
     if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath (Join-Path $indexWork 'index.md'))) {
       $pack = Join-Path $env:TEMP 'anidealab-set-up-index.zip'
       Remove-Item -LiteralPath $pack -Force -ErrorAction SilentlyContinue
       try { Compress-Archive -Path (Join-Path $indexWork '*') -DestinationPath $pack -Force } catch { Log "couldn't zip the index: $($_.Exception.Message)" }
       if (Test-Path -LiteralPath $pack) {
         Native { & $gh release delete anidealab-set-up-index --repo $repo --yes 2>&1 } | Out-Null
-        Native { & $gh release create anidealab-set-up-index $pack --repo $repo --draft --title 'Your documents, for AnIdeaLab''s set-up' --notes 'The text of the documents your set-up read on your computer, for AnIdeaLab to write up as notes in your brain. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer.' 2>&1 } | Out-Host
+        Native { & $gh release create anidealab-set-up-index $pack --repo $repo --draft --title 'Your computer''s map, for AnIdeaLab''s set-up' --notes 'A map of your computer: its drives, its folders and the names of the documents you worked on this past year, none of them opened. AnIdeaLab uses it to get its bearings and, only if you asked for your documents to be read, to pick what to read. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once your brain is set up. Your files stay on your computer.' 2>&1 } | Out-Host
         $indexOk = $LASTEXITCODE -eq 0
         Remove-Item -LiteralPath $pack -Force -ErrorAction SilentlyContinue
       }
     }
   } else { Log "no set-up\index-computer.ps1 beside the installer" }
-  Step 'Your documents, read for your set-up' $(if ($indexOk) { 'done' } else { 'not done' })
+  Step 'Your computer, mapped for your set-up' $(if ($indexOk) { 'done' } else { 'not done' })
 }
 
 Show-Steps
@@ -591,7 +591,7 @@ Write-Host "Your copy on this PC: $vault"
 Write-Host ''
 if ($setup) {
   Write-Host "That's everything on your side. We'll take it from here, and email you when your brain is ready." -ForegroundColor Cyan
-  if (-not $indexOk) { Write-Host "(Your documents didn't get read just now. Nothing to do: we'll sort it with you by email.)" }
+  if (-not $indexOk) { Write-Host "(Your PC didn't get mapped just now. Nothing to do: we'll sort it with you by email.)" }
 } elseif ($fromSite -and -not $fresh) {
   # From the start page's step 4, before the first chat: back to the page, whose last part is the first message.
   Write-Host 'Last step: go back to anidealab.com/second-brain and send your first message.' -ForegroundColor Cyan
