@@ -3,10 +3,11 @@
 # in the browser, to sign in or sign up for a paid plan (S skips it), and asks whether you'd like Obsidian.
 # Then it installs Git and GitHub's command line (gh) if they're missing, and Obsidian if you said yes, signs
 # you in to GitHub, makes your brain's private repo (inviting AnIdeaLab's testing account to it, as the terms
-# say) and puts the brain in it, puts your copy in C:\AI-Brain-Link, with Obsidian's syncing on if you chose
-# Obsidian, adds the upload point if the brain has one, sets up the PC runner if you say yes to it, so AI
-# agents can run jobs on this PC, and opens Obsidian last. Obsidian and the runner are extras: your brain
-# works without either, and pasting the same command again adds one later.
+# say) and puts the brain in it, puts your copy in C:\AI-Brain-Link, sets up the PC runner if you say yes to
+# it, so AI agents can run jobs on this PC, then sets Obsidian up on your brain, with its syncing on, if you
+# chose Obsidian. It doesn't open Obsidian: you go back to your chat, and your agent says how to open it.
+# Obsidian and the runner are extras: your brain works without either, and pasting the same command again
+# adds one later.
 # Safe to run again: it skips what's already done. It ends with a list of which steps finished, and
 # keeps it in C:\AI-Brain-Link\_logs\install.log, which the setup check reads.
 # Where the brain comes from, first found:
@@ -265,7 +266,7 @@ if (-not $check) { Set-QuickEdit $false }
 # already, and a brain made here gets the plan's line in the last step below (22 Nov 2026).
 
 # Obsidian is an extra, so it's asked about, here, before anything is installed: the answer covers the app, its
-# Git plugin, the brain in its list of vaults and opening it at the end, and a no leaves an Obsidian that's
+# Git plugin and the brain in its list of vaults, and a no leaves an Obsidian that's
 # already on the PC alone. Enter is yes. The kit's check answers yes, so it still tries Obsidian's steps.
 $wantObsidian = Yes 'Would you like Obsidian too? It''s a free app that shows your brain as a map on this PC, where you can read and edit your notes. Your brain works without it, and you can add it later by pasting the same command again.'
 Log $(if ($wantObsidian) { 'Obsidian: wanted' } else { 'Obsidian: not wanted, so its steps are skipped' })
@@ -366,7 +367,7 @@ New-Item -ItemType Directory -Force -Path $root | Out-Null
 if (Test-Path (Join-Path $vault '.git')) {
   Say "Your brain is already on this PC, in $vault."
   # Brought up to date first, where that changes nothing of yours (a fast-forward only): the runner's setup
-  # and the upload point run from this copy, and without Obsidian nothing else on the PC syncs it.
+  # runs from this copy, and without Obsidian nothing else on the PC syncs it.
   if (-not $check) {
     Native { & $git -C $vault pull --ff-only -q origin main 2>&1 } | Out-Null
     Native { & $git -C $vault push -u origin main 2>&1 } | Out-Null
@@ -408,11 +409,89 @@ if (Test-Path (Join-Path $vault '.git')) {
 }
 Step "Your brain on GitHub, and your copy in $vault" 'done'
 
-# 5. Obsidian, if it's wanted, with the Git plugin that syncs your edits (its code isn't kept in the repo). It
-# opens at the end: opened here, it came up in front of this window while the runner's question waited behind
-# it. Without Obsidian, the PC runner brings this copy up to date at the start of each job, so the upload
-# point and the setup scripts in it stay current (the brain's pc-run.yml does it: a brain made from the
-# template has that now, and one made from brain\ gets it with the next brain update).
+# Once the runner is online, the brain records this PC itself: its row in knowledge/systems/devices.md and what
+# it has in the PC's note, in a commit of their own. Without it, a brain whose owner ran this after their session
+# ended said no computer had a runner, though this one worked, until an agent happened to test it.
+function Record-PC($vault) {
+  try {
+    $today = (Get-Date).ToUniversalTime().ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)
+    $os = Get-CimInstance Win32_OperatingSystem
+    $cs = Get-CimInstance Win32_ComputerSystem
+    $gpu = (@(Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }) -join ', ')
+    $disks = (@(Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object { '{0} {1:N0} GB free of {2:N0} GB' -f $_.DeviceID, ($_.FreeSpace / 1GB), ($_.Size / 1GB) }) -join ', ')
+    $facts = ("{0}, {1} {2}, {3}, {4:N0} GB RAM, GPU {5}, disks {6}" -f $os.Caption, $cs.Manufacturer, $cs.Model, ((Get-CimInstance Win32_Processor | Select-Object -First 1).Name).Trim(), ($cs.TotalPhysicalMemory / 1GB), $gpu, $disks) -replace '\|', '/'
+    $devices = Join-Path $vault 'knowledge\systems\devices.md'
+    if (Test-Path $devices) {
+      $lines = [Collections.Generic.List[string]]([IO.File]::ReadAllText($devices) -split "`n")
+      $rows = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i].TrimStart().StartsWith('|')) { $i } })
+      if ($rows.Count -and -not ($rows | Where-Object { $lines[$_] -match '`my-pc`' })) {
+        $last = $rows[0]
+        while ($last + 1 -lt $lines.Count -and $lines[$last + 1].TrimStart().StartsWith('|')) { $last++ }
+        $lines.Insert($last + 1, "| [This PC, $env:COMPUTERNAME](my-pc.md) | The ``my-pc`` runner (``pc-run.yml``), added by the installer on $today | While the owner is signed in and it's awake | $facts | ``my-pc`` | ``$env:COMPUTERNAME`` |")
+        [IO.File]::WriteAllText($devices, ($lines -join "`n"), $noBom)
+      }
+    }
+    $note = Join-Path $vault 'knowledge\systems\my-pc.md'
+    if (Test-Path $note) {
+      $text = [IO.File]::ReadAllText($note)
+      $new = [regex]::Replace($text, '(?m)^\*Not checked yet:.*\*\r?$', "Recorded by the installer on $today, when the runner first came online: $env:COMPUTERNAME, $facts. A first job adds what's installed (the getting-started skill, step 4).", 1)
+      if ($new -ne $text) { [IO.File]::WriteAllText($note, $new, $noBom) }
+    }
+    Native { & $git -C $vault add -A knowledge/systems } | Out-Null
+    Native { & $git -C $vault diff --cached --quiet } | Out-Null
+    if ($LASTEXITCODE -eq 0) { return }
+    Native { & $git -C $vault commit -q -m "This PC's runner is set up: added it to the brain's devices" } | Out-Null
+    Native { & $git -C $vault push -q origin HEAD } | Out-Null
+  } catch { Log "couldn't record this PC in devices.md: $($_.Exception.Message)" }
+}
+
+# 5. The PC runner
+$runnerSetup = Join-Path (Join-Path (Join-Path $vault 'skills') 'my-pc') 'setup-runner.ps1'
+$runnerOk = $true
+Step 'The PC runner' 'started'
+if (-not $check) {
+  # A brain from the template has the newer runner setup, which needs no password; one made from this kit's
+  # main branch has the older one until the update that brings it, so the question says what this brain's does.
+  $runnerAsks = if ((Test-Path $runnerSetup) -and (Select-String -LiteralPath $runnerSetup -Pattern 'windowslogonpassword' -Quiet)) { 'It asks for admin rights, then your Windows password, in a second window.' } else { "It runs while you're signed in to Windows, and needs no password." }
+  if (Yes "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks") {
+    # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
+    # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
+    $runnerDir = Join-Path $root '_runner'
+    if (-not (Test-Path (Inside $runnerDir 'bin' 'Runner.Listener.exe'))) {
+      Say "Downloading GitHub's runner, about 100 MB..."
+      $dl = Join-Path $env:TEMP 'brain-kit-runner'
+      try {
+        $runnerTag = "$(Native { & $gh api repos/actions/runner/releases/latest --jq .tag_name })".Trim()
+        $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
+        $runnerZip = "actions-runner-win-$arch-$($runnerTag.TrimStart('v')).zip"
+        if ($runnerTag -and (Get-Release 'actions/runner' $runnerTag @($runnerZip) $dl)) {
+          Expand-Archive -Path (Join-Path $dl $runnerZip) -DestinationPath $runnerDir -Force
+        }
+      } catch { Log "couldn't put the runner in place first: $($_.Exception.Message)" }
+      Remove-Item -LiteralPath $dl -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $runnerSetup -Repo $repo -Root $root
+    # "All done" only once GitHub sees the runner online: on an owner's PC it said so after the
+    # runner setup had stopped partway (22 Oct 2026).
+    $runnerOk = $LASTEXITCODE -eq 0
+    try { $list = Native { & $gh api "repos/$repo/actions/runners" } | Out-String | ConvertFrom-Json } catch { $list = $null }
+    if (-not ($list.runners | Where-Object { $_.status -eq 'online' })) { $runnerOk = $false }
+    if ($runnerOk) { Record-PC $vault }
+    Step 'The PC runner' $(if ($runnerOk) { 'done' } else { 'not done' })
+  } else {
+    Step 'The PC runner' 'skipped'
+    Write-Host "Skipped. To set it up later, paste: powershell -ExecutionPolicy Bypass -File `"$runnerSetup`""
+  }
+} else { Step 'The PC runner' 'skipped' }
+
+# 6. Obsidian, if it's wanted, with the Git plugin that syncs your edits (its code isn't kept in the repo), after
+# the runner, so nothing of Obsidian's comes up in front of the runner's questions. It isn't opened here: the owner
+# goes back to their chat, and the agent says how to open it, to choose "Trust author and enable plugins" (what
+# Obsidian asks the first time a vault has plugins) and where the brain graph is (the getting-started skill).
+# Without Obsidian, the PC runner brings this copy up to date at the start of each job, so the setup scripts in
+# it stay current (the brain's pc-run.yml does it: a brain made from the template has that now, and one made
+# from brain\ gets it with the next brain update).
+$hasObsidian = $false
 if (-not $wantObsidian) { Step 'Obsidian, with syncing on' 'skipped' } else {
   Step 'Obsidian, with syncing on' 'started'
   # winget gets Obsidian from GitHub's plain release link at the tools step, and the setup carries on if that
@@ -457,111 +536,12 @@ if (-not $wantObsidian) { Step 'Obsidian, with syncing on' 'skipped' } else {
     $data.vaults | Add-Member -NotePropertyName $id -NotePropertyValue ([pscustomobject]@{ path = $vault; ts = $ts; open = $true })
   }
   [IO.File]::WriteAllText($cfg, ($data | ConvertTo-Json -Depth 10 -Compress), $noBom)
-  Step 'Obsidian, with syncing on' 'done'
-}
-
-# 5b. The upload point, if this brain has one (from the kit after brain update 3): your brain is fine without it.
-$uploadSetup = Inside $vault 'skills' 'upload-point' 'setup-upload-point.ps1'
-if (Test-Path -LiteralPath $uploadSetup) {
-  Step 'The upload point' 'started'
-  Say 'Adding the upload point: My brain in Send to, for giving your brain files with a right-click...'
-  if (-not $check) {
-    $uploadOk = $false
-    try { Native { & powershell -NoProfile -ExecutionPolicy Bypass -File $uploadSetup }; $uploadOk = $LASTEXITCODE -eq 0 } catch { }
-    if (-not $uploadOk) { Write-Host "The upload point didn't set up; your brain works without it. To try again later, paste: powershell -ExecutionPolicy Bypass -File `"$uploadSetup`"" -ForegroundColor Yellow }
-    Step 'The upload point' $(if ($uploadOk) { 'done' } else { 'not done' })
-  } else { Step 'The upload point' 'done' }
-}
-
-# Once the runner is online, the brain records this PC itself: its row in knowledge/systems/devices.md and what
-# it has in the PC's note, in a commit of their own. Without it, a brain whose owner ran this after their session
-# ended said no computer had a runner, though this one worked, until an agent happened to test it.
-function Record-PC($vault) {
-  try {
-    $today = (Get-Date).ToUniversalTime().ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)
-    $os = Get-CimInstance Win32_OperatingSystem
-    $cs = Get-CimInstance Win32_ComputerSystem
-    $gpu = (@(Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }) -join ', ')
-    $disks = (@(Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object { '{0} {1:N0} GB free of {2:N0} GB' -f $_.DeviceID, ($_.FreeSpace / 1GB), ($_.Size / 1GB) }) -join ', ')
-    $facts = ("{0}, {1} {2}, {3}, {4:N0} GB RAM, GPU {5}, disks {6}" -f $os.Caption, $cs.Manufacturer, $cs.Model, ((Get-CimInstance Win32_Processor | Select-Object -First 1).Name).Trim(), ($cs.TotalPhysicalMemory / 1GB), $gpu, $disks) -replace '\|', '/'
-    $devices = Join-Path $vault 'knowledge\systems\devices.md'
-    if (Test-Path $devices) {
-      $lines = [Collections.Generic.List[string]]([IO.File]::ReadAllText($devices) -split "`n")
-      $rows = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i].TrimStart().StartsWith('|')) { $i } })
-      if ($rows.Count -and -not ($rows | Where-Object { $lines[$_] -match '`my-pc`' })) {
-        $last = $rows[0]
-        while ($last + 1 -lt $lines.Count -and $lines[$last + 1].TrimStart().StartsWith('|')) { $last++ }
-        $lines.Insert($last + 1, "| [This PC, $env:COMPUTERNAME](my-pc.md) | The ``my-pc`` runner (``pc-run.yml``), added by the installer on $today | While the owner is signed in and it's awake | $facts | ``my-pc`` | ``$env:COMPUTERNAME`` |")
-        [IO.File]::WriteAllText($devices, ($lines -join "`n"), $noBom)
-      }
-    }
-    $note = Join-Path $vault 'knowledge\systems\my-pc.md'
-    if (Test-Path $note) {
-      $text = [IO.File]::ReadAllText($note)
-      $new = [regex]::Replace($text, '(?m)^\*Not checked yet:.*\*\r?$', "Recorded by the installer on $today, when the runner first came online: $env:COMPUTERNAME, $facts. A first job adds what's installed (the getting-started skill, step 4).", 1)
-      if ($new -ne $text) { [IO.File]::WriteAllText($note, $new, $noBom) }
-    }
-    Native { & $git -C $vault add -A knowledge/systems } | Out-Null
-    Native { & $git -C $vault diff --cached --quiet } | Out-Null
-    if ($LASTEXITCODE -eq 0) { return }
-    Native { & $git -C $vault commit -q -m "This PC's runner is set up: added it to the brain's devices" } | Out-Null
-    Native { & $git -C $vault push -q origin HEAD } | Out-Null
-  } catch { Log "couldn't record this PC in devices.md: $($_.Exception.Message)" }
-}
-
-# 6. The PC runner
-$runnerSetup = Join-Path (Join-Path (Join-Path $vault 'skills') 'my-pc') 'setup-runner.ps1'
-$runnerOk = $true
-Step 'The PC runner' 'started'
-if (-not $check) {
-  # A brain from the template has the newer runner setup, which needs no password; one made from this kit's
-  # main branch has the older one until the update that brings it, so the question says what this brain's does.
-  $runnerAsks = if ((Test-Path $runnerSetup) -and (Select-String -LiteralPath $runnerSetup -Pattern 'windowslogonpassword' -Quiet)) { 'It asks for admin rights, then your Windows password, in a second window.' } else { "It runs while you're signed in to Windows, and needs no password." }
-  if (Yes "Set up the PC runner now, so you can ask Claude to do things on this PC from any chat, even your phone? It only does what you ask. $runnerAsks") {
-    # The runner's setup downloads the runner from GitHub's plain release link, which can answer 504 (see
-    # Get-Release). Put in place here, through gh, the setup finds it and skips that; if this fails, it still tries.
-    $runnerDir = Join-Path $root '_runner'
-    if (-not (Test-Path (Inside $runnerDir 'bin' 'Runner.Listener.exe'))) {
-      Say "Downloading GitHub's runner, about 100 MB..."
-      $dl = Join-Path $env:TEMP 'brain-kit-runner'
-      try {
-        $runnerTag = "$(Native { & $gh api repos/actions/runner/releases/latest --jq .tag_name })".Trim()
-        $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
-        $runnerZip = "actions-runner-win-$arch-$($runnerTag.TrimStart('v')).zip"
-        if ($runnerTag -and (Get-Release 'actions/runner' $runnerTag @($runnerZip) $dl)) {
-          Expand-Archive -Path (Join-Path $dl $runnerZip) -DestinationPath $runnerDir -Force
-        }
-      } catch { Log "couldn't put the runner in place first: $($_.Exception.Message)" }
-      Remove-Item -LiteralPath $dl -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $runnerSetup -Repo $repo -Root $root
-    # "All done" only once GitHub sees the runner online: on an owner's PC it said so after the
-    # runner setup had stopped partway (22 Oct 2026).
-    $runnerOk = $LASTEXITCODE -eq 0
-    try { $list = Native { & $gh api "repos/$repo/actions/runners" } | Out-String | ConvertFrom-Json } catch { $list = $null }
-    if (-not ($list.runners | Where-Object { $_.status -eq 'online' })) { $runnerOk = $false }
-    if ($runnerOk) { Record-PC $vault }
-    Step 'The PC runner' $(if ($runnerOk) { 'done' } else { 'not done' })
-  } else {
-    Step 'The PC runner' 'skipped'
-    Write-Host "Skipped. To set it up later, paste: powershell -ExecutionPolicy Bypass -File `"$runnerSetup`""
-  }
-} else { Step 'The PC runner' 'skipped' }
-
-# 7. Obsidian opens last, so it can't hide a question in this window.
-$hasObsidian = $false
-if (-not $wantObsidian) { Step 'Obsidian opened on your brain' 'skipped' } else {
-  Step 'Obsidian opened on your brain' 'started'
-  # Without Obsidian, the link only gets Windows asking which app should open it (a friend's PC, 8 Nov 2026).
+  # Without the app, it's set up for when it comes: a run again installs it.
   $hasObsidian = $check -or (Find-Obsidian)
-  if (-not $check -and $hasObsidian) {
-    try { Start-Process ('obsidian://open?path=' + [uri]::EscapeDataString($vault)) } catch { $o = Find-Obsidian; if ($o) { Start-Process $o } }
-    Start-Sleep -Seconds 3
-  }
-  Step 'Obsidian opened on your brain' $(if ($hasObsidian) { 'done' } else { 'not done' })
+  Step 'Obsidian, with syncing on' $(if ($hasObsidian) { 'done' } else { 'not done' })
 }
 
-# 8. AnIdeaLab's set-up only: the documents of the past year, read here, as the owner, so no runner is needed. Their
+# 7. AnIdeaLab's set-up only: the documents of the past year, read here, as the owner, so no runner is needed. Their
 # text, never the files, goes to the brain's repo as a private draft release (never into the brain's files) for the
 # set-up's agent to write up as notes; the agent deletes it once it has it. The originals stay where they are.
 $indexOk = $false
@@ -590,7 +570,7 @@ if ($setup -and -not $check) {
 Show-Steps
 if (-not $check) { Set-QuickEdit $true }
 if (-not $wantObsidian) { Say 'No Obsidian, as you chose. To add it later, paste the same command again and answer Y to the Obsidian question.' }
-elseif ($hasObsidian) { Say 'Obsidian is opening your brain. If it asks, choose "Trust author and enable plugins". Then come back to this window for the last step, below.' }
+elseif ($hasObsidian) { Say 'Obsidian is installed and set up on your brain. Your agent tells you how to open it when you go back to your chat.' }
 else {
   Write-Host ''
   Write-Host "Obsidian didn't install, because its download didn't come through. That's usually GitHub, and it usually passes. Your brain is fine without it for now: wait a few minutes, then paste the same command again." -ForegroundColor Yellow
@@ -602,7 +582,7 @@ if ($runnerOk) { Say 'All done on this PC.' } else {
   Write-Host 'Or carry on below, and ask Claude to help get the runner working.'
 }
 Write-Host "Your brain on GitHub: https://github.com/$repo"
-Write-Host "Your copy on this PC: $vault$(if ($wantObsidian) { ' (open in Obsidian)' })"
+Write-Host "Your copy on this PC: $vault"
 Write-Host ''
 if ($setup) {
   Write-Host "That's everything on your side. We'll take it from here, and email you when your brain is ready." -ForegroundColor Cyan
@@ -617,10 +597,4 @@ Write-Host '  1. Go to https://claude.ai/code. It needs a paid plan (Pro or abov
 Write-Host "  2. Start a new session with $repo selected."
 Write-Host '  3. Send this message:'
 Write-Host '       This is my new second brain. Read CLAUDE.md and get me set up.' -ForegroundColor Green
-
-# Last, AnIdeaLab's tutorials page opens in the browser: these steps, and the rest, with a video each.
-$tutorials = 'https://anidealab.com/second-brain/tutorials'
-Write-Host ''
-Write-Host "The tutorials are opening in your browser: these steps with a video, then Obsidian and connecting Google. $tutorials" -ForegroundColor Cyan
-if (-not $check) { try { Start-Process $tutorials } catch { } }
 }

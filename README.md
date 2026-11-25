@@ -50,11 +50,9 @@ irm https://raw.githubusercontent.com/AnIdeaLab/brain-kit/main/install.ps1 | iex
 - installs Git and GitHub's command line if they're missing, and Obsidian if you said yes, and signs you in to GitHub in your browser;
 - uses your brain, `my-brain-ail` (or the name in `BRAIN_KIT_NAME`), if you've made it already; if not, makes it from [brain/](brain/), as of the newest update, with the day you install it as its start, in a new private repo on your GitHub account;
 - invites AnIdeaLab's testing account to that repo, as the terms say;
-- puts your copy in `C:\AI-Brain-Link\<your brain's name>`, set up for Obsidian with your edits syncing to GitHub, if you chose Obsidian;
-- adds the upload point, a Send to entry for giving your brain files with a right-click;
+- puts your copy in `C:\AI-Brain-Link\<your brain's name>`;
 - sets up the PC runner, if you say yes to it, so you can ask your agent to do things on your PC. It asks for admin rights and your Windows password, then whether to keep the PC awake while it's plugged in, and says to answer yes: a sleeping PC can't run jobs, and its runner can stay disconnected after it wakes until it's restarted by hand;
-- opens your brain in Obsidian, if you chose it, last, so it can't hide a question in the PowerShell window.
-- then opens AnIdeaLab's tutorials page in your browser, for connecting Claude and the rest (anidealab.com/second-brain/tutorials, or the site's preview address until the site moves there).
+- then, if you chose Obsidian, sets it up on your brain, with your edits syncing to GitHub, after the runner so nothing of Obsidian's covers the runner's questions. It doesn't open it: back in your chat, your agent says how to open it, to choose "Trust author and enable plugins", and where the brain graph is.
 
 It's safe to run again: it skips what's already done. Its questions show in yellow, and a click in its window can't pause it. At the end it lists each step and how it went, keeps that in `C:\AI-Brain-Link\_logs\install.log` (which the brain's setup check reads), and says what to send Claude to get started. The steps in plain words, to send someone: [install/START-HERE.txt](install/START-HERE.txt).
 
@@ -69,8 +67,7 @@ It's safe to run again: it skips what's already done. Its questions show in yell
 - Git comes with Apple's command line tools, which macOS offers to install in a window of its own; GitHub's command line and Obsidian come from their own releases on GitHub, each checked against its checksum. There's no Homebrew, and nothing asks for your Mac's password;
 - your copy goes in `~/AI-Brain-Link/<your brain's name>`, and the log in `~/AI-Brain-Link/_logs/install.log`;
 - the brain gets its Mac parts, since [brain/](brain/) is made for a Windows PC: the Mac runner's workflow, skill and note from [install/mac-brain/](install/mac-brain/), and its lines about the PC and PowerShell said for a Mac;
-- the Mac runner runs as a LaunchAgent under your account, so your agent can do what you ask on your Mac while it's on and you're logged in, and it offers to keep the Mac awake on the charger;
-- there's no Send to on a Mac: you put files for your brain in `~/AI-Brain-Link/_upload`.
+- the Mac runner runs as a LaunchAgent under your account, so your agent can do what you ask on your Mac while it's on and you're logged in, and it offers to keep the Mac awake on the charger.
 
 The steps in plain words, to send someone: [install/START-HERE-MAC.txt](install/START-HERE-MAC.txt). GitHub's own Macs try it on each change ([the workflow](.github/workflows/mac-installer.yml)).
 
