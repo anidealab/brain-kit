@@ -1,6 +1,6 @@
 ---
 name: backup
-description: "The backup to the owner's cold storage drive, an external drive they plug in for it and unplug after, through the runner on their connected computer: the brain with all its history plus the folders they choose. Only for a brain with a connected computer. What to ask on the first one, running it, the tripwire, logging it and restoring. Use at the weekly tidy-up's optional last step when the owner says yes, or whenever they ask for a backup or a restore."
+description: "The backup to the owner's cold storage drive, an external drive they plug in for it and unplug after, through the runner on their connected computer: the brain with all its history and any other repos they name, plus only the folders or files they ask for. Only for a brain with a connected computer. Setting up what it saves, the Mac's optional iCloud step, running it, the tripwire, logging it and restoring. Use at the weekly tidy-up's optional last step when the owner says yes, or whenever they ask for a backup or a restore."
 ---
 
 # The backup to a cold storage drive
@@ -27,27 +27,34 @@ The drive has to be **exFAT**, the one format Windows and Macs can both read and
 ## Running it
 [backup.py](backup.py) does it: Python 3 and git, which the computer has (on Windows the job below installs Python for the owner's account the first time, without admin rights).
 
-**The first time, ask what to save: only what can't be got back.** The drive is for what's theirs alone, nothing that can be downloaded again (AnIdeaLab, 25 Nov 2026: "we don't want things that the owner can download easily again. We only want things that can't be downloaded, like personal stuff, photos, maybe personal videos"). So:
-- **In:** their own documents and work, photos, videos they filmed, music they made, anything they couldn't get back.
-- **Out:** anything that can be downloaded or reinstalled: programs, games, installers, `node_modules`; music and films they bought or stream (Apple Music, Spotify, the TV app's films), and the Downloads folder as a rule, which is mostly things from the internet (ask whether anything of theirs is kept there).
-- **Look before you suggest.** Run a job that lists each likely folder's size, its top-level names and its file types (names and counts only; never open their files), and say what each looks like: a Movies folder full of `.mov` and `.mp4` files from a phone or camera, or a Final Cut or iMovie library, is their own footage; one of `.m4v` films from the TV app isn't. A Music folder of GarageBand or Logic projects, or recordings, is theirs; an Apple Music library is not. On a PC the same goes for Videos and Music.
-- The usual places are Documents, Desktop, Pictures, Movies (or Videos) and Music, and other drives. Ask about anything you can't tell.
-Then write `skills/backup/my-folders.json`, one entry per folder:
+**The first time, set up what it saves, with the owner.** It isn't a backup of everything they own: it's the brain, their working projects and the documents they've been working on, the essentials, and only what they ask for, so it never feels like the agent is going through all their files (AnIdeaLab, 25 Nov 2026: "This isn't a backup of everything the person owns ... Just essential things. It's not a everything folder"; "It's like ones that they've asked for"). So:
+1. **The brain is always in.** Say so; there's nothing to choose.
+2. **Other repos:** ask whether there are other repos they'd like a copy of too, like a project's or a website's code on GitHub. Each goes in `repos` by `owner/name` (a bare name means the brain's own owner), as a full copy with all its history. If you can see their repos, you can list them to choose from.
+3. **Then only what they ask for:** ask whether there are folders or files on this computer they'd like kept as well, things they're working on. Add only what they name. Don't go looking through their folders to suggest things, by size, type or anything else. If they're not sure where something is, look for that one thing by its name.
+4. **Left out, unless they ask by name:** Downloads (mostly things from the internet: if something of theirs is in there, add that file, or suggest moving it where it belongs); personal photos and videos (big, and a Mac's Photos library is usually closed to the runner anyway); music and films. Programs, games and installers can be got back, so they're never worth the room. If they ask for one of these, it's their call: say it may be big, then add it.
+5. **On a Mac, an optional step: iCloud Drive's Desktop and Documents.** If the Mac keeps Desktop and Documents in iCloud (a job's `ls ~/Library/Mobile\ Documents/com~apple~CloudDocs` lists a `Desktop` and a `Documents`), offer them as an optional extra: they go in marked `"sometimes": true`, so they're left out of the weekly backup, and copied only in a week when you ask and the owner says yes. Tell them why: copying them makes the Mac download every file it keeps only in iCloud (they show as small or empty files until then), which takes much longer. If Desktop and Documents are only on the Mac, they're ordinary folders: in or out like anything else.
+Then write `skills/backup/my-folders.json`:
 ```json
 {
-  "about": "What the backup copies to the owner's cold storage drive, read by backup.py. 'to' is the folder on the drive. 'once': copy it the first time, then leave it. 'skipNamed': folder names to leave out at any depth. Paths can use ~.",
+  "about": "What the backup copies to the owner's cold storage drive, read by backup.py. 'repos': other repos to keep a full copy of, by owner/name, beside the brain. For each computer, 'folders': what the owner asked for. 'to' is the folder on the drive. 'once': copy it the first time, then leave it. 'skip': folders inside it to leave out. 'skipNamed': folder names to leave out at any depth. 'sometimes': only when the owner says yes that week (--sometimes). Paths can use ~ (and %USERPROFILE% on Windows).",
+  "repos": [
+    { "repo": "their-github-name/their-website" }
+  ],
   "computers": {
     "<the computer's name, as the job prints it>": {
       "folders": [
-        { "from": "~/Documents", "to": "Documents" },
-        { "from": "~/Pictures", "to": "Pictures" },
-        { "from": "D:\\Work", "to": "Work", "skipNamed": ["node_modules"] }
+        { "from": "~/Work/Shop accounts", "to": "Shop accounts" },
+        { "from": "D:\\Projects", "to": "Projects", "skipNamed": ["node_modules"] },
+        { "from": "~/Desktop", "to": "Desktop", "sometimes": true },
+        { "from": "~/Documents", "to": "Documents", "sometimes": true }
       ]
     }
   }
 }
 ```
-Commit it, and push it before the job starts: the job runs the owner's copy of the brain, which catches up first. The computer's name is the one the job prints (`== Backup to ... from <name>`), which is the computer's own name; it's also the computer's folder on the drive. A second computer gets its own entry under `computers`, asked about the same way the first time it backs up, and its own folder on the drive, so two computers' "Documents" never mix. When they want something added or dropped later, change the file.
+Commit it, and push it before the job starts: the job runs the owner's copy of the brain, which catches up first. The computer's name is the one the job prints (`== Backup to ... from <name>`), which is the computer's own name; it's also the computer's folder on the drive. A second computer gets its own entry under `computers`, set up the same way the first time it backs up, and its own folder on the drive, so two computers' "Documents" never mix; `repos` serves them all. When they want something added or dropped later, change the file.
+
+**A private repo** needs a way in. The job first tries the computer's own sign-in to GitHub. If that fails (the summary says the repo couldn't be reached), the owner makes a read-only token for it, and it goes in the brain's Actions secrets as `BACKUP_GITHUB_TOKEN`, which the runner's workflow hands the job (the add-a-key skill; never in chat or a file). The token: on GitHub, Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token; repository access, the repos in the list (or all); permissions, Contents read-only; the longest expiry. With the token, the job can also take the brain itself from GitHub when it runs from a job's checkout.
 
 **On a Mac, the owner sits beside the first one.** macOS asks before the runner reads Desktop, Documents, Downloads, Pictures, Movies or Music, and before it writes to an external drive, and a job nobody answers is simply refused ("no access" in the summary). The Mac's setup asks for the folders while the owner is there (the my-mac skill); the drive's question comes with the first backup, so tell them: "Your Mac may ask whether it can use the drive and your folders: click Allow."
 
@@ -64,16 +71,18 @@ Commit it, and push it before the job starts: the job runs the owner's copy of t
   # Backup to the cold storage drive
   python3 ~/AI-Brain-Link/<repo name>/skills/backup/backup.py run --drive auto
   ```
-`--drive auto` takes the one external drive plugged in; with more than one, it lists them and stops, so run it again with `--drive E:\` or `--drive "/Volumes/<name>"`. `--dry-run` says what it would copy and changes nothing; `--brain-only` skips the folders. `python3 backup.py drives` lists the drives it sees, with each one's format.
+**The sometimes folders:** if `my-folders.json` has any, ask in the same message as the drive: "Shall I include your iCloud Desktop and Documents this time? It takes longer." Only on a yes, add `--sometimes` to the command. A sometimes folder can trip the tripwire after weeks away, since more has changed; ask the owner as below, and `--force` it if they say the files are fine.
 
-**Read the summary** at the end of the job log: a line for the brain and each folder (new, changed, the same, gone from the computer and kept), then the drive's free space. Exit codes: 0 done (maybe with warnings), 1 something failed, 2 the tripwire stopped a folder, 3 no drive, 4 the drive isn't exFAT ([above](#the-drives-format)). The first backup copies everything and can take an hour or more for big folders; later ones copy only what changed. Then tell the owner it's done and they can unplug the drive, with any warning in a line.
+`--drive auto` takes the one external drive plugged in; with more than one, it lists them and stops, so run it again with `--drive E:\` or `--drive "/Volumes/<name>"`. `--dry-run` says what it would copy, and whether each repo can be reached, and changes nothing; `--brain-only` does the brain and the repos and skips the folders. `python3 backup.py drives` lists the drives it sees, with each one's format.
+
+**Read the summary** at the end of the job log: a line for the brain, each repo and each folder (new, changed, the same, gone from the computer and kept), then the drive's free space. Exit codes: 0 done (maybe with warnings), 1 something failed, 2 the tripwire stopped a folder, 3 no drive, 4 the drive isn't exFAT ([above](#the-drives-format)). The first backup copies everything and can take an hour or more for big folders; later ones copy only what changed. Then tell the owner it's done and they can unplug the drive, with any warning in a line.
 
 ## What's on the drive
 Everything goes in `Brain backup/` on the drive:
 ```
 Brain backup/
-  brain/<repo>/        the one full git copy of the brain, named after its repo, updated by fast-forward only;
-                       every computer brings it up to date, so there's one copy, not one per computer
+  brain/<repo>/        the one full git copy of the brain, and of each repo in `repos`, named after its repo, updated
+                       by fast-forward only; every computer brings them up to date, so there's one copy, not one per computer
   <computer>/          one folder per computer, by the computer's own name (DESKTOP-7Q2KF, Sallys-MacBook-Air)
     <to>/              each folder chosen on that computer, by the name in `to`
     _older-versions/<date>/   the old copy of any file that changed, from that backup
@@ -98,4 +107,4 @@ A heading in the backup log (`knowledge/systems/backup-log.md`), dated today (UT
 
 ## Restoring
 - **Files:** copy them back from the computer's folder on the drive. An older version of a changed file is in that computer's `_older-versions/<date>/`.
-- **The brain:** `git clone "<drive>/Brain backup/brain/<repo>" <repo>` gives a working copy with all history, which can be pushed to a new GitHub repo if the old one is gone.
+- **The brain, or a repo:** `git clone "<drive>/Brain backup/brain/<repo>" <repo>` gives a working copy with all history, which can be pushed to a new GitHub repo if the old one is gone.

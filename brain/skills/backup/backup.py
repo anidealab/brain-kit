@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
-"""The weekly backup to the owner's cold storage drive: the brain, with all its history, and the folders
-they chose, copied to an external drive they plug in for the backup and unplug after.
+"""The weekly backup to the owner's cold storage drive: the brain, with all its history, any other repos the
+owner named, and the folders or files they asked for, copied to an external drive they plug in for the backup and
+unplug after.
 
 Runs on the owner's computer (Windows, Mac or Linux), through the runner, from the owner's own copy of the
-brain (a full clone, so the drive gets every commit). Python 3 and git only, nothing to install.
+brain (a full clone, so the drive gets every commit; from a job's shallow checkout it clones the brain from GitHub
+instead). Python 3 and git only, nothing to install.
+
+What it saves is in my-folders.json beside it: "repos", other repos to keep a full copy of (cloned from GitHub,
+by "owner/name"), and for each computer the "folders" (or single files) the owner asked for. A folder marked
+"sometimes" (on a Mac, Desktop and Documents kept in iCloud, which take long since macOS downloads any it keeps
+only in iCloud) is left out unless the run has --sometimes, which the agent adds when the owner says yes that week.
+A private repo is reached with the computer's own git sign-in, or with the read-only token in the environment
+variable BACKUP_GITHUB_TOKEN when the job passes one (from the brain's Actions secrets; never written anywhere).
 
 The rules it keeps:
 - It only reads on the computer. It never changes, moves or deletes anything there.
@@ -18,13 +27,14 @@ The rules it keeps:
   run with code 4, and the agent tells the owner what that means and what they can do.
 
 On the drive, in "Brain backup/": brain/<repo>/ is the one copy of the brain, which every computer brings up to
-date; each computer has its own folder, by its own name, with its chosen folders, _older-versions, _backup-log
-and _backup-state.json, so two computers' "Documents" never mix.
+date, beside the other repos (brain/<name>/ too); each computer has its own folder, by its own name, with its
+chosen folders, _older-versions, _backup-log and _backup-state.json, so two computers' "Documents" never mix.
 
   python3 backup.py drives                         list the external drives it can see
-  python3 backup.py run --drive <path>             back up the brain, and the folders in my-folders.json
-  python3 backup.py run --drive <path> --brain-only
-  python3 backup.py run --drive <path> --no-brain     the folders only, when another computer keeps the brain there
+  python3 backup.py run --drive <path>             back up the brain, the repos and the folders in my-folders.json
+  python3 backup.py run --drive <path> --sometimes   the same, with the folders marked "sometimes" too
+  python3 backup.py run --drive <path> --brain-only  the brain and the repos, no folders
+  python3 backup.py run --drive <path> --no-brain    the folders only, when another computer keeps the brain there
   python3 backup.py run --drive <path> --dry-run   say what it would do, and change nothing
   python3 backup.py run --drive <path> --force "Documents"   let one drive folder past the tripwire
 
@@ -33,6 +43,7 @@ Exit codes: 0 done (maybe with warnings), 1 something failed, 2 the tripwire sto
 4 the drive isn't exFAT (or can't be written to), so nothing was copied.
 """
 import argparse
+import base64
 import datetime
 import json
 import os
@@ -64,6 +75,16 @@ def warn(text):
 def fail(text):
     say("  FAILED: " + text)
     failures.append(text)
+
+
+def lp(path):
+    """On Windows, the long-path form, so files deeper than 260 characters can still be read and written."""
+    if platform.system() != "Windows":
+        return path
+    path = os.path.abspath(path)
+    if path.startswith("\\\\?\\"):
+        return path
+    return "\\\\?\\UNC\\" + path[2:] if path.startswith("\\\\") else "\\\\?\\" + path
 
 
 def gb(n):
@@ -198,72 +219,155 @@ def computer_name():
 
 # ---- The brain: a full git clone on the drive, updated by fast-forward only
 
+def git_env():
+    """Never wait on a password prompt; with a token, send it to github.com only, through git's environment settings
+    (not the command line or any file), with the computer's own credential helper out of the way."""
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    token = os.environ.get("BACKUP_GITHUB_TOKEN", "").strip()
+    if token:
+        basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        env.update(GIT_CONFIG_COUNT="2", GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
+                   GIT_CONFIG_VALUE_0="AUTHORIZATION: basic " + basic,
+                   GIT_CONFIG_KEY_1="credential.helper", GIT_CONFIG_VALUE_1="")
+    return env
+
+
 def git(*args, cwd=None):
-    r = subprocess.run(["git", "-c", "safe.directory=*", *args], cwd=cwd, capture_output=True, text=True)
+    r = subprocess.run(["git", "-c", "safe.directory=*", *args], cwd=cwd, capture_output=True, text=True,
+                       env=git_env())
     return r.returncode, (r.stdout + r.stderr).strip()
 
 
-def backup_brain(root, dry):
-    code, top = git("rev-parse", "--show-toplevel", cwd=HERE)
-    if code:
-        fail("this script isn't in a git copy of the brain, so the brain can't be backed up")
-        return
-    ocode, origin = git("remote", "get-url", "origin", cwd=top)
-    origin = "" if ocode else origin
-    # Named after the repo on GitHub, not this computer's folder, so every computer updates the same copy.
-    name = os.path.basename(origin.rstrip("/").replace(":", "/")) if origin else ""
-    name = name[:-4] if name.endswith(".git") else name
-    name = name or os.path.basename(top)
-    _, shallow = git("rev-parse", "--is-shallow-repository", cwd=top)
-    if shallow == "true":
-        fail(f"the copy of the brain at {top} is shallow (only recent history). Run this from the owner's own "
-             "copy, not a job's checkout")
-        return
-    dst = os.path.join(root, "brain", name)
+def last_line(out, code):
+    return out.splitlines()[-1] if out else str(code)
+
+
+def keep_clone(dst, source, label, dry):
+    """A full clone of source (a GitHub address or a folder) at dst, every branch, brought up to date by fetching
+    every branch and fast-forwarding the checked-out one, so history on the drive is never rewritten."""
     if dry:
-        say(f"Brain {name}: would {'update' if os.path.isdir(os.path.join(dst, '.git')) else 'clone'} "
-            f"{dst}")
+        code, out = git("ls-remote", "--heads", source)
+        reach = "can be reached" if not code else f"can NOT be reached ({last_line(out, code)})"
+        say(f"{label}: {reach}; would {'update' if os.path.isdir(os.path.join(dst, '.git')) else 'clone'} it")
+        if code:
+            failures.append(label)
         return
     if not os.path.exists(dst):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
-        code, out = git("clone", "--no-hardlinks", "--quiet", top, dst)
+        code, out = git("clone", "--no-hardlinks", "--quiet", source, dst)
         if code:
-            fail(f"brain {name} couldn't be cloned: {out.splitlines()[-1] if out else code}")
-            return
+            shutil.rmtree(dst, ignore_errors=True)  # a half-made clone of ours, nothing of the owner's
+            return fail(f"{label} couldn't be cloned: {last_line(out, code)}")
         _, count = git("rev-list", "--count", "--all", cwd=dst)
-        say(f"Brain {name} cloned: {count} commits, all branches")
-    elif not os.path.isdir(os.path.join(dst, ".git")):
-        fail(f"brain {name}: {dst} is on the drive but isn't a git clone; left alone")
+        say(f"{label} cloned: {count} commits, all branches")
         return
-    else:
-        git("remote", "set-url", "origin", top, cwd=dst)
-        _, before = git("rev-parse", "HEAD", cwd=dst)
-        code, out = git("fetch", "--quiet", "--tags", "origin", cwd=dst)
-        if code:
-            fail(f"brain {name} fetch failed: {out.splitlines()[-1] if out else code}")
+    if not os.path.isdir(os.path.join(dst, ".git")):
+        return fail(f"{label}: {dst} is on the drive but isn't a git clone; left alone")
+    hcode, before = git("rev-parse", "--verify", "--quiet", "HEAD", cwd=dst)
+    # By the source's address, not origin, so one copy can be brought up to date from any computer.
+    code, out = git("fetch", "--quiet", "--tags", source, "+refs/heads/*:refs/remotes/origin/*", cwd=dst)
+    if code:
+        return fail(f"{label} fetch failed: {last_line(out, code)}")
+    if hcode:
+        return say(f"{label} fetched: every branch (nothing checked out on the drive's copy)")
+    _, branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=dst)
+    code, out = git("merge", "--ff-only", "--quiet", f"origin/{branch}", cwd=dst)
+    if code:
+        warn(f"{label}: {branch} doesn't follow on from the copy on the drive (history rewritten?); "
+             "kept the drive's copy, and fetched the rest")
+    _, new = git("rev-list", "--count", f"{before}..HEAD", cwd=dst)
+    say(f"{label} updated: {new} new commits on {branch}; other branches fetched")
+
+
+def github_url(spec, owner):
+    """'owner/name', or a bare 'name' under the brain's own owner, or a full address, as a clone address."""
+    spec = spec.strip().rstrip("/")
+    if "://" in spec or spec.startswith("git@"):
+        return spec
+    if "/" not in spec:
+        if not owner:
+            return ""
+        spec = f"{owner}/{spec}"
+    return f"https://github.com/{spec[:-4] if spec.endswith('.git') else spec}.git"
+
+
+def repo_name(url):
+    name = os.path.basename(url.rstrip("/").replace(":", "/"))
+    return name[:-4] if name.endswith(".git") else name
+
+
+def brain_origin():
+    """(the brain's top folder, its GitHub address), from the copy this script is in."""
+    code, top = git("rev-parse", "--show-toplevel", cwd=HERE)
+    if code:
+        return "", ""
+    ocode, origin = git("remote", "get-url", "origin", cwd=top)
+    return top, ("" if ocode else origin)
+
+
+def owner_of(url):
+    parts = url.rstrip("/").replace(":", "/").split("/")
+    return parts[-2] if len(parts) >= 2 else ""
+
+
+def backup_repos(root, repos, dry):
+    _, origin = brain_origin()
+    brain = repo_name(origin) if origin else ""
+    for r in repos:
+        spec = r.get("repo", "") if isinstance(r, dict) else str(r)
+        url = github_url(spec, (r.get("owner") if isinstance(r, dict) else "") or owner_of(origin))
+        if not url:
+            fail(f"repo {spec}: no owner given, and the brain's own couldn't be told; write it as owner/name")
+            continue
+        name = repo_name(url)
+        if name == brain:
+            continue  # the brain itself, done above
+        label = f"Repo {name}"
+        keep_clone(os.path.join(root, "brain", name), url, label, dry)
+        if not dry and os.path.isdir(os.path.join(root, "brain", name, ".git")):
+            git("config", "backup.github", url, cwd=os.path.join(root, "brain", name))
+    if repos and not os.environ.get("BACKUP_GITHUB_TOKEN", "").strip() and \
+            any(f.startswith("Repo ") for f in failures):
+        say("  (A repo that couldn't be reached may be private, and this job had no BACKUP_GITHUB_TOKEN: "
+            "the backup skill says how to give it one.)")
+
+
+def backup_brain(root, dry):
+    top, origin = brain_origin()
+    if not top:
+        fail("this script isn't in a git copy of the brain, so the brain can't be backed up")
+        return
+    # Named after the repo on GitHub, not this computer's folder, so every computer updates the same copy.
+    name = (repo_name(origin) if origin else "") or os.path.basename(top)
+    source = top
+    _, shallow = git("rev-parse", "--is-shallow-repository", cwd=top)
+    if shallow == "true":
+        # A job's checkout has only the last commit, so take the brain from GitHub, with all its history.
+        if not origin.startswith("https://github.com/"):
+            fail(f"the copy of the brain at {top} is shallow (only recent history) and its GitHub address is "
+                 "unknown. Run this from the owner's own copy, not a job's checkout")
             return
-        _, branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=dst)
-        code, out = git("merge", "--ff-only", "--quiet", f"origin/{branch}", cwd=dst)
-        if code:
-            warn(f"brain {name}: {branch} doesn't follow on from the copy on the drive (history rewritten?); "
-                 "kept the drive's copy, and fetched the rest")
-        _, new = git("rev-list", "--count", f"{before}..HEAD", cwd=dst)
-        say(f"Brain {name} updated: {new} new commits on {branch}; other branches fetched")
-    # Where it came from, for a restore: the drive's clone points at the computer's copy, so keep GitHub's too.
-    if origin:
-        git("config", "backup.github", origin, cwd=dst)
+        source = github_url(origin, "")
+    keep_clone(os.path.join(root, "brain", name), source, f"Brain {name}", dry)
+    # Where it came from, for a restore: the drive's clone may point at a computer's copy, so keep GitHub's too.
+    if origin and not dry and os.path.isdir(os.path.join(root, "brain", name, ".git")):
+        git("config", "backup.github", origin, cwd=os.path.join(root, "brain", name))
 
 
 # ---- The folders: copied, never deleting or overwriting on the drive
 
-def scan(src, skip_named):
-    """{relative path: (size, mtime)} for every file under src (or src itself, if it's a file)."""
+def scan(src, skip_named, skip=()):
+    """{relative path: (size, mtime)} for every file under src (or src itself, if it's a file), leaving out folders
+    named in skip_named at any depth and the folders in skip (paths inside src)."""
     files = {}
     if os.path.isfile(src):
         st = os.stat(src)
         return {os.path.basename(src): (st.st_size, int(st.st_mtime))}
+    skip = {os.path.normcase(os.path.normpath(x)) for x in skip}
     for dirpath, dirnames, filenames in os.walk(src):
-        dirnames[:] = [d for d in dirnames if d not in skip_named]
+        rel_dir = os.path.relpath(dirpath, src)
+        dirnames[:] = [d for d in dirnames if d not in skip_named and
+                       os.path.normcase(os.path.normpath(os.path.join(rel_dir, d))) not in skip]
         for f in filenames:
             p = os.path.join(dirpath, f)
             try:
@@ -280,11 +384,14 @@ def same(a, b):
     return a[0] == b[0] and abs(a[1] - b[1]) <= 2
 
 
-def backup_folder(root, entry, state, stamp, dry, force, logdir):
+def backup_folder(root, entry, state, stamp, dry, force, logdir, sometimes):
     # root here is this computer's own folder on the drive.
     src = os.path.expanduser(os.path.expandvars(entry["from"]))
     to = entry.get("to") or os.path.basename(src.rstrip("/\\"))
     label = to
+    if entry.get("sometimes") and not sometimes:
+        say(f"{label}: a sometimes folder, left out this time (the owner said yes to it with --sometimes)")
+        return
     if not os.path.exists(src):
         warn(f"{label}: {entry['from']} isn't on this computer; nothing copied for it")
         return
@@ -296,7 +403,7 @@ def backup_folder(root, entry, state, stamp, dry, force, logdir):
             warn(f"{label}: this computer refused to let the backup read {entry['from']} (on a Mac: System Settings > "
                  "Privacy & Security > Files and Folders); nothing copied for it")
             return
-    now = scan(src, set(entry.get("skipNamed", [])))
+    now = scan(lp(src), set(entry.get("skipNamed", [])), entry.get("skip", []))
     dst = os.path.join(root, to)
     if entry.get("once") and os.path.isdir(dst) and state.get(to):
         say(f"{label}: copied once already; left as it is")
@@ -318,8 +425,8 @@ def backup_folder(root, entry, state, stamp, dry, force, logdir):
     lines = []
     single = os.path.isfile(src)
     for rel, meta in sorted(now.items()):
-        s = src if single else os.path.join(src, rel)
-        d = os.path.join(dst, rel)
+        s = lp(src if single else os.path.join(src, rel))
+        d = lp(os.path.join(dst, rel))
         if os.path.isfile(d):
             st = os.stat(d)
             if same((st.st_size, int(st.st_mtime)), meta):
@@ -328,7 +435,7 @@ def backup_folder(root, entry, state, stamp, dry, force, logdir):
             upd_n += 1
             lines.append("changed  " + rel)
             if not dry:
-                aside = os.path.join(root, "_older-versions", stamp, to, rel)
+                aside = lp(os.path.join(root, "_older-versions", stamp, to, rel))
                 os.makedirs(os.path.dirname(aside), exist_ok=True)
                 if os.path.exists(aside):
                     aside += ".2"
@@ -358,16 +465,18 @@ def safe_name(to):
 
 
 def read_list():
+    """(the repos, this computer's folders), or (None, None) when there's no my-folders.json yet."""
     if not os.path.exists(LIST_FILE):
-        return None
+        return None, None
     with open(LIST_FILE, encoding="utf-8") as f:
         cfg = json.load(f)
+    repos = cfg.get("repos", [])
     computers = cfg.get("computers", {})
     me = computer_name()
     for name, entry in computers.items():
         if safe_name(name.split(".")[0]).lower() == me.lower():
-            return entry.get("folders", [])
-    return cfg.get("folders", [])
+            return repos, entry.get("folders", [])
+    return repos, cfg.get("folders", [])
 
 
 def run(args):
@@ -390,24 +499,25 @@ def run(args):
         os.makedirs(logdir, exist_ok=True)
         with open(os.path.join(root, "README.txt"), "w", encoding="utf-8") as f:
             f.write("Your brain's cold storage backup, made by its weekly tidy-up.\n\n"
-                    "brain/<name>/   one full git copy of your brain, every commit, kept up to date by each of your\n"
-                    "                computers: `git clone \"<this folder>/brain/<name>\" <name>` gives a working copy,\n"
-                    "                and it can be pushed to a new GitHub repo if the old one is gone.\n"
+                    "brain/<name>/   one full git copy of your brain, and of each repo you added, every commit, kept up to\n"
+                    "                date by each of your computers: `git clone \"<this folder>/brain/<name>\" <name>` gives\n"
+                    "                a working copy, and it can be pushed to a new GitHub repo if the old one is gone.\n"
                     "<computer>/     one folder for each computer, by its own name, holding the folders you chose on it,\n"
                     "                by the names you gave them, and its own:\n"
                     "  _older-versions/<date>/   the old copy of any file that changed, from that backup\n"
                     "  _backup-log/<date>/       what each backup copied, file by file\n"
                     "Nothing here is ever deleted or overwritten by the backup. Keep the drive unplugged between backups.\n")
+    repos, folders = read_list()
     if args.no_brain:
-        say("Brain: left to the other computer that backs it up to this drive (--no-brain)")
+        say("Brain and repos: left to the other computer that backs them up to this drive (--no-brain)")
     else:
         backup_brain(root, args.dry_run)
+        backup_repos(root, repos or [], args.dry_run)
     tripped = False
     if not args.brain_only:
-        folders = read_list()
         if folders is None:
-            say("No my-folders.json yet, so only the brain was backed up. The first backup with the runner asks "
-                "the owner what to save.")
+            say("No my-folders.json yet, so only the brain was backed up. The first backup asks the owner what "
+                "else to save.")
         else:
             state_path = os.path.join(mine, "_backup-state.json")
             state = {}
@@ -418,7 +528,8 @@ def run(args):
                 except (OSError, ValueError):
                     warn("_backup-state.json on the drive couldn't be read; the tripwire starts fresh")
             for entry in folders:
-                if backup_folder(mine, entry, state, stamp, args.dry_run, set(args.force), logdir) == "tripwire":
+                if backup_folder(mine, entry, state, stamp, args.dry_run, set(args.force), logdir,
+                                 args.sometimes) == "tripwire":
                     tripped = True
             if not args.dry_run:
                 with open(state_path + ".new", "w", encoding="utf-8") as f:
@@ -437,8 +548,11 @@ def main():
     sub.add_parser("drives", help="list the external drives")
     r = sub.add_parser("run", help="back up")
     r.add_argument("--drive", default="auto")
-    r.add_argument("--brain-only", action="store_true")
-    r.add_argument("--no-brain", action="store_true", help="the folders only; another computer keeps the brain here")
+    r.add_argument("--brain-only", action="store_true", help="the brain and the repos, no folders")
+    r.add_argument("--no-brain", action="store_true",
+                   help="the folders only; another computer keeps the brain and the repos here")
+    r.add_argument("--sometimes", action="store_true",
+                   help='also the folders marked "sometimes", when the owner said yes to them this time')
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--force", nargs="*", default=[], help="drive folders to let past the tripwire")
     r.add_argument("--any-format", action="store_true",
