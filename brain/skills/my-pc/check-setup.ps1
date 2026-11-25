@@ -237,7 +237,7 @@ else {
         }
       }
       if ($pcWorkflow) { Ok "$pcWorkflow lets agents run a command on the PC" } else { Fix 'No workflow lets agents run a command on the PC (workflow_dispatch with a command input, on the self-hosted runner)' "Add pc-run.yml from the AnIdeaLab brain kit (.github/workflows)" }
-      if (@($wf | ForEach-Object { $_.name }) -contains 'library.yml') { Ok 'library.yml rebuilds the knowledge indexes on each push' } else { Note 'No library.yml, so the knowledge indexes update only when an agent runs library.py build' "Add library.yml from the AnIdeaLab brain kit (.github/workflows)" }
+      if (@($wf | ForEach-Object { $_.name }) -contains 'library.yml') { Ok 'library.yml rebuilds the knowledge indexes every 3 hours' } else { Note 'No library.yml, so the knowledge indexes update only when an agent runs library.py build' "Add library.yml from the AnIdeaLab brain kit (.github/workflows)" }
     }
     $sec = GhJson api "repos/$Repo/actions/secrets"
     if ($sec) { if ($sec.total_count) { Info "Actions secrets, names only: $(($sec.secrets | ForEach-Object { $_.name }) -join ', ')" } else { Info 'No Actions secrets yet; keys get added when a job needs one' } }
