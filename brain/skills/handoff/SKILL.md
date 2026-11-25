@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "How any agent in this brain hands work on. To a fresh chat: the job's task note, kept up to date as the work goes (it took the place of the session hand-off at brain update 6), brought up to date at the end of a stage or when the size nudge says the conversation is long, and its path given to the owner to paste. To an agent: a brief, and a report back (at the end of its work, or at its own nudge at 250k), on the hand-offs shelf. Saving what's lasting first, what to do at the nudge, how to start from a task note or an old hand-off, doing it by hand where no hook runs, and the nudge's settings. Use whenever you hand a job on, brief an agent, report back, get the nudge, or are given a task's or hand-off's path."
+description: "How any agent in this brain hands work on. To a fresh chat: the job's task note, kept up to date as the work goes (it took the place of the session hand-off at brain update 6), brought up to date at the end of a stage or when the size nudge says the conversation is long, and its path given to the owner to paste only when a new chat is due (the nudge, a chat stopping, or they ask), not at every stage. To an agent: a brief, and a report back (at the end of its work, or at its own nudge at 250k), on the hand-offs shelf. Saving what's lasting first, what to do at the nudge, how to start from a task note or an old hand-off, doing it by hand where no hook runs, and the nudge's settings. Use whenever you hand a job on, brief an agent, report back, get the nudge, or are given a task's or hand-off's path."
 ---
 
 # Hand-offs
@@ -59,7 +59,7 @@ A big job runs in stages ([guide mode](../guide-mode/SKILL.md)). At the end of e
 1. **Save what's lasting** (above).
 2. **Bring the task note up to date:** rewrite its status, add a Progress line, and add The last messages, word for word, if the talk with the owner is mid-way. Cut long tool output, never the owner's words.
 3. **Commit and push** it: `git pull --rebase`, run `python3 skills/brain-spec/library.py build`, commit only your paths (`git commit -- <paths>`), and push to `main`. A note only on your disk hands nothing on.
-4. **Tell the owner** in a few plain lines where things stand.
+4. **Tell the owner** in a few plain lines where things stand. No carry-on line here: the stage's end updates the note quietly, and the line comes only when a new chat is due (below).
 
 ## At the nudge
 In Claude Code, a hook tells you when the conversation passes 300,000 tokens, and again at 325,000 and each extra 25,000. A token is a word or part of a word: about how much the agent reads. From 400,000 the nudge is urgent, and after 500,000 every message the owner sends comes with a reminder to start a fresh chat. Then:
@@ -73,7 +73,9 @@ In Claude Code, a hook tells you when the conversation passes 300,000 tokens, an
 5. **Then it's their call:** start the new chat, or carry on here. If you carry on, keep the task note up to date as usual, and push it at the next nudge and before the chat ends.
 
 ### Telling the owner
-Whenever you tell the owner a fresh chat can carry on from a file (at the nudge, at the end of a stage or a job, or a brief they'll run themselves), give the line as a code block on its own, like the one above: the file's path from the brain's top folder as plain text, then "continue". The chat app puts a copy button on a code block, so it pastes straight into a new chat. Never a link, a clickable file reference or a path inside a sentence: a link only opens the file, which doesn't start anything.
+**When to give it:** only when a new chat is actually due: at the nudge, when a chat has to stop with work left (the owner leaving, a usage limit coming), when a job ends with something left for a later chat, when it's a brief they'll run themselves, or when they ask. Not at every check-in or the end of every stage: the task note is still brought up to date there, quietly, and the line waits until it's needed, so the owner isn't asked to start a new chat over and over.
+
+Whenever you do tell the owner a fresh chat can carry on from a file, give the line as a code block on its own, like the one above: the file's path from the brain's top folder as plain text, then "continue". The chat app puts a copy button on a code block, so it pastes straight into a new chat. Never a link, a clickable file reference or a path inside a sentence: a link only opens the file, which doesn't start anything.
 
 The agent never moves the owner to a new chat by itself, and nothing starts up on its own: the owner pastes the path. The pasted path says exactly which job, even with several chats going.
 
