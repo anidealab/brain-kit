@@ -33,7 +33,7 @@ main() {
   fi
   echo "Searching the computer and reading the documents. A big computer takes a while."
   INDEX_BRAIN_ROOT="$base" UV_CACHE_DIR="$tools/cache" UV_PYTHON_INSTALL_DIR="$tools/python" UV_NO_PROGRESS=1 \
-    "$uv" run --quiet --no-project --python 3.12 --with "$markitdown" python -I "$tools/index-computer.py" --work "$work" --intake "$tools/intake.py"
+    "$uv" run --quiet --no-build --no-project --python 3.12 --with "$markitdown" python -I "$tools/index-computer.py" --work "$work" --intake "$tools/intake.py"
   local code=$?
   rm -rf "$tools"
   [ $code -eq 0 ] || { echo "The index stopped (exit $code). What went wrong is above."; return $code; }

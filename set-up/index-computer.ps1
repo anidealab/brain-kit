@@ -62,7 +62,7 @@ param([string]$Root = '')
   # Its PROGRESS| lines become Windows' own progress bar at the top of the window; the rest is printed as it comes.
   $env:INDEX_PROGRESS = 'ps'
   $ProgressPreference = 'Continue'
-  & $uv run --quiet --no-project --python 3.12 --with $markitdown python -I $py --work $work --intake $intake 2>&1 | ForEach-Object {
+  & $uv run --quiet --no-build --no-project --python 3.12 --with $markitdown python -I $py --work $work --intake $intake 2>&1 | ForEach-Object {
     $line = "$_"
     if ($line.StartsWith('PROGRESS|')) {
       $p = $line.Split('|', 4)
