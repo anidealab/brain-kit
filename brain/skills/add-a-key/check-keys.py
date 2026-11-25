@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks that every key in this brain's GitHub Actions secrets still answers, and writes the date into the keys table.
 
-Run by the "Check keys" workflow (.github/workflows/check-keys.yml), monthly and by hand, on GitHub's machines.
+Run by the "Check keys" workflow (.github/workflows/check-keys.yml), weekly (Fridays) and by hand, on GitHub's machines.
 The workflow hands it every secret as JSON in ALL_SECRETS (toJSON(secrets)); this never prints, saves or sends a
 value anywhere but the service the key is for, and it never prints an answer's body (some services echo part of a
 key back in an error), only the HTTP status.

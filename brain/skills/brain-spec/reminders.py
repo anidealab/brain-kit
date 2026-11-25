@@ -289,7 +289,7 @@ def main(argv):
                for r in due_rows):
             print(
                 "For the weekly tidy-up or the monthly deep audit, keep it to one short, friendly line, not a chore or a "
-                "warning (\"audit\" can sound daunting to someone new): call it a tidy-up, say it keeps their brain's "
+                "warning (\"audit\" can sound like a chore): call it a tidy-up, say it keeps their brain's "
                 "answers sharp and is worth it if answers have felt a bit off lately, that it only tidies their notes, "
                 "and that \"not now\" is fine. Example: \"Your weekly tidy-up is due: it keeps answers sharp, handy if "
                 "things have felt a bit off. Want me to run it, or leave it for now?\""
