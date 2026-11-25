@@ -10,5 +10,6 @@ The brain's own skills for running this brain: its first session, how to work wi
 - [brain-audit](../brain-audit/SKILL.md): the weekly tidy-up, and the monthly deep audit in it, when the owner says yes to them.
 - [file-intake](../file-intake/SKILL.md): bring a pile of the owner's unsorted files into the brain as notes: survey it first, pick the method by its size and kinds, an agent per subject for a big one, and a list of what every file became.
 - [my-pc](../my-pc/SKILL.md): run commands and jobs on the owner's PC through the `my-pc` runner, and check or fix its setup.
+- [backup](../backup/SKILL.md): back up the brain, and with the runner the owner's chosen files, to their cold storage drive: one pasted command or a runner job, the tripwire, the log, and restoring.
 - [windows-powershell](../windows-powershell/SKILL.md): the traps in Windows PowerShell 5.1 that break scripts and commands for the owner's PC (double quotes stripped on the way to programs, `$name:` in strings, stderr as errors, encodings), and how to check a script first. Read before writing any PowerShell.
 - [add-a-key](../add-a-key/SKILL.md): get a key only the owner can make (a service's API key, a GitHub token) into this brain's GitHub secrets, or a site host's, with one command they paste: the page opened for them, the key read in hidden and checked.

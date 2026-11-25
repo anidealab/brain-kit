@@ -9,6 +9,7 @@ What each system is and how it's set up. How to use one, when that's the same fr
 <!-- index:start -->
 - [brain-updates/](brain-updates/README.md): Brain updates from AnIdeaLab: which one this brain has, where they come from, and a report of each one applied. Read before checking for or applying a brain update. [the-brain]
 
+- [backup-log](backup-log.md): One entry per backup to the owner's cold storage drive, newest first: the date, full or brain only, and its counts, or skipped. Read before running a backup, or to see when the last one was. [the-brain]
 - [brain-graph](brain-graph.md): The brain graph, the Obsidian view that replays the brain's growth from git history: opening it, reading it, its settings, and the rules for changing it. Read before touching its plugin or explaining it. [the-brain]
 - [devices](devices.md): Every computer this brain can use: how agents reach each, when it's on, what it's good for, and how to tell which one you're on and which are on now. Read before picking where a job runs, or when a session starts somewhere new. [the-brain]
 - [keys-and-accounts](keys-and-accounts.md): The outside accounts and keys the brain uses, by name only, and how the owner adds a key. Read before using, connecting or closing an account, or when a job needs a key. [the-brain]
