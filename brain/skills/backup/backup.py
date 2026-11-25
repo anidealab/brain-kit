@@ -13,16 +13,24 @@ The rules it keeps:
 - The tripwire: if more than 10% of a folder's files (and at least 200) changed or vanished since the last
   backup, which is what ransomware looks like, that folder is left alone and the run ends with code 2.
 - Nothing private in the job's log: counts and folder names only. File-by-file lists stay on the drive, in
-  _backup-log/<date>/.
+  <computer>/_backup-log/<date>/.
+- It never formats a drive. A drive that isn't exFAT (the one format Windows and Macs can both write) stops the
+  run with code 4, and the agent tells the owner what that means and what they can do.
+
+On the drive, in "Brain backup/": brain/<repo>/ is the one copy of the brain, which every computer brings up to
+date; each computer has its own folder, by its own name, with its chosen folders, _older-versions, _backup-log
+and _backup-state.json, so two computers' "Documents" never mix.
 
   python3 backup.py drives                         list the external drives it can see
   python3 backup.py run --drive <path>             back up the brain, and the folders in my-folders.json
   python3 backup.py run --drive <path> --brain-only
+  python3 backup.py run --drive <path> --no-brain     the folders only, when another computer keeps the brain there
   python3 backup.py run --drive <path> --dry-run   say what it would do, and change nothing
   python3 backup.py run --drive <path> --force "Documents"   let one drive folder past the tripwire
 
 --drive can be the drive itself (E:\\, /Volumes/My Drive) or "auto" when exactly one external drive is in.
-Exit codes: 0 done (maybe with warnings), 1 something failed, 2 the tripwire stopped a folder, 3 no drive.
+Exit codes: 0 done (maybe with warnings), 1 something failed, 2 the tripwire stopped a folder, 3 no drive,
+4 the drive isn't exFAT (or can't be written to), so nothing was copied.
 """
 import argparse
 import datetime
@@ -37,6 +45,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 LIST_FILE = os.path.join(HERE, "my-folders.json")
 ROOT_NAME = "Brain backup"
+GOOD_FORMAT = "exfat"
 TRIP_SHARE, TRIP_MIN = 0.10, 200
 
 summary, warnings, failures = [], [], []
@@ -133,6 +142,60 @@ def pick_drive(arg):
     sys.exit(3)
 
 
+def drive_format(path):
+    """The drive's format, lower case (exfat, ntfs, msdos for FAT32, apfs, hfs, ...), or "" if it can't be told."""
+    system = platform.system()
+    try:
+        if system == "Windows":
+            letter = os.path.splitdrive(os.path.abspath(path))[0].rstrip(":")
+            out = subprocess.run(["powershell", "-NoProfile", "-Command",
+                                  f"(Get-Volume -DriveLetter {letter}).FileSystem"],
+                                 capture_output=True, text=True, timeout=60).stdout.strip()
+            return {"fat32": "msdos", "fat": "msdos"}.get(out.lower(), out.lower())
+        if system == "Darwin":
+            info = plistlib.loads(subprocess.run(["diskutil", "info", "-plist", path], capture_output=True,
+                                                 timeout=30).stdout)
+            return str(info.get("FilesystemType") or info.get("FilesystemName") or "").lower()
+        out = subprocess.run(["findmnt", "-no", "FSTYPE", "--target", path], capture_output=True, text=True,
+                             timeout=30).stdout.strip().lower()
+        return {"vfat": "msdos", "ntfs3": "ntfs", "fuseblk": "ntfs"}.get(out, out)
+    except Exception:
+        return ""
+
+
+FORMAT_NAMES = {"exfat": "exFAT", "ntfs": "NTFS (Windows only: a Mac can read it but not write to it)",
+                "msdos": "FAT32 (no file over 4 GB)", "apfs": "APFS (Mac only: Windows can't read it)",
+                "hfs": "Mac OS Extended (Mac only: Windows can't read it)"}
+
+
+def check_format(drive, label_ok):
+    """Stop with code 4 unless the drive is exFAT and can be written to. Never formats anything."""
+    fmt = drive_format(drive)
+    writable = True
+    probe = os.path.join(drive, ".backup-write-test")
+    try:
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+    except OSError:
+        writable = False
+    if fmt == GOOD_FORMAT and writable:
+        return
+    shown = FORMAT_NAMES.get(fmt, fmt or "a format this script can't tell")
+    if fmt != GOOD_FORMAT and label_ok and writable:
+        say(f"{drive} is {shown}, not exFAT; going on, as the owner chose (--any-format).")
+        return
+    say(f"FORMAT: {drive} is {shown}{'' if writable else ', and it can not be written to from here'}. "
+        "The backup needs exFAT, which Windows and Macs can both read and write, with no limit on file size. "
+        "Nothing was copied and nothing on the drive was changed. Turning it into exFAT erases everything on it, "
+        "so that's the owner's choice (the backup skill says what to tell them).")
+    sys.exit(4)
+
+
+def computer_name():
+    return safe_name(platform.node().split(".")[0] or platform.system())
+
+
 # ---- The brain: a full git clone on the drive, updated by fast-forward only
 
 def git(*args, cwd=None):
@@ -145,14 +208,18 @@ def backup_brain(root, dry):
     if code:
         fail("this script isn't in a git copy of the brain, so the brain can't be backed up")
         return
-    name = os.path.basename(top)
+    ocode, origin = git("remote", "get-url", "origin", cwd=top)
+    origin = "" if ocode else origin
+    # Named after the repo on GitHub, not this computer's folder, so every computer updates the same copy.
+    name = os.path.basename(origin.rstrip("/").replace(":", "/")) if origin else ""
+    name = name[:-4] if name.endswith(".git") else name
+    name = name or os.path.basename(top)
     _, shallow = git("rev-parse", "--is-shallow-repository", cwd=top)
     if shallow == "true":
         fail(f"the copy of the brain at {top} is shallow (only recent history). Run this from the owner's own "
              "copy, not a job's checkout")
         return
     dst = os.path.join(root, "brain", name)
-    _, origin = git("remote", "get-url", "origin", cwd=top)
     if dry:
         say(f"Brain {name}: would {'update' if os.path.isdir(os.path.join(dst, '.git')) else 'clone'} "
             f"{dst}")
@@ -214,14 +281,23 @@ def same(a, b):
 
 
 def backup_folder(root, entry, state, stamp, dry, force, logdir):
+    # root here is this computer's own folder on the drive.
     src = os.path.expanduser(os.path.expandvars(entry["from"]))
     to = entry.get("to") or os.path.basename(src.rstrip("/\\"))
     label = to
     if not os.path.exists(src):
         warn(f"{label}: {entry['from']} isn't on this computer; nothing copied for it")
         return
+    if os.path.isdir(src):
+        try:
+            os.listdir(src)
+        except OSError:
+            # On a Mac, macOS's privacy settings: the runner wasn't allowed into this folder.
+            warn(f"{label}: this computer refused to let the backup read {entry['from']} (on a Mac: System Settings > "
+                 "Privacy & Security > Files and Folders); nothing copied for it")
+            return
     now = scan(src, set(entry.get("skipNamed", [])))
-    dst = os.path.join(root, "files", to)
+    dst = os.path.join(root, to)
     if entry.get("once") and os.path.isdir(dst) and state.get(to):
         say(f"{label}: copied once already; left as it is")
         return
@@ -252,7 +328,7 @@ def backup_folder(root, entry, state, stamp, dry, force, logdir):
             upd_n += 1
             lines.append("changed  " + rel)
             if not dry:
-                aside = os.path.join(root, "_older-versions", stamp, "files", to, rel)
+                aside = os.path.join(root, "_older-versions", stamp, to, rel)
                 os.makedirs(os.path.dirname(aside), exist_ok=True)
                 if os.path.exists(aside):
                     aside += ".2"
@@ -287,9 +363,9 @@ def read_list():
     with open(LIST_FILE, encoding="utf-8") as f:
         cfg = json.load(f)
     computers = cfg.get("computers", {})
-    me = platform.node().split(".")[0]
+    me = computer_name()
     for name, entry in computers.items():
-        if name.lower() == me.lower():
+        if safe_name(name.split(".")[0]).lower() == me.lower():
             return entry.get("folders", [])
     return cfg.get("folders", [])
 
@@ -303,23 +379,29 @@ def run(args):
             sys.exit(3)
     except OSError:
         pass
+    check_format(drive, args.any_format)
     root = os.path.join(drive, ROOT_NAME)
+    me = computer_name()
+    mine = os.path.join(root, me)
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H%M")
-    say(f"== Backup to {drive} ({'dry run, nothing changed' if args.dry_run else stamp}) on {platform.node()}")
-    logdir = os.path.join(root, "_backup-log", stamp)
+    say(f"== Backup to {drive} ({'dry run, nothing changed' if args.dry_run else stamp}) from {me}")
+    logdir = os.path.join(mine, "_backup-log", stamp)
     if not args.dry_run:
         os.makedirs(logdir, exist_ok=True)
-        readme = os.path.join(root, "README.txt")
-        if not os.path.exists(readme):
-            with open(readme, "w", encoding="utf-8") as f:
-                f.write("Your brain's cold storage backup, made by its weekly tidy-up.\n\n"
-                        "brain\\   a full git copy of your brain, every commit: `git clone \"<this folder>\\brain\\<name>\" <name>`\n"
-                        "          gives a working copy, and it can be pushed to a new GitHub repo if the old one is gone.\n"
-                        "files\\   the folders you chose, by the names you gave them.\n"
-                        "_older-versions\\<date>\\   the old copy of any file that changed, from that backup.\n"
-                        "_backup-log\\<date>\\       what each backup copied, file by file.\n"
-                        "Nothing here is ever deleted or overwritten by the backup. Keep the drive unplugged between backups.\n")
-    backup_brain(root, args.dry_run)
+        with open(os.path.join(root, "README.txt"), "w", encoding="utf-8") as f:
+            f.write("Your brain's cold storage backup, made by its weekly tidy-up.\n\n"
+                    "brain/<name>/   one full git copy of your brain, every commit, kept up to date by each of your\n"
+                    "                computers: `git clone \"<this folder>/brain/<name>\" <name>` gives a working copy,\n"
+                    "                and it can be pushed to a new GitHub repo if the old one is gone.\n"
+                    "<computer>/     one folder for each computer, by its own name, holding the folders you chose on it,\n"
+                    "                by the names you gave them, and its own:\n"
+                    "  _older-versions/<date>/   the old copy of any file that changed, from that backup\n"
+                    "  _backup-log/<date>/       what each backup copied, file by file\n"
+                    "Nothing here is ever deleted or overwritten by the backup. Keep the drive unplugged between backups.\n")
+    if args.no_brain:
+        say("Brain: left to the other computer that backs it up to this drive (--no-brain)")
+    else:
+        backup_brain(root, args.dry_run)
     tripped = False
     if not args.brain_only:
         folders = read_list()
@@ -327,7 +409,7 @@ def run(args):
             say("No my-folders.json yet, so only the brain was backed up. The first backup with the runner asks "
                 "the owner what to save.")
         else:
-            state_path = os.path.join(root, "_backup-state.json")
+            state_path = os.path.join(mine, "_backup-state.json")
             state = {}
             if os.path.exists(state_path):
                 try:
@@ -336,7 +418,7 @@ def run(args):
                 except (OSError, ValueError):
                     warn("_backup-state.json on the drive couldn't be read; the tripwire starts fresh")
             for entry in folders:
-                if backup_folder(root, entry, state, stamp, args.dry_run, set(args.force), logdir) == "tripwire":
+                if backup_folder(mine, entry, state, stamp, args.dry_run, set(args.force), logdir) == "tripwire":
                     tripped = True
             if not args.dry_run:
                 with open(state_path + ".new", "w", encoding="utf-8") as f:
@@ -356,8 +438,11 @@ def main():
     r = sub.add_parser("run", help="back up")
     r.add_argument("--drive", default="auto")
     r.add_argument("--brain-only", action="store_true")
+    r.add_argument("--no-brain", action="store_true", help="the folders only; another computer keeps the brain here")
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--force", nargs="*", default=[], help="drive folders to let past the tripwire")
+    r.add_argument("--any-format", action="store_true",
+                   help="go on with a drive that isn't exFAT, when the owner has said so (one computer only)")
     r.add_argument("--same-disk-ok", action="store_true", help=argparse.SUPPRESS)  # for testing only
     args = ap.parse_args()
     if args.cmd == "drives":
@@ -365,7 +450,9 @@ def main():
         if not drives:
             print("No external drive found.")
         for p, label, free, total in drives:
-            print(f"{p}\t{label}\t{gb(free)} free of {gb(total)}")
+            fmt = drive_format(p)
+            print(f"{p}\t{label}\t{gb(free)} free of {gb(total)}\t{FORMAT_NAMES.get(fmt, fmt or 'format unknown')}"
+                  f"{'' if fmt == GOOD_FORMAT else '  <- not exFAT: the backup would stop'}")
         return
     run(args)
 

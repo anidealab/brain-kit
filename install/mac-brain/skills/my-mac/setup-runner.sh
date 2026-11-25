@@ -155,6 +155,35 @@ PLIST
   fi
   printf '\n\033[32m%s\033[0m\n' "The Mac runner '$name' is set up, and GitHub sees it online."
   echo "It starts when you log in, so agents can run jobs while this Mac is on and you're logged in."
+
+  # 7. Your folders. macOS asks before anything reads Desktop, Documents, Downloads, Pictures, Movies or Music,
+  # and it asks for the program doing the reading: the runner, not this Terminal window. A job nobody is watching
+  # can't answer, so without this the runner can't reach the owner's files at all (25 Nov 2026, Matt's Mac: every
+  # one of those folders refused until he clicked Allow). So one small job looks into each now, while the owner
+  # is here to say yes. It lists nothing and changes nothing.
+  if [ -z "$check" ]; then
+    say "Last, letting the runner reach your folders. Your Mac will now ask, a few times, whether it may use your Desktop, Documents, Downloads and other folders. It says \"node\" wants to use them: that's the runner. Click Allow each time. (You can change this later in System Settings > Privacy & Security > Files and Folders.)"
+    local cmd='# Asking macOS for the runner to reach your folders (looks only, changes nothing)
+for d in Desktop Documents Downloads Pictures Movies Music; do
+  if ls "$HOME/$d" >/dev/null 2>&1; then echo "$d: allowed"; else echo "$d: not allowed"; fi
+done'
+    if "$gh" workflow run mac-run.yml --repo "$repo" --ref main -f command="$cmd" -f timeout=10 >/dev/null 2>&1; then
+      local run_id="" j=0
+      while [ "$j" -lt 12 ] && [ -z "$run_id" ]; do
+        sleep 5
+        run_id=$("$gh" run list --repo "$repo" --workflow mac-run.yml --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null)
+        j=$((j + 1))
+      done
+      if [ -n "$run_id" ] && "$gh" run watch "$run_id" --repo "$repo" --exit-status >/dev/null 2>&1; then
+        "$gh" run view "$run_id" --repo "$repo" --log 2>/dev/null | grep -E ': (allowed|not allowed)$' | sed 's/.*\t//; s/^.*Z //'
+        echo "Any folder that says \"not allowed\" can be turned on in System Settings > Privacy & Security > Files and Folders."
+      else
+        echo "The folder check didn't finish. Nothing to do now: an agent will ask again when a job needs your folders."
+      fi
+    else
+      echo "The folder check couldn't be started. Nothing to do now: an agent will ask again when a job needs your folders."
+    fi
+  fi
 }
 
 main "$@"
