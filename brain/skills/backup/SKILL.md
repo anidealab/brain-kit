@@ -27,7 +27,12 @@ The drive has to be **exFAT**, the one format Windows and Macs can both read and
 ## Running it
 [backup.py](backup.py) does it: Python 3 and git, which the computer has (on Windows the job below installs Python for the owner's account the first time, without admin rights).
 
-**The first time, ask what to save.** Ask the owner which of their files matter most: their documents, photos, work folders, anything they couldn't get back. Suggest the usual places (Documents, Desktop, Pictures), ask about other drives, and leave out what reinstalls by itself (programs, games, `node_modules`). List what's in a folder with a job if they aren't sure; never open their files. Then write `skills/backup/my-folders.json`, one entry per folder:
+**The first time, ask what to save: only what can't be got back.** The drive is for what's theirs alone, nothing that can be downloaded again (AnIdeaLab, 25 Nov 2026: "we don't want things that the owner can download easily again. We only want things that can't be downloaded, like personal stuff, photos, maybe personal videos"). So:
+- **In:** their own documents and work, photos, videos they filmed, music they made, anything they couldn't get back.
+- **Out:** anything that can be downloaded or reinstalled: programs, games, installers, `node_modules`; music and films they bought or stream (Apple Music, Spotify, the TV app's films), and the Downloads folder as a rule, which is mostly things from the internet (ask whether anything of theirs is kept there).
+- **Look before you suggest.** Run a job that lists each likely folder's size, its top-level names and its file types (names and counts only; never open their files), and say what each looks like: a Movies folder full of `.mov` and `.mp4` files from a phone or camera, or a Final Cut or iMovie library, is their own footage; one of `.m4v` films from the TV app isn't. A Music folder of GarageBand or Logic projects, or recordings, is theirs; an Apple Music library is not. On a PC the same goes for Videos and Music.
+- The usual places are Documents, Desktop, Pictures, Movies (or Videos) and Music, and other drives. Ask about anything you can't tell.
+Then write `skills/backup/my-folders.json`, one entry per folder:
 ```json
 {
   "about": "What the backup copies to the owner's cold storage drive, read by backup.py. 'to' is the folder on the drive. 'once': copy it the first time, then leave it. 'skipNamed': folder names to leave out at any depth. Paths can use ~.",
