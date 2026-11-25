@@ -56,7 +56,7 @@ HANDOFF_KINDS = ("session", "brief", "report")  # the handoff skill's one format
 HANDOFF_GROUPS = [("Open", "open"), ("Picked up", "picked-up")]  # the shelf's index is the coordinator's board
 OTHER_STATUSES = {"current", "done"}
 TAG_SHELVES = ("ventures", "areas", "subjects")
-MACHINERY = {"brain-spec", "brain-audit", "getting-started", "guide-mode", "handoff", "my-pc", "upload-point", "add-a-key"}  # skills that run the brain's own machinery, so may link into notes
+MACHINERY = {"brain-spec", "brain-audit", "getting-started", "guide-mode", "handoff", "my-pc", "add-a-key"}  # skills that run the brain's own machinery, so may link into notes
 TASK_GROUPS = [("Waiting on the owner", None), ("Doing", "doing"), ("Waiting", "waiting"), ("Open", "open")]
 MAX_ABOUT = 250
 OLD_OWNER_TASK = 30   # days untouched before an owner's task is listed by name only on the board
@@ -861,7 +861,7 @@ def slipped(lib, since, finished=()):
         ("Graduated ideas still a full plan", "move the detail to its project, cut the idea to a pointer", graduated),
         ("Notes whose date has passed", "update, close or mark done", dated),
         ("Code files in knowledge/", "move to the project's own repo (brain spec: a project with code gets its own repo), or the PC", code),
-        ("Big or media files added to knowledge/ since then", "move to the project's repo or the PC, unless it's an upload point original", media),
+        ("Big or media files added to knowledge/ since then", "move to the project's repo or the PC, unless it's a note's raw original", media),
         ("Stray files", "move into a shelf, or delete if empty", stray),
         ("Branches already merged into main, untouched for two days", "delete them: `git push origin --delete <branch>`", branches),
     ]

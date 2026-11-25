@@ -5,8 +5,8 @@ How it's used: SKILL.md in this folder. In short, everything about one pile live
 outside the repo (on the PC: C:\\AI-Brain-Link\\_intake\\<name>), and the file list in it, files.txt,
 has one row for every file found, so nothing is quietly missed.
 
-    intake.py survey PATH... --work DIR      walk the paths (or --upload-list FILE, the upload point's list):
-                                             writes files.txt and survey.md. Changes nothing in the pile.
+    intake.py survey PATH... --work DIR      walk the paths and write files.txt and survey.md.
+                                             Changes nothing in the pile.
     intake.py convert --work DIR             turn each document into text, text/<id>.md, with MarkItDown
                                              where it's installed (pip install "markitdown[all]"); plain
                                              text needs nothing. Safe to run again: it skips what's done.
@@ -117,12 +117,6 @@ def fingerprint(path, size):
     return h.hexdigest()
 
 
-def upload_list(path):
-    """The paths in the upload point's list on the PC: on each line the time it was sent, a tab, the path."""
-    with open(path, encoding="utf-8-sig") as fh:
-        return [ln.split("\t", 1)[-1].strip() for ln in fh.read().splitlines() if ln.strip()]
-
-
 def walk(top):
     """Every file under top as (kind, path). A folder with a .git in it is one 'repo' row, and isn't walked."""
     if os.path.isfile(top):
@@ -152,9 +146,9 @@ def walk(top):
 
 
 def survey(args):
-    paths = list(args.paths) + (upload_list(args.upload_list) if args.upload_list else [])
+    paths = list(args.paths)
     if not paths:
-        sys.exit("Nothing to survey: give paths, or --upload-list with the upload point's list.")
+        sys.exit("Nothing to survey: give the paths of the files or folders.")
     os.makedirs(args.work, exist_ok=True)
     rows, missing = [], []
     for top in paths:
@@ -471,7 +465,6 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("survey")
     p.add_argument("paths", nargs="*")
-    p.add_argument("--upload-list")
     p = sub.add_parser("convert")
     p = sub.add_parser("split")
     p = sub.add_parser("check")

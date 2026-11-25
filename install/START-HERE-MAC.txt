@@ -8,7 +8,7 @@ yours. A brain made before 22 Nov 2026 has another name: ask its chat for its co
 has its name in it.
 
 What you'll have at the end:
-- Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 69 skills
+- Your brain: a private GitHub repo of plain notes. A core page every AI agent reads, 68 skills
   (how to do things) and a knowledge library that fills up as you use it.
 - Obsidian on your Mac, if you'd like it, showing your brain as a map, and the brain graph
   replaying how it grew.

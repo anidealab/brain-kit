@@ -30,10 +30,7 @@ into the session. It prints nothing when nothing is due. It reads only this repo
 needs nothing outside Python's standard library. In a brain started from the AnIdeaLab brain
 kit, it also runs brain_update.py notice beside it, which asks the kit repo at most once a day
 whether AnIdeaLab has sent an update, and prints only when one is waiting, so a day with no
-update costs the session nothing. In a session on the owner's PC, in the brain's copy, it also
-says how many things are waiting at the upload point and since when (_upload/waiting.txt beside the
-brain's copy, which Send to, My brain writes), so the agent asks the owner what to do with them. It's
-silent when nothing's waiting, and anywhere that file isn't, a cloud session included.
+update costs the session nothing.
 It starts with one line saying which computer the session is on, from devices.py, then one saying who
 the owner is and what time it is where they live, from the core's first line ("<Name>'s second brain"),
 their note in knowledge/people/ and the time zone, so every session knows both without being told again.
@@ -50,7 +47,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))  # skills/brain-spec/ is two folders down
 ROUTINES = os.path.join(ROOT, "knowledge", "systems", "routines.md")
 ROUTINES_DIR = os.path.dirname(ROUTINES)  # the Log links are relative to routines.md
-UPLOAD_LIST = os.path.join(os.path.dirname(ROOT), "_upload", "waiting.txt")  # on the owner's PC only
 UTC = timezone.utc
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]  # weekday() counts Monday as 0
 MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
@@ -216,24 +212,6 @@ def read_reminders():
     return rows, problems
 
 
-def upload_point():
-    """A line for the agent when something's waiting at the upload point, or None."""
-    try:
-        with open(UPLOAD_LIST, encoding="utf-8-sig") as fh:
-            lines = [ln for ln in fh.read().splitlines() if ln.strip()]
-    except OSError:
-        return None  # not on the owner's PC, or nothing sent yet
-    if not lines:
-        return None
-    sent = sorted(ln.split("\t", 1)[0].strip() for ln in lines if "\t" in ln)
-    since = f", the oldest since {sent[0]}" if sent else ""
-    n = len(lines)
-    return (f"Upload point: {n} thing{'s' if n != 1 else ''} waiting{since}, in {UPLOAD_LIST} (the owner sent "
-            "them with My brain: Send to on Windows, Quick Actions on a Mac). In your first reply, tell the owner in one line and ask what they'd "
-            "like done with them, unless they've already said; then sort them with the upload-point skill. "
-            "Ignore this if the owner didn't start this session.")
-
-
 def owner_line(now):
     """Who the owner is, where they live, their note and their clock now; None until the first session has set them up."""
     owner = core_owner(ROOT)
@@ -326,9 +304,6 @@ def main(argv):
             "their time zone's name, like Europe/London; then commit.")
     for p in problems:
         print("skills/brain-spec/reminders.py: " + p)
-    waiting = upload_point()
-    if waiting:
-        print(waiting)
     update = os.path.join(HERE, "brain_update.py")
     if os.path.isfile(update) and len(argv) == 1:  # a brain started from the kit: is a brain update waiting?
         try:

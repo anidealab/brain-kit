@@ -8,7 +8,7 @@ updated: {KIT_DATE}
 Every note is plain Markdown, and notes link to each other with normal relative links, which Obsidian's graph draws as lines. The repo carries the Obsidian settings (in `.obsidian/`), so the map comes out coloured by shelf.
 
 ## The setup
-The installer did it all: it cloned the brain into `C:\AI-Brain-Link\<repo name>`, added the Obsidian Git plugin, and opened the folder as a vault. The first time, Obsidian asks whether to trust the vault's plugins: "Trust author and enable plugins". Two plugins are on:
+The installer did it all: it cloned the brain into `C:\AI-Brain-Link\<repo name>`, added the Obsidian Git plugin, and added the folder to Obsidian's vaults, so Obsidian opens on it. It doesn't open Obsidian: the owner does, when the agent says how (the getting-started skill's step 4). The first time, Obsidian asks whether to trust the vault's plugins: "Trust author and enable plugins". Two plugins are on:
 - **Obsidian Git** syncs: it pulls when Obsidian opens and commits and syncs every 10 minutes, so the owner's edits reach GitHub as "My edits in Obsidian" and agents' work arrives in Obsidian. It uses the GitHub sign-in the installer set up (`gh auth setup-git`). Its code isn't in the repo, so another computer installs it from Settings, then Community plugins, then Browse, "Git" by Vinzent03.
 - **The brain graph** (the brain icon in the left ribbon) replays the brain's growth ([brain-graph.md](brain-graph.md)). Its code is in the repo.
 

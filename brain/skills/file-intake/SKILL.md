@@ -1,12 +1,12 @@
 ---
 name: file-intake
-description: "Bringing a pile of the owner's unsorted files into the brain as proper notes, accurately: a look-first survey of the pile, a table for picking the method by how much there is and what kind, one agent per subject for a big pile, a links agent, and a list of every file and what it became. Use when the owner has more than a few dozen files to bring in (a first session's documents, a big drop on the upload point, an old drive or folder), or asks to index, import or sort a lot of files."
+description: "Bringing a pile of the owner's unsorted files into the brain as proper notes, accurately: a look-first survey of the pile, a table for picking the method by how much there is and what kind, one agent per subject for a big pile, a links agent, and a list of every file and what it became. Use when the owner has more than a few dozen files to bring in (a first session's documents, an old drive or folder), or asks to index, import or sort a lot of files."
 ---
 
 # Bringing a pile of files in
 An owner's files arrive unsorted: years of documents, several projects mixed together, copies, scans, photos. The job is to turn them into the brain's notes without getting anything wrong and without missing anything. One agent reading the whole pile does it badly: its memory fills with every subject at once, detail gets summarised away, and nobody can say afterwards which files were read. So look first, pick the method the pile needs, give each subject to an agent with a clear head, and keep a list of every file and what it became.
 
-A few files need none of this: the [upload-point skill](../upload-point/SKILL.md) sorts those. This skill starts where its "Small" row ends.
+A few files need little of this: the "Small" row below is all it takes.
 
 ## The steps
 1. **Look first,** before reading anything: run the survey over the pile, then turn its documents into text ([below](#the-look-first-step)). It costs almost none of the owner's plan, and tells you how many files there are, what kinds, which folders hold what, which are copies, and how much reading there is.
@@ -25,7 +25,7 @@ By size, from the survey's last lines. The numbers are starting points: a pile o
 
 | The pile | About | The method |
 |---|---|---|
-| **Small** | Up to 30 documents, 100,000 tokens of text | The coordinator sorts it alone, the upload point's way. No agents; the survey is optional |
+| **Small** | Up to 30 documents, 100,000 tokens of text | The coordinator sorts it alone: reads each file and writes its note, with the file next to it as its raw original if it belongs in the brain (the brain spec's rule on big files). No agents; the survey is optional |
 | **Medium** | Up to 150 documents, 300,000 tokens, one or two subjects | The survey, then one or two subject agents. A links agent only if there are two |
 | **Big** | Up to about 1,500 documents, 2 million tokens, several subjects | Every step above: an agent per subject, one or two at a time, then the links agent |
 | **Huge** | More than that | Too big for one chat. Ask the owner what matters first, and bring it in a few subjects at a time, with the job's task note brought up to date after each round ([handoff](../handoff/SKILL.md)); the file list carries over, so each chat starts from what's left |
@@ -45,7 +45,7 @@ By kind, whatever the size:
 | Photos, video and audio | Listed, not read: what's there, where, how many and from when. Transcribing or describing them is a job of its own on the PC, if the owner asks |
 | Spreadsheets of data | The note says what the data is, its columns, its dates and its totals; the data stays in the file |
 | Chats with an AI assistant (an export from ChatGPT, Claude or another) | Read like documents, one subject agent per topic for a big export. The owner's own words and decisions are kept apart from the assistant's advice ([below](#a-subject-agents-brief)) |
-| Code repos | Learned where they are, one agent each if they're big, the way the upload point's step 4 says. The survey lists a repo as one row and doesn't walk it |
+| Code repos | Learned where they are, never moved or copied: its README, `CLAUDE.md`, docs, `git log` and the files that matter, into a project note on the ventures shelf (what it is, where it lives, where it stands, its decisions, how to build and run it, a map of its code); one agent each if they're big. The survey lists a repo as one row and doesn't walk it |
 | Zips and other archives | Listed. Ask the owner before unpacking one; unpacked, it's surveyed like any folder |
 | Apps' and the system's files | Skipped by the survey, and counted |
 
@@ -55,7 +55,7 @@ By kind, whatever the size:
 python3 skills/file-intake/intake.py survey <folder or file>... --work <work folder>
 python3 skills/file-intake/intake.py convert --work <work folder>
 ```
-- **`survey`** walks the paths (or `--upload-list C:\AI-Brain-Link\_upload\waiting.txt`, for what's waiting at the upload point, when it runs on the PC) and writes `files.txt`, one row per file, and `survey.md`: counts by kind and by folder, copies, repos, the biggest files.
+- **`survey`** walks the paths and writes `files.txt`, one row per file, and `survey.md`: counts by kind and by folder, copies, repos, the biggest files.
 - **`convert`** writes each document's text to `text/<id>.md`, and adds how much reading there is, and the method that points to, to `survey.md`. Plain text needs nothing. PDF, Word, Excel, PowerPoint and email need [MarkItDown](https://github.com/microsoft/markitdown) (Microsoft's, free, MIT licence): `python -m pip install "markitdown[all]"`. Tell the owner you're installing it. It's safe to run again, and skips what's done.
 - **In a session on the owner's computer,** run them directly.
 - **In a cloud session,** the files are on the PC, so run both as one job ([my-pc](../my-pc/SKILL.md)) with `checkout` on and `artifact` set to the work folder, then download the artifact into a scratch folder: that copy is your work folder, and the agents you brief read the text from it. If the PC has no Python (the PC's note says), a job installs it first (`winget install --silent Python.Python.3.12`), and the runner restarts before the next job, as the my-pc skill says.
@@ -68,7 +68,6 @@ python3 skills/file-intake/intake.py convert --work <work folder>
   python $tool convert --work $work
   ```
 - **On a Mac,** the work folder is `~/AI-Brain-Link/_intake/<name>`, Python is `python3`, and the job runs through the Mac's own runner (its skill says how).
-- **When the pile came through the upload point,** take its lines off that list once `check` passes, as the upload-point skill's last step says (`look.ps1 -Done`). The files stay where they are.
 - **The text stays out of the repo.** It's a working copy, it can be made again, and it may hold passwords the secrets gate keeps out of commits.
 
 ## Splitting
@@ -116,7 +115,7 @@ python3 skills/file-intake/intake.py check --work <work folder> --record knowled
 ```
 - It reads every `outcomes-*.txt` and lists each file with no outcome, each note that isn't there, and each note that doesn't name the file it's said to come from. Fix those (finish the file, or give it an outcome and a reason) until it says every file is accounted for.
 - `--record` writes the pile's record: where it came from, the tally, the notes by subject, what was left out and why, with the whole list saved beside it. Fill in its "How it went", and give its folder a `README.md` if it's the first (the brain spec's shelves).
-- **The owner's files stay where they were.** Each note names its files, and the record's list has every path. Move or delete nothing from a pile unless the owner asks; if they'd like the originals gathered, that's a job of its own, under the upload point's rules for what goes in the repo and what stays on the PC.
+- **The owner's files stay where they were.** Each note names its files, and the record's list has every path. Move or delete nothing from a pile unless the owner asks; if they'd like the originals gathered, that's a job of its own, under the brain spec's rule for what goes in the repo and what stays on the PC.
 - **A huge pile's rounds:** at the end of each round, run `check --record` as it stands. The record says "not finished", and its list is what the next chat starts from: copy it into the new work folder as `files.txt`, and `convert` makes the text again.
 
 ## When it lets you down
