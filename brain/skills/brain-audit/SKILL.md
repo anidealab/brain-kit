@@ -6,7 +6,7 @@ description: "The weekly tidy-up of this second brain: run the library and link 
 # The weekly tidy-up
 Once a week, the agent cleans the brain up and gives the owner a short report, so the brain stays tidy and true as it grows. It's light on purpose, and a reminder, not a scheduled job: `reminders.py` says when it's due, the agent tells the owner, and it runs only if they say yes. What past ones found is in [the audit log](../../knowledge/areas/the-brain/audit-log.md).
 
-**Two levels.** This weekly one is cheap. Once a month, [the deep audit](deep-audit.md) reads that month's new decisions in full against the rest, to catch what only reading does.
+**Two levels.** This weekly one is cheap. Once a month, [the deep audit](deep-audit.md) reads that month's new decisions in full against the rest, to catch what only reading does, and, with a connected computer, lists its AI-Brain-Link folder by size for the owner to clear.
 
 **Keep it light.** It uses the owner's plan. Read cards, not notes: the shelves' indexes and `library.py find` show every card; open a note only when a card or a script points at a problem. For "what happened this week", read commit messages, not the notes themselves.
 
