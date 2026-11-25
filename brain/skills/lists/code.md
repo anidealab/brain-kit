@@ -1,6 +1,6 @@
 # Building and fixing code
 
-Copied skills, kept as they came; where each came from, its commit and its licence are in [sources.md](sources.md). A new skill on this topic gets a line here saying when to use it; one of the brain's own goes at the top, under a "The brain's own" heading.
+Copied skills, kept as they came; where each came from, its commit and its licence are in [sources.md](sources.md). A new skill on this topic gets a line here saying when to use it; one of the brain's own goes at the top, under a "The brain's own" heading. The traps agents have hit checking a page or a build, beyond these skills: [building and testing](building-and-testing.md).
 
 - [addyosmani-incremental-implementation](../addyosmani-incremental-implementation/SKILL.md): build a change or carry out a plan, one small working step at a time.
 - [mattpocock-prototype](../mattpocock-prototype/SKILL.md): answer a design question with quick throwaway code.

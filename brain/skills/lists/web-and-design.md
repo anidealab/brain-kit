@@ -1,6 +1,6 @@
 # Websites and design
 
-Copied skills, kept as they came; where each came from, its commit and its licence are in [sources.md](sources.md). A new skill on this topic gets a line here saying when to use it; one of the brain's own goes at the top, under a "The brain's own" heading.
+Copied skills, kept as they came; where each came from, its commit and its licence are in [sources.md](sources.md). A new skill on this topic gets a line here saying when to use it; one of the brain's own goes at the top, under a "The brain's own" heading. The traps agents have hit making and checking a page, beyond these skills: [building and testing](building-and-testing.md).
 
 - [frontend-design](../frontend-design/SKILL.md): distinctive web design that doesn't look templated.
 - [impeccable](../impeccable/SKILL.md), [taste-skill](../taste-skill/SKILL.md): better-looking interfaces, with taste.

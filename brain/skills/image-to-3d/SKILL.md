@@ -49,7 +49,7 @@ On a Mac, give the Mac's line for the same key (the my-mac skill's "Keys on a Ma
   ```
 A run takes two or three minutes. The GLB is attached to the run as `out-<run id>` for 3 days (`gh run download <run id>`, or the GitHub tool). Delete the transfer branch afterwards with the "Delete branches" workflow.
 
-**The free quota is about one model a day.** A free account's daily GPU time covers one run (two calls of 120 seconds each); a second the same day is refused, and the quota comes back about a day after it ran out. So plan one model a day, or take the paid route with the owner's go. Another `--seed` gives another guess at the same picture; the other options are at the script's top. If the Space has changed, `Client('microsoft/TRELLIS.2').view_api()` (from `gradio_client`) lists its calls.
+**The free quota is about one model a day.** A free account's daily GPU time covers one run (two calls of 120 seconds each); a second the same day is refused, and the quota comes back about a day after it ran out. So plan one model a day, or take the paid route with the owner's go. For a simple shape (a bowl, a plate, a sign), a model can also be made with no GPU at all: a head-on picture of it plus a depth estimate of that picture (Depth Anything V2 runs on a CPU, with `transformers`), laid on a surface in Blender or in Python. Another `--seed` gives another guess at the same picture; the other options are at the script's top. If the Space has changed, `Client('microsoft/TRELLIS.2').view_api()` (from `gradio_client`) lists its calls.
 
 ## 3b. Make the model, paid
 When the owner wants more than one model a day, or the free Space is down: fal's `fal-ai/trellis-2` runs the same model, about US$0.25 to 0.35 a model by resolution (fal's page, 14 Nov 2026), and fal has others (`fal_find.py search "image to 3d" --category image-to-3d`). Run it with the [fal skill](../fal/SKILL.md)'s steps, price first and the owner's go before sending, with an entry like:
@@ -62,6 +62,6 @@ When the owner wants more than one model a day, or the free Space is down: fal's
 - **Glowing colours come back grey:** lights and glows lose their glow. Add it back in whatever shows the model.
 - **A flat plate underneath** from the picture's shadow, sometimes. Cut it off in a 3D tool, or make the picture again with softer shadow.
 - **It invents what the picture can't show,** such as a back or a support. A picture that shows more of the object, or another seed, helps.
-- **One mesh in many small pieces,** not one piece per real part. Splitting it into moving parts is a separate job, for a 3D tool such as Blender.
+- **One mesh in many small pieces,** not one piece per real part. Splitting it into moving parts is a separate job, for a 3D tool such as Blender. A cloud session can run Blender as a Python module (`pip install bpy` on Python 3.11), or a job on the owner's computer runs their own. Blender's Python is often older than the one beside it, and rejects code a newer one accepts (an f-string with a backslash inside), so compile a script with the Python that will run it before a long run (Blender's own is in its folder, `<version>/python/bin/`: `python -m py_compile <script>`).
 
 Open it to look: drag the file into https://gltf-viewer.donmccurdy.com, or open it in Blender. Show the owner a picture of it, and say which route made it and what it cost.
