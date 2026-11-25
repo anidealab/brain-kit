@@ -12,7 +12,7 @@ When a job needs a key (an API key for a service), the agent gives the owner one
 1. **On GitHub:** opens this brain's repo, then Settings, then Secrets and variables, then Actions, then New repository secret; types the name, pastes the key, and saves. Jobs that run through GitHub Actions, the PC runner's included, can use it from then on. This is the key's home.
 2. **In Claude, if a session needs it directly** (optional): the environment menu in the session's title bar, then Edit, then the secrets or environment variables section, with the same name. A new session picks it up.
 
-A website's own keys go in its host's settings (Vercel, Cloudflare and so on), where the site reads them.
+A website's own keys go in its host's settings (Vercel, Cloudflare and so on), where the site reads them, as a copy of the original in the GitHub Actions secrets: a host can make a key write-only, and then it can't be moved ([add-a-key](../../skills/add-a-key/SKILL.md#where-it-goes)).
 
 ## Accounts
 | Service | Account | Since | Used for |
