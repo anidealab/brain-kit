@@ -1,13 +1,14 @@
 # The AnIdeaLab brain kit
 
-A second brain for working with AI agents: a private GitHub repo of plain Markdown that agents work from. It has a core every agent reads (`CLAUDE.md`), a library of skills for how to do things, and a knowledge library of what the brain knows. It's free, and an owner starts one in three steps, with nothing to install ([Start a brain](#start-a-brain)). Two extras go on the owner's PC or Mac, if they'd like them: a runner for jobs that need their computer, and Obsidian with a custom AnIdeaLab plugin to see the brain as a map ([On your computer](#on-your-computer-if-you-like)).
+A second brain for working with AI agents: a private GitHub repo of plain Markdown that agents work from. It has a core every agent reads (`CLAUDE.md`), a library of skills for how to do things, and a knowledge library of what the brain knows. It's free, and an owner starts one in four steps, with nothing to install ([Start a brain](#start-a-brain)). Two extras go on the owner's PC or Mac, if they'd like them: a runner for jobs that need their computer, and Obsidian with a custom AnIdeaLab plugin to see the brain as a map ([On your computer](#on-your-computer-if-you-like)).
 
 ## Start a brain
-Three steps, and a phone will do. Your brain is kept on GitHub, in a private repo that's yours, and your AI agent works in it from your browser.
+Four steps, and a phone will do. Your brain is kept on GitHub, in a private repo that's yours, and your AI agent works in it from your browser.
 
 1. **Get a Claude Pro plan,** or above: [claude.com/pricing](https://claude.com/pricing). Your agent is Claude, and working in a brain needs a paid plan. If you have one already, go on to step 2.
 2. **[Make your brain](https://github.com/new?template_owner=AnIdeaLab&template_name=second-brain&name=my-brain-ail&visibility=private).** The link opens GitHub, where your brain is kept. Sign in, or make a free account, then press "Create repository". Leave it set to Private.
-3. **Send your first message.** Open [claude.ai/code](https://claude.ai/code). If it asks, connect GitHub and let it see `my-brain-ail`. Start a session with `my-brain-ail` selected, and send this:
+3. **Connect Claude to your brain.** Open [claude.ai/code](https://claude.ai/code). The first time, Claude needs GitHub connected: press "Connect GitHub" and allow it. Back in Claude, the repo list still says there are none; that's normal. Press "Install the Claude GitHub App", leave All repositories on, and press Install & Authorize. Back in Claude, `my-brain-ail` is in the list. Pick it.
+4. **Send your first message.** With `my-brain-ail` picked, send this:
 
    ```
    This is my new second brain. Read CLAUDE.md and get me set up.
@@ -15,7 +16,7 @@ Three steps, and a phone will do. Your brain is kept on GitHub, in a private rep
 
 It asks you a few questions and sets everything up from there. Every chat after that starts the same way: a new session with `my-brain-ail` selected.
 
-The same three steps are on AnIdeaLab's site, [anidealab.com/second-brain](https://anidealab.com/second-brain), with tutorials for your first days with a brain, and you can have AnIdeaLab set yours up for you there if you'd rather.
+The same four steps are on AnIdeaLab's site, [anidealab.com/second-brain](https://anidealab.com/second-brain), with tutorials for your first days with a brain, and you can have AnIdeaLab set yours up for you there if you'd rather.
 
 What those steps do:
 - step 2 copies the template repo, [AnIdeaLab/second-brain](https://github.com/AnIdeaLab/second-brain), into a new private repo on your GitHub account. The template is [brain/](brain/) as it is on this repo's `next` branch, so a new brain has the newest work;
