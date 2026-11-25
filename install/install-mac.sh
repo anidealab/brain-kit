@@ -398,10 +398,8 @@ if mode == "new":
     skills = len([d for d in os.listdir(os.path.join(work, "skills")) if os.path.isfile(os.path.join(work, "skills", d, "SKILL.md"))])
     with open(os.path.join(work, "README.md"), encoding="utf-8") as f:
         count = re.search(r" \d+ to start,", f.read())
-    if count:
+    if count:  # brain/ before update 12 gives a count; from update 12 it gives none, so there's nothing to change
         edit("README.md", "- **[The skills](skills/README.md):**", f" {skills} to start,", how="swap", old=count.group(0))
-    else:
-        problems.append('README.md: no " <number> to start," saying how many skills there are')
     # The PC's note: no PC yet.
     edit("knowledge/systems/my-pc.md", "about: ",
          "about: \"The owner's Windows PC, if they add one: this brain was set up on their Mac (the my-mac note). How agents reach a PC (the my-pc runner), its folders in C:/AI-Brain-Link, and what's on it.\"")
