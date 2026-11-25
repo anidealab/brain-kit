@@ -29,8 +29,8 @@ tools_check="${BRAIN_KIT_CHECK_TOOLS:-}"
 if [ -n "$check" ]; then root="$check"; else root="$HOME/AI-Brain-Link"; fi
 # AnIdeaLab's set-up (the brain set up for you): BRAIN_KIT_SETUP=1, in the command its set-up page gives. It
 # lets AnIdeaLab's set-up account in to the brain even when the brain was made already (from the template),
-# reads the documents of the past year on this Mac last (set-up/index-computer.sh, beside install/) and sends their
-# text to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
+# maps this Mac last (set-up/index-computer.sh --map, beside install/: folders and documents' names, nothing opened) and sends the
+# map to the brain's repo as a private draft release, and ends with "we'll take it from here" instead of the chat
 # steps. Anyone can set it; it's off unless they do.
 setup="${BRAIN_KIT_SETUP:-}"
 # The start page's step 4 (anidealab.com/second-brain, 25 Nov 2026): BRAIN_KIT_FROM_SITE=1, which connect.sh sets.
@@ -762,26 +762,27 @@ PY
   if [ -n "$has_obsidian" ]; then step 'Obsidian, with syncing on' 'done'; else step 'Obsidian, with syncing on' 'not done'; fi
 fi
 
-# 7. AnIdeaLab's set-up only: the documents of the past year, read here, as the owner, so no runner is needed. Their
-# text, never the files, goes to the brain's repo as a private draft release (never into the brain's files) for the
-# set-up's agent to write up as notes; the agent deletes it once it has it. The originals stay where they are.
+# 7. AnIdeaLab's set-up only: the map, the index's first stage (decided 25 Nov 2026), made here as the owner: folders
+# and the past year's documents' names, none opened. It goes to the brain's repo as a private draft release (never
+# into the brain's files); the set-up's agent picks what to read from it and the owner's answers, and reads that
+# later as a job on this computer's runner (index-computer -Plan). The originals stay where they are.
 index_ok=''
 if [ -n "$setup" ] && [ -z "$check" ]; then
-  step 'Your documents, read for your set-up' started
-  say "Last, reading the documents you've worked on this past year, so we can put what's in them into your brain. Photos, and anything that looks like passwords or keys, are left out, and nothing on this Mac is changed or moved. It can take a while: leave this window open."
+  step 'Your computer, mapped for your set-up' started
+  say "Last, a quick map of this Mac: its folders and the names of the documents you've worked on this past year, so we can pick what to put in your brain. Nothing is opened yet, photos and anything that looks like passwords or keys are left out, and nothing on this Mac is changed or moved. We read what we pick later, in the background."
   indexer="$here/../set-up/index-computer.sh"
   index_work="$root/_intake/computer"
-  if [ -f "$indexer" ] && /bin/bash "$indexer" --root "$root" && [ -f "$index_work/index.md" ]; then
+  if [ -f "$indexer" ] && /bin/bash "$indexer" --root "$root" --map && [ -f "$index_work/index.md" ]; then
     pack="${TMPDIR:-/tmp}"; pack="${pack%/}/anidealab-set-up-index.zip"
     rm -f "$pack"
     if (cd "$index_work" && zip -qr "$pack" .); then
       "$gh" release delete anidealab-set-up-index --repo "$repo" --yes >/dev/null 2>&1
-      if "$gh" release create anidealab-set-up-index "$pack" --repo "$repo" --draft --title "Your documents, for AnIdeaLab's set-up" \
-        --notes "The text of the documents your set-up read on your computer, for AnIdeaLab to write up as notes in your brain. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer."; then index_ok=yes; fi
+      if "$gh" release create anidealab-set-up-index "$pack" --repo "$repo" --draft --title "Your computer's map, for AnIdeaLab's set-up" \
+        --notes "A map of your computer: its folders, and the names of the documents you worked on this past year, none of them opened. AnIdeaLab uses it to pick what to read for your brain, then reads just that in the background. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer."; then index_ok=yes; fi
     fi
     rm -f "$pack"
   fi
-  if [ -n "$index_ok" ]; then step 'Your documents, read for your set-up' done; else step 'Your documents, read for your set-up' 'not done'; fi
+  if [ -n "$index_ok" ]; then step 'Your computer, mapped for your set-up' done; else step 'Your computer, mapped for your set-up' 'not done'; fi
 fi
 
 show_steps
@@ -803,7 +804,7 @@ echo "Your copy on this Mac: $vault"
 echo ''
 if [ -n "$setup" ]; then
   printf '\033[36m%s\033[0m\n' "That's everything on your side. We'll take it from here, and email you when your brain is ready."
-  if [ -z "$index_ok" ]; then echo "(Your documents didn't get read just now. Nothing to do: we'll sort it with you by email.)"; fi
+  if [ -z "$index_ok" ]; then echo "(Your Mac didn't get mapped just now. Nothing to do: we'll sort it with you by email.)"; fi
 elif [ -n "$from_site" ] && [ -z "$fresh" ]; then
   # From the start page's step 4, before the first chat: back to the page, whose last part is the first message.
   printf '\033[36m%s\033[0m\n' "Last step: go back to anidealab.com/second-brain and send your first message."
