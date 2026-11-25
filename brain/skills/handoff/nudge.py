@@ -8,13 +8,14 @@ main-thread assistant message in the session's log (the transcript), and when th
 passes a mark it hasn't nudged for yet, it prints the nudge for Claude Code to hand the
 agent. What the agent then does is in the handoff skill (skills/handoff/SKILL.md).
 
-A sub-agent gets one nudge of its own, later than the main chat's, since its work is a
-single task. Inside one, the hook input carries `agent_id`, and after each
+A sub-agent gets nudges of its own, the same marks as the main chat's by default, since a
+long agent's work loses detail the same way and its report has to fit back into the chat. Inside one, the hook input carries `agent_id`, and after each
 of its tool calls the script measures that sub-agent's own conversation, from its own log:
 `agent_transcript_path` if the input gives it, or else the log Claude Code keeps beside the
 main transcript, <dir>/<session>/subagents/agent-<agent_id>.jsonl for <dir>/<session>.jsonl,
-where every line is marked `isSidechain`. At agent_at it tells the sub-agent, once, to finish
-its step, report back and stop. It remembers that in a state file of the sub-agent's own, so
+where every line is marked `isSidechain`. At agent_at it tells the sub-agent to finish its step,
+report back and stop, and again at each agent_repeat_every after if it carries on, urgent from
+agent_urgent_at. It remembers its marks in a state file of the sub-agent's own, so
 it never uses up the main chat's nudge, and the main chat's nudges never go to a sub-agent.
 
 The policy lives in nudge.json beside this script, not in the code, so a brain can change
@@ -24,12 +25,14 @@ its marks without touching the script. The settings:
   urgent_at           from this size on, nudges use urgent_message; 0 means never
   every_prompt_after  from this size on, every message the person sends gets prompt_message
                       (needs a UserPromptSubmit hook); 0 means never
-  agent_at            tokens in a sub-agent's own conversation at its one nudge,
+  agent_at            tokens in a sub-agent's own conversation at its first nudge,
                       agent_message; 0 means never
+  agent_repeat_every  tokens between a sub-agent's later nudges; 0 means one only
+  agent_urgent_at     from this size on, a sub-agent's nudges use agent_urgent_message; 0 means never
   tell_person         true also shows the message to the person in Claude Code
   state_dir           where it remembers which nudges a session has had; "" means the
                       system's temp folder
-  message, urgent_message, prompt_message, agent_message
+  message, urgent_message, prompt_message, agent_message, agent_urgent_message
                       what it says; {size} and {mark} are filled in, like "312,000"
 Anything left out of nudge.json takes the default below.
 
@@ -55,7 +58,9 @@ DEFAULTS = {
     "repeat_every": 0,
     "urgent_at": 0,
     "every_prompt_after": 0,
-    "agent_at": 250000,
+    "agent_at": 300000,
+    "agent_repeat_every": 25000,
+    "agent_urgent_at": 400000,
     "tell_person": False,
     "state_dir": "",
     "message": ("Hand-off nudge: this conversation is about {size} tokens, past the {mark} mark. It's a nudge, "
@@ -73,8 +78,11 @@ DEFAULTS = {
     "agent_message": ("Sub-agent hand-off nudge: your own conversation is about {size} tokens, past the {mark} mark "
                       "for agents. Finish the step you're on, then write your report back the way the handoff skill "
                       "(skills/handoff/SKILL.md, \"Briefs and reports\") says: what's done, what's left, and where "
-                      "everything is. Then stop: the session that started you picks up from your report. This is "
-                      "your only nudge."),
+                      "everything is. Then stop: the session that started you picks up from your report."),
+    "agent_urgent_message": ("Sub-agent hand-off nudge, urgent: your own conversation is about {size} tokens, past {mark}. "
+                             "Stop now: write your report back the way the handoff skill (skills/handoff/SKILL.md, "
+                             "\"Briefs and reports\") says, with what's done, what's left and where everything is, push "
+                             "what you have, and stop. The session that started you picks up from your report."),
 }
 CHUNK = 64 * 1024        # bytes read at a time, from the end of the transcript
 MOST = 64 * 1024 * 1024  # bytes it reads back at most, so a huge log can't stall a hook
@@ -161,9 +169,9 @@ def stamp():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def mark_for(size, conf):
-    """The highest mark the size has passed, or 0."""
-    first, every = tokens(conf["first_at"]), tokens(conf["repeat_every"])
+def mark_for(size, conf, first_key="first_at", every_key="repeat_every"):
+    """The highest mark the size has passed, or 0 (a sub-agent's with agent_at and agent_repeat_every)."""
+    first, every = tokens(conf[first_key]), tokens(conf[every_key])
     if not first or size < first:
         return 0
     return first + ((size - first) // every) * every if every else first
@@ -187,22 +195,29 @@ def agent_log(hook, agent):
 
 
 def agent_nudge(hook, conf, session, agent):
-    """A sub-agent's one nudge, at agent_at tokens of its own conversation: what to print, and the state to save."""
-    at = tokens(conf["agent_at"])
+    """A sub-agent's nudge, at agent_at tokens of its own conversation and each agent_repeat_every after, urgent from
+    agent_urgent_at: what to print, and the state to save."""
+    at, every = tokens(conf["agent_at"]), tokens(conf["agent_repeat_every"])
     if not at:
         return None, None
     path = state_file(conf, f"{session}.agent-{agent}")  # its own file, so the main chat's nudge is never used up
-    if tokens(load_state(path).get("last_mark")):
-        return None, None  # it has had its nudge: no repeats
+    state = load_state(path)
+    last = tokens(state.get("last_mark"))
+    if not every and last >= at:
+        return None, None  # it has had its one nudge
     log = agent_log(hook, agent)
     size = conversation_size(log, side=True) if log else None
-    if not size or size < at:
+    if not size:
         return None, None
-    message = fill(conf["agent_message"], size, at)
+    mark = mark_for(size, conf, "agent_at", "agent_repeat_every")
+    if mark <= last:
+        return None, None
+    urgent = tokens(conf["agent_urgent_at"])
+    message = fill(conf["agent_urgent_message"] if urgent and mark >= urgent else conf["agent_message"], size, mark)
     out = {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": message}}
     if conf.get("tell_person") is True:
         out["systemMessage"] = message
-    return out, (path, {"agent_id": agent, "last_mark": at, "size": size, "event": "PostToolUse", "at": stamp()})
+    return out, (path, dict(state, agent_id=agent, last_mark=mark, size=size, event="PostToolUse", at=stamp()))
 
 
 def decide(hook, conf):
