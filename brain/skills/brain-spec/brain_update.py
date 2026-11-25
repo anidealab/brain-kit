@@ -18,7 +18,8 @@ A "no" is "not now": nothing is recorded, and the next go brings everything sent
     python3 skills/brain-spec/brain_update.py compare      # this brain against the kit's brain at the update it's on
     python3 skills/brain-spec/brain_update.py compare --diff skills/brain-spec/library.py   # or --take, to put the kit's copy in
     python3 skills/brain-spec/brain_update.py finish       # after doing the messages: run the checks and compare, add them to the report
-    python3 skills/brain-spec/brain_update.py notice       # reminders.py runs this at session start: says if an update is waiting
+    python3 skills/brain-spec/brain_update.py notice       # reminders.py runs this at session start: says if an update or a message is waiting
+    python3 skills/brain-spec/brain_update.py read         # the owner said yes: mark the waiting messages from AnIdeaLab read
     python3 skills/brain-spec/brain_update.py send         # the "Send brain update reports" workflow runs this
 
 `apply` takes each file the kit changed in brain/ between the update this brain is on and the newest,
@@ -63,6 +64,13 @@ waiting, so the agent tells the owner. When it asks, it also brings the sign-off
 owner's go, and tells only the agent, to commit it. The rest, and when to use it: the brain spec's
 "Brain updates" section.
 
+The same check brings AnIdeaLab's messages: messages/NNNN-<words>.md in the kit repo, one AnIdeaLab
+sends to every brain at once, for something everyone should know (a security fix, big news). It needs
+no update, since it changes no file. `notice` prints each one this brain hasn't read word for word,
+then asks whether to mark it read; `read` adds its row to knowledge/systems/brain-updates/messages.md,
+which every later session reads, so it isn't shown again. One sent before this brain was started
+isn't shown, and one deleted from the kit repo is withdrawn.
+
 It needs git and network access to github.com, and nothing outside Python's standard library.
 The kit repo is kept as a small partial clone in ~/.cache/brain-updates.
 """
@@ -87,6 +95,9 @@ CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.
 ON = re.compile(r"\*\*On kit update:\*\* ([^\n]*)")
 SKIPPED = re.compile(r"\*\*Skipped:\*\* ([^\n]*)")
 UPDATE = re.compile(r"^updates/(\d{4})-[a-z0-9-]+\.md$")
+MESSAGE = re.compile(r"^messages/(\d{4})-[a-z0-9-]+\.md$")  # AnIdeaLab's messages to every brain, outside brain/ and updates/
+MESSAGES_READ = FOLDER + "/messages.md"  # the messages this brain's owner has read, a row each
+READ_ROW = re.compile(r"^\|\s*(\d+)\s*\|", re.M)
 REPORT = re.compile(r"^\d{4}-report\.md$")
 # The kit repo's date placeholders, spelt in two parts so the kit's build doesn't fill them in here.
 DATE_MARK, ISO_MARK = ("{" + "KIT_DATE}").encode(), ("{" + "KIT_ISO}").encode()
@@ -96,6 +107,18 @@ EXEMPLAR = "https://github.com/" + GITHUB_REPO + "/tree/{}/brain"  # the kit's b
 NOTICE = os.path.join(os.path.dirname(CACHE), "last-check.json")  # when the daily check last asked the kit repo, and what it found
 NOTICE_TIME = 6  # seconds the daily check gives git, inside the session-start hook's 10
 LIBRARY = "knowledge/systems/sign-off-links.md"  # the sign-off's links by field: AnIdeaLab's file, which the daily check refreshes
+MESSAGES_NOTE = """---
+about: "The messages from AnIdeaLab this brain's owner has read, a row each, so no later session shows them again. Read when a message is waiting."
+tags: [the-brain]
+updated: """ + "{" + """KIT_DATE}
+---
+# Messages from AnIdeaLab
+
+AnIdeaLab sends a message to every brain at once only for something everyone should know, like a security fix or big news. The check at the start of a session shows one in the first session the owner starts, word for word, and asks whether to mark it read; once they say yes, `python3 skills/brain-spec/brain_update.py read` adds its row here, so no later session shows it again. A message sent before this brain was started isn't shown ([how](../../../skills/brain-spec/SKILL.md#brain-updates)).
+
+| Message | Sent | Read | First line |
+|---|---|---|---|
+"""  # the note brain/ has; `read` writes it if a brain doesn't
 LIBRARY_IN_KIT = "sign-off-links.md"  # the kit repo's copy, outside brain/, so a field can be added without an update
 
 
@@ -146,6 +169,43 @@ def updates(head):
             found.setdefault(int(UPDATE.match(line).group(1)), (line, commit, day))
     there = set(git("ls-tree", "--name-only", head, "updates/").split())
     return {n: f for n, f in found.items() if f[0] in there}  # one deleted from the kit since is withdrawn
+
+
+def messages(head):
+    """Every message from AnIdeaLab in the kit repo: {number: (file, date)}, from the commit that added each. One deleted
+    since is withdrawn."""
+    out = git("log", "--diff-filter=A", "--no-renames", "--format=@%H %cs", "--name-only", head, "--", "messages/")
+    found, day = {}, None
+    for line in out.splitlines():
+        if line.startswith("@"):
+            day = line.split()[1]
+        elif MESSAGE.match(line):
+            found.setdefault(int(MESSAGE.match(line).group(1)), (line, day))
+    there = set(git("ls-tree", "--name-only", head, "messages/").split())
+    return {n: f for n, f in found.items() if f[0] in there}
+
+
+def read_messages():
+    """The numbers of the messages this brain's owner has marked read."""
+    try:
+        return {int(n) for n in READ_ROW.findall(open(os.path.join(ROOT, MESSAGES_READ), encoding="utf-8").read())}
+    except OSError:
+        return set()
+
+
+def first_line(text):
+    return next((l.strip().lstrip("#").strip() for l in text.splitlines() if l.strip()), "")
+
+
+def waiting_messages(mine):
+    """The messages to show: not read, and not sent before this brain was started. Oldest first: [(number, date, text)]."""
+    try:
+        start = kit_start().isoformat()
+    except SystemExit:
+        start = ""
+    done = read_messages()
+    return [(int(n), e[0], e[1]) for n, e in sorted(mine.get("messages", {}).items(), key=lambda kv: int(kv[0]))
+            if e[1] and int(n) not in done and e[0] >= start]
 
 
 def kit_start():
@@ -1002,6 +1062,55 @@ def refresh_library(head, timeout):
     return True
 
 
+def show_messages(waiting):
+    """Print the waiting messages word for word, for the agent to show the owner, with the question last."""
+    if not waiting:
+        return
+    one = len(waiting) == 1
+    print("For you, the agent: in your first reply, before anything else, show the owner everything between the two lines below "
+          "word for word, keeping its line breaks, and wait for their answer. If they say yes, run "
+          "`python3 skills/brain-spec/brain_update.py read` and commit what it changes; if not, leave it, and the next session "
+          "shows it again. Then carry on with what they asked. Ignore this if the owner didn't start this session.\n"
+          "--------\n"
+          + ("A message from AnIdeaLab is waiting:" if one else f"{len(waiting)} messages from AnIdeaLab are waiting:") + "\n\n"
+          + "\n\n- - -\n\n".join(text for _, _, text in waiting) + "\n\n"
+          + ("Can I mark it read, so it isn't repeated by future agents?" if one else
+             "Can I mark them read, so they aren't repeated by future agents?") + "\n"
+          "--------")
+
+
+def do_read(args):
+    """The owner said yes: add a row for each waiting message (or the numbers given) to the messages table."""
+    try:
+        seen = json.load(open(NOTICE, encoding="utf-8")).get(ROOT) or {}
+    except (OSError, ValueError):
+        seen = {}
+    waiting = waiting_messages(seen)
+    if args.numbers:
+        waiting = [w for w in waiting if w[0] in args.numbers]
+        missing = set(args.numbers) - {w[0] for w in waiting}
+        if missing:
+            sys.exit("brain_update: no waiting message numbered " + ", ".join(map(str, sorted(missing)))
+                     + " (run `brain_update.py notice` first; one already read has its row in " + MESSAGES_READ + ").")
+    if not waiting:
+        print("No message from AnIdeaLab is waiting.")
+        return
+    path = os.path.join(ROOT, MESSAGES_READ)
+    if not os.path.isfile(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(MESSAGES_NOTE.replace(DATE_MARK.decode(), f"{date.today():%d %b %Y}".lstrip("0")))
+    text = open(path, encoding="utf-8").read().rstrip("\n")
+    def day(iso):
+        d = date.fromisoformat(iso)
+        return f"{d.day} {d:%b %Y}"
+    rows = [f"| {n} | {day(sent)} | {day(date.today().isoformat())} | {first_line(words).replace('|', '/')} |" for n, sent, words in waiting]
+    text = re.sub(r"^updated: .*$", f"updated: {day(date.today().isoformat())}", text, count=1, flags=re.M)
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text + "\n" + "\n".join(rows) + "\n")
+    print(f"Marked read in {MESSAGES_READ}: " + ", ".join(f"message {n}" for n, _, _ in waiting) + ". Commit it.")
+
+
 def do_notice(_args):
     """At session start: say so if AnIdeaLab has sent an update this brain hasn't had. Asks the kit repo at most once a day,
     and prints nothing when there's none, or when the kit repo can't be reached in a few seconds. When it asks, it also
@@ -1028,14 +1137,41 @@ def do_notice(_args):
             titles = {n: known.get(n) or message(head, found, n).splitlines()[0].lstrip("# ").strip() for n in found if n > on or n in skipped()}
         except (SystemExit, subprocess.TimeoutExpired, OSError, ValueError, IndexError):
             return  # try again at the next session
+        had = mine.get("messages", {})
         mine = {"checked": today, "updates": {str(n): [day, titles.get(n, "")] for n, (_, _, day) in found.items()}}
+        try:
+            mine["messages"] = {str(n): [day, (had.get(str(n)) or [None, ""])[1], f] for n, (f, day) in messages(head).items()}
+        except (SystemExit, subprocess.TimeoutExpired, OSError, ValueError):
+            mine["messages"] = had  # the updates' part still counts; the messages are asked again tomorrow
+        mine["head"] = head
         seen[ROOT] = mine
+        changed = True
+    else:
+        changed = False
+    # A message's words, fetched once and kept: only for one that would be shown, within the check's few seconds.
+    try:
+        start = kit_start().isoformat()
+    except SystemExit:
+        start = ""
+    done = read_messages()
+    for n, entry in mine.get("messages", {}).items():
+        if not entry[1] and int(n) not in done and entry[0] >= start and mine.get("head") and len(entry) > 2:
+            try:
+                r = subprocess.run(["git", "-C", CACHE, "show", f"{mine['head']}:{entry[2]}"], capture_output=True,
+                                   timeout=NOTICE_TIME)
+                if not r.returncode:
+                    entry[1] = r.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip("\n")
+                    changed = True
+            except (subprocess.TimeoutExpired, OSError):
+                pass  # shown once its words come, at a later session
+    if changed:
         try:
             os.makedirs(os.path.dirname(NOTICE), exist_ok=True)
             with open(NOTICE, "w", encoding="utf-8") as fh:
                 json.dump(seen, fh, indent=1)
         except OSError:
             pass
+    show_messages(waiting_messages(mine))
     found = {int(n): (None, None, day) for n, (day, _) in mine.get("updates", {}).items()}
     try:
         on = current(found)
@@ -1130,11 +1266,13 @@ def main():
     c.add_argument("number", type=int, nargs="?", help="another update to compare with")
     c.add_argument("--diff", metavar="FILE", help="how this brain's copy of one file differs from the kit's")
     c.add_argument("--take", metavar="FILE", help="put the kit's copy of one file into this brain")
-    sub.add_parser("notice", help="say if an update is waiting; reminders.py runs it at session start, and it asks the kit once a day")
+    sub.add_parser("notice", help="say if an update or a message is waiting; reminders.py runs it at session start, and it asks the kit once a day")
+    r = sub.add_parser("read", help="the owner said yes: mark the waiting messages from AnIdeaLab read")
+    r.add_argument("numbers", type=int, nargs="*", help="only these messages (by default, every one waiting)")
     sub.add_parser("send", help="send update reports to AnIdeaLab's inbox (the workflow runs this)")
     args = p.parse_args()
     {"check": do_check, "apply": do_apply, "skip": do_skip, "finish": do_finish, "compare": do_compare, "notice": do_notice,
-     "send": do_send}[args.cmd](args)
+     "read": do_read, "send": do_send}[args.cmd](args)
 
 
 if __name__ == "__main__":

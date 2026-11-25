@@ -12,5 +12,5 @@ AnIdeaLab, which makes the brain kit this brain was started from, sends updates 
 Each update leaves a report here: what went in, what clashed and what broke. The "Send brain update reports" workflow sends it to AnIdeaLab's inbox, so the kit gets better for everyone. It runs on GitHub's machines, not the PC.
 
 <!-- index:start -->
-*Nothing here yet.*
+- [messages](messages.md): The messages from AnIdeaLab this brain's owner has read, a row each, so no later session shows them again. Read when a message is waiting. [the-brain]
 <!-- index:end -->

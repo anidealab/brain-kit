@@ -29,8 +29,8 @@ session through a SessionStart hook in .claude/settings.json, and what it prints
 into the session. It prints nothing when nothing is due. It reads only this repo and
 needs nothing outside Python's standard library. In a brain started from the AnIdeaLab brain
 kit, it also runs brain_update.py notice beside it, which asks the kit repo at most once a day
-whether AnIdeaLab has sent an update, and prints only when one is waiting, so a day with no
-update costs the session nothing.
+whether AnIdeaLab has sent an update or a message to every brain, and prints only when one is waiting,
+so a day with neither costs the session nothing.
 It starts with one line saying which computer the session is on, from devices.py, then one saying who
 the owner is and what time it is where they live, from the core's first line ("<Name>'s second brain"),
 their note in knowledge/people/ and the time zone, so every session knows both without being told again.
