@@ -8,7 +8,7 @@ What the brain knows, as plain Markdown notes. How to do things is the other lib
 
 - **A note's folder says what kind of thing it is; its tags say what it's about.** A tag is the name of a project, area or subject. So everything about one project is one question: `python3 skills/brain-spec/library.py find --tag <project>`.
 - **Every note starts with a card**: an `about` line saying what's in it and when you'd read it, its tags, its status and when it was last checked. Pick notes by their cards, and open only the ones your job needs.
-- **Each shelf's `README.md` is its index.** The lists between the index marks are built from the cards by `python3 skills/brain-spec/library.py build` (a GitHub Action runs it on every push), so don't edit them by hand.
+- **Each shelf's `README.md` is its index.** The lists between the index marks are built from the cards by `python3 skills/brain-spec/library.py build` (a GitHub Action runs it every 3 hours), so don't edit them by hand.
 - **It's there to be added to.** What to save, where, and how: the [brain-spec skill](../skills/brain-spec/SKILL.md).
 
 <!-- index:start -->

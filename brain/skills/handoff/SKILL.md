@@ -47,7 +47,7 @@ There's no lock and nothing in the middle keeping order: git is the only thing e
 - **One holder writes the status.** Only the chat named in `holder` rewrites the top four parts and Where everything is. To take a job, set `holder` to yourself and push that alone before you start. If the push is refused because another chat just took it, it's theirs.
 - **Everyone else only adds.** A chat that isn't the holder adds one line at the end of Progress (or under The ask, if the owner said it to them), and touches nothing else.
 - **A second chat on the same job gets a piece, with a note of its own.** The holder lists the piece under Next with a link; the other chat holds that note, and the holder folds it in when the piece is done. Two chats never share one status.
-- **Pull, edit, push, in one go.** `git pull --rebase` right before you edit the note, commit only that file (`git commit -- <path>`), and push at once. Never leave it edited and unpushed while you work.
+- **Pull, edit, push, in one go.** `git pull --rebase origin main` right before you edit the note, commit only that file (`git commit -- <path>`), and push at once. Never leave it edited and unpushed while you work.
 - **If the rebase clashes:** keep both sides' Progress lines, in time order. In the status the holder's text stands, and the other side's facts become a Progress line. Nothing either side wrote is dropped.
 - **A holder that's gone quiet:** if the holder is a chat and the note hasn't changed for two days (`git log -1 --format=%cs -- <path>`), take it over and say so in Progress.
 
@@ -58,7 +58,7 @@ Before you bring the task note up to date, or write a brief or a report, put wha
 A big job runs in stages ([guide mode](../guide-mode/SKILL.md)). At the end of each, and whenever a chat has to stop before the work is done (the owner leaving, their plan's limit coming):
 1. **Save what's lasting** (above).
 2. **Bring the task note up to date:** rewrite its status, add a Progress line, and add The last messages, word for word, if the talk with the owner is mid-way. Cut long tool output, never the owner's words.
-3. **Commit and push** it: `git pull --rebase`, run `python3 skills/brain-spec/library.py build`, commit only your paths (`git commit -- <paths>`), and push to `main`. A note only on your disk hands nothing on.
+3. **Commit and push** it: `git pull --rebase origin main`, run `python3 skills/brain-spec/library.py build`, commit only your paths (`git commit -- <paths>`), and push to `main`. A note only on your disk hands nothing on.
 4. **Tell the owner** in a few plain lines where things stand. No carry-on line here: the stage's end updates the note quietly, and the line comes only when a new chat is due (below).
 
 ## At the nudge
@@ -81,7 +81,7 @@ The agent never moves the owner to a new chat by itself, and nothing starts up o
 
 ## Starting from a task note
 When someone gives you a task's path, the owner pasting it or a coordinator in a brief:
-1. **Pull** (`git pull --rebase`), so you have it.
+1. **Pull** (`git pull --rebase origin main`), so you have it.
 2. **Read the core, the task note, and what its Where everything is names for the next step.** Nothing else up front; open more only when the work needs it.
 3. **Take it:** set `holder` to your session link and `status: doing`, add a Progress line, `**Picked up** {KIT_DATE}, by <your session link>`, and commit and push that alone, so the board shows it's taken and no second chat starts on it too. If the holder is another chat that's still at work, don't take it: add a Progress line, or ask for a piece with a note of its own.
 4. **Check what moved since it was last updated** (`git log --since=<its date> --oneline`), then carry on from its Next. If the owner said more than "continue", their words come first, and go under The ask.

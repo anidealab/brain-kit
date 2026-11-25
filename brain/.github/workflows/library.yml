@@ -1,16 +1,16 @@
 # Keeps the knowledge library's indexes in step with the notes' cards.
-# On each push to main that touches knowledge/ or skills/, it runs
-# skills/brain-spec/library.py build and commits any README.md that changed. Then it
-# runs the library check and the link check and writes their reports into the run
-# summary. It never fails on them, so GitHub doesn't email the owner on every push.
+# Every 3 hours (and by hand), it runs skills/brain-spec/library.py build and commits any
+# README.md that changed. Not on every push: a private repo gets 2,000 free Actions minutes a
+# month, each run counts as at least one, and a busy brain's pushes used them up, which left
+# every job on GitHub's machines queued. Every 3 hours is about 240 minutes a month, and agents
+# run the build themselves before they push. Then it runs the library check and the link check
+# and writes their reports into the run summary. It never fails on them, so GitHub doesn't
+# email the owner each time.
 name: Build the knowledge indexes
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "knowledge/**"
-      - "skills/**"
+  schedule:
+    - cron: "17 */3 * * *"
   workflow_dispatch:
 
 permissions:

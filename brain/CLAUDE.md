@@ -52,4 +52,4 @@ Only these rules apply to all work in the brain, on top of a project's own rules
 - Ask the owner in your thread when you need them. Anything that waits on them is a task they hold, on the tasks shelf.
 - Before making a task, check the tasks shelf for one the job fits into ([how](knowledge/tasks/README.md)).
 - When something slows or stops you, add a line to the ideas shelf's friction log. When a skill lets you down, or the owner corrects work done with it, add a dated line to the `LESSONS.md` in its folder (the brain spec says how).
-- Commit straight to `main`, with `git pull --rebase` before you start and before you push. If your session was given its own branch, push there too. Make small commits with plain messages, never force-push, and keep both sides' facts when edits clash.
+- Commit straight to `main`, with `git pull --rebase origin main` before starting and pushing. If your session has its own branch, push there too. Make small commits with plain messages, never force-push, and keep both sides' facts when edits clash.
