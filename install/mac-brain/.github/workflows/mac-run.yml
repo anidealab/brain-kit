@@ -78,6 +78,8 @@ jobs:
           LIVE_PRIVATE: ${{ github.event.repository.private }}
           # A job that needs a key gets it here, from the repo's Actions secrets, never in the command:
           # SOME_API_KEY: ${{ secrets.SOME_API_KEY }}
+          # The backup's read-only token for the owner's private repos, if they added one (skills/backup/SKILL.md).
+          BACKUP_GITHUB_TOKEN: ${{ secrets.BACKUP_GITHUB_TOKEN }}
         shell: bash
         run: |
           # The command comes in through an env var, so quotes and $ signs in it reach the shell untouched.
