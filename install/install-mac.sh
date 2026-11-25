@@ -778,7 +778,7 @@ if [ -n "$setup" ] && [ -z "$check" ]; then
     if (cd "$index_work" && zip -qr "$pack" .); then
       "$gh" release delete anidealab-set-up-index --repo "$repo" --yes >/dev/null 2>&1
       if "$gh" release create anidealab-set-up-index "$pack" --repo "$repo" --draft --title "Your computer's map, for AnIdeaLab's set-up" \
-        --notes "A map of your computer: its folders, and the names of the documents you worked on this past year, none of them opened. AnIdeaLab uses it to pick what to read for your brain, then reads just that in the background. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer."; then index_ok=yes; fi
+        --notes "A map of your computer: its drives, its folders and the names of the documents you worked on this past year, none of them opened. AnIdeaLab uses it to get its bearings and, only if you asked for your documents to be read, to pick what to read. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once your brain is set up. Your files stay on your computer."; then index_ok=yes; fi
     fi
     rm -f "$pack"
   fi

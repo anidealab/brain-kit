@@ -562,7 +562,7 @@ if ($setup -and -not $check) {
       try { Compress-Archive -Path (Join-Path $indexWork '*') -DestinationPath $pack -Force } catch { Log "couldn't zip the index: $($_.Exception.Message)" }
       if (Test-Path -LiteralPath $pack) {
         Native { & $gh release delete anidealab-set-up-index --repo $repo --yes 2>&1 } | Out-Null
-        Native { & $gh release create anidealab-set-up-index $pack --repo $repo --draft --title 'Your computer''s map, for AnIdeaLab''s set-up' --notes 'A map of your computer: its folders, and the names of the documents you worked on this past year, none of them opened. AnIdeaLab uses it to pick what to read for your brain, then reads just that in the background. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once it has. Your files stay on your computer.' 2>&1 } | Out-Host
+        Native { & $gh release create anidealab-set-up-index $pack --repo $repo --draft --title 'Your computer''s map, for AnIdeaLab''s set-up' --notes 'A map of your computer: its drives, its folders and the names of the documents you worked on this past year, none of them opened. AnIdeaLab uses it to get its bearings and, only if you asked for your documents to be read, to pick what to read. Only you and AnIdeaLab can see it, and AnIdeaLab deletes it once your brain is set up. Your files stay on your computer.' 2>&1 } | Out-Host
         $indexOk = $LASTEXITCODE -eq 0
         Remove-Item -LiteralPath $pack -Force -ErrorAction SilentlyContinue
       }
