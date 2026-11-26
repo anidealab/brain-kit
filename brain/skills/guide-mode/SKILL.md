@@ -27,7 +27,7 @@ A question, an explanation or one small edit: just answer or do it. No plan, no 
 6. **Wait for their go.** Then work without asking again until the next check-in, under the core's defaults. Their answers to your questions aren't the go, and in a chat they've said is for talking things through, "let's build" means save their answers and the plan; build only when they plainly say to.
 
 ## Sizing a job
-Say how complex the job is, not how many tokens it will take. How much a job uses swings too much with what the agent ends up reading for a number to mean anything, and the owner can't see a meter anyway; they get a feel over time for what makes a good request, and what's too much for one session.
+Say how complex the job is, never a count of what it will use. That swings too much with what the agent ends up reading to mean anything, and the owner can't see a meter anyway; they get a feel over time for what makes a good request, and what's too much for one session.
 
 | Size | What it looks like | How to run it |
 |---|---|---|
@@ -52,7 +52,7 @@ Ways to keep a job smaller, worth telling the owner when they fit:
 - Don't add things they didn't ask for. Suggest them at the end instead.
 - **Start from what they already approved.** Asked for something new in a style or setup they've signed off, start from the closest thing they passed and change only what was asked. Copy its conditions too, not just its numbers (the same settings on a different background or angle can look worse): list what it sat in and check each.
 - **Build a choice they may change as a setting,** keeping the last one, so when they change their mind on seeing it (they often do), the change takes minutes, not a rebuild.
-- When a session is getting long, or the size nudge comes, finish the step you're on and hand off the way the [handoff skill](../handoff/SKILL.md) says: save what's lasting, bring the job's task note up to date, and give the owner its path to paste into a fresh chat for the next stage, as a code block to copy (the path, then "continue"), never a link.
+- When the hand-off nudge comes, finish the step you're on and hand off the way the [handoff skill](../handoff/SKILL.md) says: save what's lasting, bring the job's task note up to date, and give the owner its path to paste into a fresh chat for the next stage, as a code block to copy (the path, then "continue"), never a link.
 
 ## Explaining
 - As much as their level says (above): at 1, plain words and every technical term explained; at 4, none.

@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "How any agent in this brain hands work on. To a fresh chat: the job's task note, kept up to date as the work goes (it took the place of the session hand-off at brain update 6), brought up to date at the end of a stage or when the size nudge says the conversation is long, and its path given to the owner to paste only when a new chat is due (the nudge, a chat stopping, or they ask), not at every stage. To an agent: a brief, and a report back (at the end of its work, or at its own nudge at 250k), on the hand-offs shelf. Saving what's lasting first, what to do at the nudge, how to start from a task note or an old hand-off, doing it by hand where no hook runs, and the nudge's settings. Use whenever you hand a job on, brief an agent, report back, get the nudge, or are given a task's or hand-off's path."
+description: "How any agent in this brain hands work on. To a fresh chat: the job's task note, kept up to date as the work goes (it took the place of the session hand-off at brain update 6), brought up to date at the end of a stage or at the hand-off nudge, and its path given to the owner to paste only when a new chat is due (the nudge, a chat stopping, or they ask), not at every stage. To an agent: a brief, and a report back (at the end of its work, or at its own nudge), on the hand-offs shelf. Saving what's lasting first, what to do at the nudge, and how to start from a task note or an old hand-off. Use whenever you hand a job on, brief an agent, report back, get the nudge, or are given a task's or hand-off's path."
 ---
 
 # Hand-offs
@@ -10,7 +10,7 @@ One way for every agent and sub-agent to hand work on, saved in the brain so the
 
 **Why the task note.** A job used to get a new session hand-off at each stage and each nudge, each copying the last one's open list, so finding where a job really stood meant reading down a trail of them. Now each job has one note whose status is rewritten as the work moves, so it's always true and always in the same place. There are no new session hand-offs.
 
-It's plain Markdown and git, so any agent can follow it. The nudge is a Claude Code hook (a setting that makes Claude Code run a small script at set moments, like after each tool call): a shortcut, written down below so an agent without it can do the same by hand.
+It's plain Markdown and git, so any agent can follow it. The nudge is a Claude Code hook (a setting that makes Claude Code run a small script at set moments, like after each tool call): a shortcut. How it works, its settings, how it reaches every cloud chat, and handing off by hand where no hook runs are in [the nudge's note](nudge-settings.md), for whoever changes the nudge or works without one.
 
 ## Three ways work is handed on
 | What | From and to | Where it lives |
@@ -62,7 +62,7 @@ A big job runs in stages ([guide mode](../guide-mode/SKILL.md)). At the end of e
 4. **Tell the owner** in a few plain lines where things stand. No carry-on line here: the stage's end updates the note quietly, and the line comes only when a new chat is due (below).
 
 ## At the nudge
-In Claude Code, a hook tells you when the conversation passes 300,000 tokens, and again at 325,000 and each extra 25,000. A token is a word or part of a word: about how much the agent reads. From 400,000 the nudge is urgent, and after 500,000 every message the owner sends comes with a reminder to start a fresh chat. Then:
+In Claude Code, a hook tells you when the conversation has grown long enough to hand off, and again if it carries on; later ones are urgent. Until it comes, there's nothing to watch or tell the owner about the conversation's size: the nudge is the only word on it, and saying how much room is left only pulls attention onto it. Then:
 1. **Finish what you're doing.** It's a nudge, not a hard stop. Bring the step you're on to a safe point (a change that works, a message sent, an answer the owner is waiting for), but don't start a new piece. When it's urgent, stop at the first safe point.
 2. **Save what's lasting,** and **bring the task note up to date,** with the last messages word for word. If the job has no task note yet, make one now. If the conversation covers more than one job, update each one's note.
 3. **Commit and push** it.
@@ -92,7 +92,7 @@ When someone gives you a task's path, the owner pasting it or a coordinator in a
 ## Briefs and reports
 The chat the owner talks to is the coordinator, and the agents it hands work to are its helpers, each in a clean thread of its own, and each hands its work back to the coordinator in a hand-off of its own. When to hand work to an agent at all, and how many at once, is in the brain spec ([handing work to an agent](../brain-spec/SKILL.md#handing-work-to-an-agent)).
 - **A brief** is a hand-off with `kind: brief`, saved on the shelf and pushed; give the agent its path, with a line on the job in the prompt. Cut it to what the agent needs, add the gates that bear on the job, and say what to send back: a report on the shelf, and its path. The agent can't ask the owner, so put in what it would ask. Agents given too much spend their whole budget reading and build nothing, so:
-  - **One job a brief** (two at most in big code files), with the facts it needs written in rather than a list of files to read, line ranges rather than whole files, sized well inside its nudge (`agent_at` in [nudge.json](nudge.json)), and pushing each piece as it's made. For a big area (about 20 notes or more), the survey and the rewrites go to separate agents, or the one agent stops at the survey and reports, and the rewriters are told not to survey again.
+  - **One job a brief** (two at most in big code files), with the facts it needs written in rather than a list of files to read, line ranges rather than whole files, sized well inside its nudge, and pushing each piece as it's made. For a big area (about 20 notes or more), the survey and the rewrites go to separate agents, or the one agent stops at the survey and reports, and the rewriters are told not to survey again.
   - **One light check, then the report,** and say that's the end of it: the build or tests and a look at the main states, for the agent itself. No round of screenshots for the owner, who looks at the work themselves; long check rounds hit the usage limit before the report.
   - **A research brief asks for a short answer:** a brief comparison and one pick from what's quick to find; deeper tests only when the owner asks.
   - **Fresh eyes get the owner's words and the material,** never your own picks, and the brief keeps the agent off notes and commits that hold them, or it finds your ideas again.
@@ -119,34 +119,7 @@ updated: {KIT_DATE}
 `kind` is `brief` or `report` (`session` only on notes from before brain update 6). Statuses: `open` when written, `picked-up` once someone starts from it, `done` once its work is finished; whoever does each step changes it. Save it where anyone can get it: pull, run `python3 skills/brain-spec/library.py build`, commit only your paths, and push to `main`.
 
 ## The sub-agent nudge
-An agent you hand work to (a sub-agent) gets nudges of its own, by its own conversation's size and at the same marks as the chat's: at 300,000 tokens, again at each extra 25,000, and urgent from 400,000. A long agent's work loses detail the same way, and its report has to fit back into the chat. Sizing the job first ([guide mode](../guide-mode/SKILL.md)) stays the main way work is split; this is the safety net for when a job turns out bigger than you thought.
-- **The agent, at its nudge:** finish the step you're on, write your report back as above (what's done, what's left, and where everything is), and stop. The owner has nothing to paste. An agent that carries on gets another nudge every 25,000 tokens, and from 400,000 an urgent one: stop now, push what you have, and report.
+An agent you hand work to (a sub-agent) gets nudges of its own, by its own conversation's size. A long agent's work loses detail the same way, and its report has to fit back into the chat. Sizing the job first ([guide mode](../guide-mode/SKILL.md)) stays the main way work is split; this is the safety net for when a job turns out bigger than you thought.
+- **The agent, at its nudge:** finish the step you're on, write your report back as above (what's done, what's left, and where everything is), and stop. The owner has nothing to paste. An agent that carries on gets more nudges, then an urgent one: stop now, push what you have, and report.
 - **The chat that started it** picks up from the report: it checks what's done, and carries on what's left itself or hands it to a fresh agent with the report as its brief.
 - **It's separate from the chat's own nudge:** an agent's nudge doesn't use up the chat's, and the chat's never reaches an agent.
-
-## By hand, where no hook runs
-The nudge only runs in Claude Code, in a chat started on a copy of this repo. Anywhere else (another AI tool, an agent with no hooks), notice it yourself and hand off the same way (the core's "not tied to one AI provider"). Signs a conversation is long: the tool shows how full its memory is, warns, or starts summarising earlier turns; many long tool outputs, logs or file reads; hours of back-and-forth. In Claude Code you can measure it: `python3 skills/handoff/nudge.py --size <the session's .jsonl log>` (the logs are in `~/.claude/projects/`) prints the size in tokens, and a sub-agent's log, in the session's `subagents/` folder, works the same way. At about 300,000 (the same if you're an agent the chat handed work to), or the first time the tool warns or summarises, hand off: bring the job's task note up to date, or write your report.
-
-## The nudge's settings
-Hooks in `.claude/settings.json` run [nudge.py](nudge.py) after each tool call (`PostToolUse`), when the agent finishes an answer (`Stop`) and when the owner sends a message (`UserPromptSubmit`). It reads the hook's input, takes the conversation's size from the newest main-thread assistant message in the session's log (its input, cache-write and cache-read tokens added up), and when that passes a mark it hasn't nudged for, hands the agent the message: as added context after a tool call or with the owner's message, or by keeping a finished answer going. It remembers which marks a session has had in a small file in the temp folder, named by the session's id. Inside a sub-agent, whose hook input carries `agent_id`, it measures that agent's own conversation instead, after each of its tool calls: from `agent_transcript_path` if the input gives it, or else from the log Claude Code keeps beside the session's, `<the session's log without .jsonl>/subagents/agent-<agent_id>.jsonl`, where every line is marked `isSidechain`. It remembers a sub-agent's marks in a file of its own, named by the session's and the agent's ids. It stays silent on a `Stop` already continuing because of a stop hook (`stop_hook_active`), and on any error it prints nothing and exits 0, so it can't break a chat. The hooks run through bash (on Windows, Git Bash, which comes with Git), trying `python3`, then `python`, as the session-start hook does, and doing nothing if neither is there: a claude.ai/code chat has Python, and a Claude Code chat on the owner's PC needs it installed.
-
-The policy is in [nudge.json](nudge.json), not the code, so it can change without touching the script:
-
-| Setting | What it does | This brain's |
-|---|---|---|
-| `first_at` | Tokens at the first nudge; 0 turns the nudge off | 300000 |
-| `repeat_every` | Tokens between later nudges; 0 means one only | 25000 |
-| `urgent_at` | From this size on, nudges use `urgent_message`; 0 means never | 400000 |
-| `every_prompt_after` | From this size on, every message the owner sends gets `prompt_message` (the `UserPromptSubmit` hook); 0 means never | 500000 |
-| `agent_at` | Tokens in a sub-agent's own conversation at its first nudge, `agent_message`; 0 means never | 300000 |
-| `agent_repeat_every` | Tokens between a sub-agent's later nudges; 0 means one only | 25000 |
-| `agent_urgent_at` | From this size on, a sub-agent's nudges use `agent_urgent_message`; 0 means never | 400000 |
-| `tell_person` | `true` also shows the message to the owner in Claude Code; off, since it's written for the agent, who tells the owner in plain words | false |
-| `state_dir` | Where it remembers the marks; empty means the temp folder | empty |
-| `message`, `urgent_message`, `prompt_message`, `agent_message`, `agent_urgent_message` | What it says; `{size}` and `{mark}` are filled in | |
-
-The owner can change any of these: save it as a decision ([brain spec](../brain-spec/SKILL.md#saving-knowledge)), then change `nudge.json`. To check a change, pipe made-up hook input in, with a made-up session id so no real chat's nudge is used up:
-```
-echo '{"session_id":"test-1","transcript_path":"<a .jsonl log>","hook_event_name":"PostToolUse"}' | python3 skills/handoff/nudge.py
-```
-For a sub-agent's nudge, add `"agent_id":"test-agent"` and `"agent_transcript_path":"<its .jsonl log>"`. `--settings <file>` tries other settings.

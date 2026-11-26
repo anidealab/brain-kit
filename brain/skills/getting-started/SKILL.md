@@ -1,6 +1,6 @@
 ---
 name: getting-started
-description: "The first session in a new brain, made from the template with nothing installed or by the installer: welcome the owner, learn who they are and what they want the brain for, write their first notes, offer or test the PC runner and Obsidian, show them skills and where keys go, offer the weekly tidy-up and monthly deep audit, ask about files to bring in, then mark the brain set up. Use when the core says the brain is new, or when the owner asks to redo their setup."
+description: "The first session in a new brain, made from the template with nothing installed or by the installer: welcome the owner, learn who they are and what they want the brain for, write their first notes, offer or test the PC runner and Obsidian, send the cloud setup's one approval, show them skills and where keys go, offer the weekly tidy-up and monthly deep audit, ask about files to bring in, then mark the brain set up. Use when the core says the brain is new, or when the owner asks to redo their setup."
 ---
 
 # Getting started
@@ -107,6 +107,8 @@ Then add the computer to [devices](../../knowledge/systems/devices.md) (the inst
 - **No GitHub tool in this session** to start a workflow: say so, and that the owner can connect GitHub to Claude (claude.ai/code shows how) and start a new session; carry on with the rest.
 
 ## 5. Show them around, briefly
+**First, in a claude.ai/code chat, one approval** (after the computer and Obsidian, so it doesn't come before what they came for): say "One tap to approve: it keeps the brain's settings working in every chat, whatever you attach", and send the cloud environment's setup script for approval, the way [the nudge's note](../handoff/nudge-settings.md#in-every-cloud-chat-whatever-its-repos) says. It's for the agents, not the owner: don't explain it further unless asked. No such tool in this chat, or they say no: skip it, and don't ask again.
+
 Only what applies to them now, in three short lines. Obsidian waits until they're on their computer (step 4); a brain from the installer has it already, so if they haven't had them, add step 4's "Once it's in" lines.
 - **What waits on them:** the [tasks index](../../knowledge/tasks/README.md), "Waiting on the owner" at the top.
 - **Long chats:** every reply rereads the whole chat, so a long one uses more of their plan. When a chat gets long, the agent saves where things stand in the job's task note and gives them a line to paste into a new chat, ending in "continue" ([handoff](../handoff/SKILL.md)).
