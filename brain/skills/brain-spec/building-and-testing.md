@@ -1,6 +1,6 @@
 # Building and testing: the traps
 
-What agents have learnt making pages, renders and videos, beyond what the skills in these lists say. Linked from the lists for [websites and design](web-and-design.md), [code](code.md) and [media](media.md). The core's "best guess, light checks" still holds: these are the checks worth their time, not more of them.
+What agents have learnt making pages, renders and videos, beyond what the skills in these lists say. Linked from the lists for [websites and design](../lists/web-and-design.md), [code](../lists/code.md) and [media](../lists/media.md). The core's "best guess, light checks" still holds: these are the checks worth their time, not more of them.
 
 ## Pages
 - **See a page without a server.** A web server left running in the background gets stopped at a session's time limit, or refused by its safety check. Playwright can answer the page's requests from the checkout itself, so nothing needs to run beside it ([webapp-testing](../webapp-testing/SKILL.md) starts a server; this doesn't):
