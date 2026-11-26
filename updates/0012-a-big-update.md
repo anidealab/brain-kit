@@ -5,6 +5,7 @@ Sent 26 Nov 2026.
 A big update, so apply it in a new session, running Opus 5.5 on high effort. To the agent: say so to the owner first, before the summary; if this chat isn't a new one on Opus 5.5 on high, ask them to start one for it (pick the model and effort in the chat's settings, then say "apply the brain update"), and go ahead here only if they'd rather. Everything that came with it is in the summary below.
 
 ## Summary for the owner
+- **A big update: apply it in a new session, running Opus 5.5 on high effort.** If this chat isn't a new one on Opus 5.5 on high, start one (pick the model and effort in the chat's settings) and say "apply the brain update" there.
 - **Every chat knows who you are, where you live and your time of day.** The brain's core now has a small table with your name, your town and your time zone, so a new chat doesn't have to ask again.
 - **Your agents get on with things.** Inside the brain's few gates (spending, keys, messages to the outside, your voice), they decide and act without asking first. There's no rule about open-source licences any more.
 - **Rules your agents write get checked with you.** Once a month the deep tidy-up lists any rule an agent wrote that limits what agents can do, with a line on what keeping it costs, and asks you: keep it or cut it.
