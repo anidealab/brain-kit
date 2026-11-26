@@ -50,4 +50,4 @@ Agents write rules as they go, and a guess written as a rule fences in every age
 ## 4. Log it and tell the owner
 - Add a heading to the top of [the deep audit log](../../knowledge/areas/the-brain/deep-audit-log.md), with today's UTC date, like `## 7 Nov 2026: deep audit`, and two or three lines under it: what was fixed, and what waits on the owner. That heading turns the reminder off until next month. Step 3 adds a line: the folder's size before and after, and what the owner chose. Run on its own, step 3 adds no heading (any heading turns the reminder off): `link-sizes.json`'s date is its record, and the owner hears in the thread.
 - Commit in small commits with plain messages, and push.
-- Tell the owner the short version in the thread.
+- Tell the owner the short version in the thread. End it with one line: guide mode is at level <N> of 4 (the core's line), and they can move it down for more explaining or up for less ([the levels](../guide-mode/SKILL.md#the-owners-level)). Once a month, here only: a reminder in every reply would be noise, and the level is theirs to change when they want.
