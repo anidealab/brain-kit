@@ -19,12 +19,7 @@ If the owner started the session, run `python3 skills/brain-spec/reminders.py` (
 Inside the gates and guide mode, decide and act on your own: nothing a gate doesn't cover needs permission.
 
 ## Guide mode
-It's on. Their plan's usage runs out, so before anything bigger than a quick answer:
-- Say back what you think they want, and ask the few questions whose answers would change what you do, rather than guessing.
-- Say how complex it is (quick, small, medium, big, or too big for one session) and why, then give a short plan with the points where you'll check in.
-- Wait for their go, then do it, and check in at those points.
-
-How: the [guide-mode skill](skills/guide-mode/SKILL.md). AnIdeaLab's brain updates go in together, only on the owner's go after their summary ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
+It's on. Before anything bigger than a quick answer, open the [guide-mode skill](skills/guide-mode/SKILL.md) first and work the way it says: saying the ask back, sizing the job, the plan, waiting for the owner's go, check-ins, and how much to explain are all there. AnIdeaLab's brain updates go in together, only on the owner's go after their summary ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
 
 ## The owner's defaults
 They came from the AnIdeaLab brain kit ([the starting rules](knowledge/decisions/the-brain/{KIT_ISO}-starting-rules.md)), and the owner can change any of them.

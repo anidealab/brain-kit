@@ -1,6 +1,6 @@
 ---
 name: guide-mode
-description: "How agents work with an owner whose plan's usage runs out: say the ask back, ask only the questions that matter, push back when it's worth it, size the job (quick, small, medium, big, too big for one session), agree a short plan, check in along the way, explain as much as the owner's level (1 to 4, in the core) says, and tune it down, never off, when the owner says: sizing, stages and hand-offs only. Use before any job bigger than a quick answer."
+description: "How agents work with an owner whose plan's usage runs out: say the ask back, ask only the questions that matter, push back when it's worth it, size the job (quick, small, medium, big, too big for one session), agree a short plan, check in along the way, explain as much as the owner's level (1 to 4, set here) says; turning it down is a higher level. Use before any job bigger than a quick answer."
 ---
 
 # Guide mode
@@ -9,7 +9,7 @@ Every message and every file an agent reads uses some of the owner's plan, which
 ## The owner's level
 **The owner's level: 2** (of 1 to 4).
 
-How much to explain, and how technical to talk, follows that level. It's kept here only, as the current level: every agent working with the owner reads this skill, and a number in the core would be in front of them every reply. Setup sets it from the owner's answer about how much they've used AI tools or coding; after that only the owner changes it ("explain more", "skip the basics", "put me on 3"), and the agent changes the line above when they ask. Don't move it on your own read of them: one number they set stays true, where a guess re-made each chat drifts. It changes the explaining, nothing else. Don't tell them the level or that they can move it: the monthly deep audit reminds them once ([its last step](../brain-audit/deep-audit.md#4-log-it-and-tell-the-owner)).
+How much to explain, and how technical to talk, follows that level. It's kept here only, as the current level with no history: the core just says guide mode is on and sends every agent here before a bigger job, and a number in the core would be in front of them every reply. Setup sets it from the owner's answer about how much they've used AI tools or coding; after that only the owner changes it ("explain more", "skip the basics", "put me on 3", "turn it down": a higher number), and the agent changes the line above when they ask: a one-digit change, nothing else. There's no tuned-down or off version, since a second setting would drift from the first; when they mean fewer questions or no waiting for some kind of job, that's a decision in their words, saved and followed. Don't move it on your own read of them: one number they set stays true, where a guess re-made each chat drifts. It changes the explaining, nothing else. Don't tell them the level or that they can move it: the monthly deep audit reminds them once ([its last step](../brain-audit/deep-audit.md#4-log-it-and-tell-the-owner)).
 1. Uses a computer comfortably: plain words, explain any technical term, walk them through steps.
 2. Pretty techy, fine copying and pasting commands and finding their way around: explain a new term in a few words.
 3. Builds things (founders, online sellers, web developers, coders): technical words are fine; explain only the unusual.
@@ -63,23 +63,4 @@ Ways to keep a job smaller, worth telling the owner when they fit:
 ## After a job
 If it turned out much bigger or smaller than you said, add a dated line to [job sizes](../../knowledge/areas/the-brain/job-sizes.md): the job, the size you gave, what it really was, and why. Read its newest lines before sizing a job, so the sizes get closer to the truth for this owner.
 
-## Tuned down
-When the owner wants less guiding, guide mode tunes down rather than turning off: keep what saves their usage and keeps big jobs on track, sizing jobs properly and handing off at the end of each stage, and drop the rest.
-
-What stays:
-- **Sizing:** size every job bigger than a quick answer, as the table says, and give the size and why in a line.
-- **Stages:** split a big job into stages that are each useful on their own, say them, and get their go on the stages before you start.
-- **The job's task note brought up to date at the end of each stage,** the way the [handoff skill](../handoff/SKILL.md) says: save what's lasting, rewrite the note's status (where it stands, next, waiting on, where everything is), add a progress line, and commit and push it, so the next stage can start clean: in this session, with an agent you hand it to as a brief, or in a fresh session given the task's path when this one is long or the size nudge comes. The task note is the hand-off: there's no separate one to write.
-- **Saying when it grows:** if a job turns out bigger than you said, say so at the next sensible point, and what it's likely to take.
-- **More than two agents at once** still needs their yes.
-- **Job sizes,** as in "After a job".
-
-What goes: saying the ask back, questions they don't need, waiting for a go on small and medium jobs, check-ins in the middle of a stage, and teaching or walking through steps unless they ask; the explaining still follows their level.
-
-## Turning it down
-When the owner says something like "just do these without asking" or "you don't need a plan for small stuff", save it as a decision note in their words ([brain spec](../brain-spec/SKILL.md#saving-knowledge)) and follow it from then on. When they say to turn guide mode off, tune it down instead: tell them in a line what stays and why, save the decision, and change the core's guide mode section to:
-```
-## Guide mode
-It's tuned down (the owner's ask, <the date>): before anything bigger than a quick answer, size it and say why; split a big job into stages, agree them, and hand off at the end of each (how: the [guide-mode skill](skills/guide-mode/SKILL.md#tuned-down)). For a brain update from AnIdeaLab, read the owner its summary and apply it only if they say go ([brain updates](skills/brain-spec/SKILL.md#brain-updates)).
-```
-To turn it back up, put the kit's section back. Nothing else is restricted: the gates in the core are all the rules there are, and an agent's own judgement does the rest.
+Beyond guide mode, nothing is restricted: the gates in the core are all the rules there are, and an agent's own judgement does the rest.
