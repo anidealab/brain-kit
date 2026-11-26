@@ -44,7 +44,7 @@ By kind, whatever the size:
 | Old formats (.doc, .ppt, .rtf) | Listed with what they seem to be. If they matter, the owner opens and saves them in the newer format, or a job on the PC converts them |
 | Photos, video and audio | Listed, not read: what's there, where, how many and from when. Transcribing or describing them is a job of its own on the PC, if the owner asks |
 | Spreadsheets of data | The note says what the data is, its columns, its dates and its totals; the data stays in the file |
-| Chats with an AI assistant (an export from ChatGPT, Claude or another) | Read like documents, one subject agent per topic for a big export. The owner's own words and decisions are kept apart from the assistant's advice ([below](#a-subject-agents-brief)) |
+| Chats with an AI assistant (an export from ChatGPT, Claude or another) | First split into one file per chat with [chats.py](chats.py) ([below](#ai-chat-exports)), then read like documents, one subject agent per topic for a big export. The owner's own words and decisions are kept apart from the assistant's advice ([below](#a-subject-agents-brief)) |
 | Code repos | Learned where they are, never moved or copied: its README, `CLAUDE.md`, docs, `git log` and the files that matter, into a project note on the ventures shelf (what it is, where it lives, where it stands, its decisions, how to build and run it, a map of its code); one agent each if they're big. The survey lists a repo as one row and doesn't walk it |
 | Zips and other archives | Listed. Ask the owner before unpacking one; unpacked, it's surveyed like any folder |
 | Apps' and the system's files | Skipped by the survey, and counted |
@@ -69,6 +69,13 @@ python3 skills/file-intake/intake.py convert --work <work folder>
   ```
 - **On a Mac,** the work folder is `~/AI-Brain-Link/_intake/<name>`, Python is `python3`, and the job runs through the Mac's own runner (its skill says how).
 - **The text stays out of the repo.** It's a working copy, it can be made again, and it may hold passwords the secrets gate keeps out of commits.
+
+## AI chat exports
+ChatGPT's export (Settings, Data controls, Export data) and Claude's (Settings, Privacy, Export data) are a zip holding one `conversations.json` with every chat in it, often tens of MB: one file no agent can read, which the survey counts as one document. Before the survey, split it:
+```
+python3 skills/file-intake/chats.py <export .zip, folder or conversations.json>... --out <folder in the work area>
+```
+It writes one Markdown file per chat under `ChatGPT/` or `Claude/`, named by the chat's date and title, with who said what ("You" is the export's owner, "Assistant" the AI), and changes nothing in the export. Then survey that folder (and the export's own folder, for anything else in it). Gemini's comes through Google Takeout as HTML pages, which the survey and `convert` read as they are. Plain Python 3, nothing to install.
 
 ## Splitting
 Write `split.txt` in the work folder, one line per rule, and run `split`:
