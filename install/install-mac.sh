@@ -583,6 +583,17 @@ echo "  This Mac has: $found"
 step "$tools_step" 'done'
 
 # 2. GitHub
+# GitHub's sign-in page opens in the browser used last, not only the Mac's default (Safari on a new Mac), since
+# that's the one they're signed in to GitHub with, having just made their brain there (found 26 Nov 2026 on a
+# wiped Mac). lsappinfo lists the open apps front to back; the first browser in it wins. Anything odd, and gh
+# opens the default as before.
+last_browser() {
+  lsappinfo visibleProcessList 2>/dev/null | grep -o -E '"(Google Chrome|Safari|Firefox|Arc|Microsoft Edge|Brave Browser|Opera|Vivaldi|Chromium)"' | head -1 | tr -d '"'
+}
+if [ -z "${BROWSER:-}" ]; then
+  b=$(last_browser || true)
+  if [ -n "$b" ] && open -Ra "$b" >/dev/null 2>&1; then export BROWSER="open -a \"$b\""; log "GitHub's sign-in opens in $b, the browser used last"; fi
+fi
 step 'Signed in to GitHub' started
 if [ -n "$check" ]; then owner=example; else
   if ! "$gh" auth status --hostname github.com >/dev/null 2>&1; then
