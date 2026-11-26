@@ -130,3 +130,6 @@ On your computer, only the upload point's menu entry is taken off; the runner co
 9. **Run `python3 skills/brain-spec/brain_update.py compare`,** and fix what it finds.
 10. **Run `python3 skills/brain-spec/brain_update.py finish`,** and fill in the report's sections, saying whether the owner switched the runner (step 5), whether the upload point came off the computer (step 6), what the owner table got, and the guide mode level.
 11. **Check the report went:** the "Send brain update reports" run for your push should say "Sent 0012-report.md" in its log. If it says "didn't take", run that workflow by hand once. If the run fails in seconds or sits queued, the free GitHub Actions minutes may be used up (they come back on the 1st of the month): run it by hand then, and tell the owner; the same holds for "Check keys".
+
+
+The exemplar, the kit's brain at this update: https://github.com/AnIdeaLab/brain-kit/tree/adb3c52bb46ef14d2ca61fda86238491364419f7/brain. `compare` prints it too.
